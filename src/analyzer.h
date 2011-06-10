@@ -6,6 +6,7 @@
 #include <iv/utils.h>
 #include <iv/maybe.h>
 #include <iv/noncopyable.h>
+#include <iv/unicode.h>
 #include "ast_fwd.h"
 #include "factory.h"
 #include "analyze_map.h"
@@ -294,8 +295,17 @@ class Analyzer
     current_function_info_ = info;
   }
 
+  // remember this statement is located at this function
   void StoreStatement(Statement* stmt) {
     current_function_info_->second.insert(std::make_pair(stmt, ReachableAndResult()));
+  }
+
+  // remember this variable is located at this function stack
+  void StoreVariable(Identifier* ident,
+                     VariableType type = VARIABLE_STACK) {
+    const iv::core::UString key(ident->value().begin(), ident->value().end());
+    iv::core::unicode::FPutsUTF16(stdout, key.begin(), key.end());
+    current_function_info_->first.insert(std::make_pair(key, std::make_pair(type, TypeSet())));
   }
 
   Statement* normal_;
