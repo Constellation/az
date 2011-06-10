@@ -43,6 +43,41 @@ class IdentifierBase<az::AstFactory>
   core::Token::Type type_;
 };
 
+template<>
+class StatementBase<az::AstFactory>
+  : public Inherit<az::AstFactory, kStatement> {
+ public:
+  typedef Statement<az::AstFactory> StatementType;
+
+  StatementType* normal() const {
+    return normal_;
+  }
+
+  void set_normal(StatementType* normal) {
+    normal_ = normal;
+  }
+
+  StatementType* raised() const {
+    return raised_;
+  }
+
+  void set_raised(StatementType* raised) {
+    raised_ = raised;
+  }
+
+ private:
+  StatementType* normal_;
+  StatementType* raised_;
+};
+
+// stack variable map
+template<>
+class FunctionLiteralBase<az::AstFactory>
+  : public Inherit<az::AstFactory, kFunctionLiteral> {
+ public:
+ private:
+};
+
 } } }  // namespace iv::core::ast
 namespace az {
 

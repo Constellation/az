@@ -15,8 +15,10 @@ class Analyzer
   : public iv::core::ast::AstVisitor<AstFactory>::type,
     private iv::core::Noncopyable<Analyzer> {
  public:
-  void Analyze(FunctionLiteral* literal) { }
+  void Analyze(FunctionLiteral* global) {
+  }
 
+ private:
   void Visit(Block* block) { }
   void Visit(FunctionStatement* func) { }
   void Visit(FunctionDeclaration* func) { }
