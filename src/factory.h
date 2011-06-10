@@ -6,10 +6,15 @@
 #include <iv/ustringpiece.h>
 #include <iv/space.h>
 #include <iv/uchar.h>
+#include <iv/utils.h>
+#include <iv/maybe.h>
+#include <iv/noncopyable.h>
 #include "ast_fwd.h"
 namespace az {
 
-class AstFactory : public iv::core::Space<2> {
+class AstFactory
+  : public iv::core::Space<2>,
+    private iv::core::Noncopyable<AstFactory> {
  public:
   AstFactory()
     : iv::core::Space<2>() {
