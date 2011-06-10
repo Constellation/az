@@ -1,0 +1,3 @@
+[submodule "deps/iv"]
+	path = deps/iv
+	url = git://github.com/Constellation/iv.git

@@ -1,0 +1,10 @@
+js
+gmon.out
+test.js
+cache
+obj
+.config
+config.log
+.sconf_temp
+tools/*.pyc
+test/sputnik/sputniktests/

@@ -1,0 +1,18 @@
+# Az
+
+Az is ECMAScript Analyzing tools
+
+# BUILD
+put following command at top directory
+
+clone iv submodule
+
+    git submodule update --recursive --init
+
+and build
+
+    scons -u az
+
+and copy it
+
+    cp obj/az/az ./

@@ -1,0 +1,11 @@
+import sys
+import os
+import glob
+from os.path import join, dirname, abspath, basename
+Import('context root_dir')
+
+conf = Configure(context.Clone())
+conf.CheckLib('pthread')
+env = conf.Finish()
+program = env.Program('az', Glob('*.cc'))
+Return('program')
