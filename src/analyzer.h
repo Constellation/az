@@ -265,8 +265,30 @@ class Analyzer
   void Visit(FunctionLiteral* literal) {
     std::shared_ptr<FunctionInfo> current_info(new FunctionInfo());
     (*map_)[literal] = current_info;
-    FunctionInfoSwitcher switcher(this, current_info);
-    AnalyzeStatements(literal->body());
+    {
+      FunctionInfoSwitcher switcher(this, current_info);
+
+      const Scope& scope = literal->scope();
+      {
+        // function declarations
+        typedef Scope::FunctionLiterals Functions;
+        const Functions& functions = scope.function_declarations();
+        for (Functions::const_iterator it = functions.begin(),
+             last = functions.end(); it != last; ++it) {
+          StoreVariable((*it)->name().Address());
+        }
+      }
+      {
+        // variables
+        typedef Scope::Variables Variables;
+        const Variables& vars = scope.variables();
+        for (Variables::const_iterator it = vars.begin(),
+             last = vars.end(); it != last; ++it) {
+          StoreVariable(it->first);
+        }
+      }
+      AnalyzeStatements(literal->body());
+    }
   }
 
   void Visit(IdentifierAccess* prop) {
