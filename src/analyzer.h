@@ -8,8 +8,10 @@
 #include <iv/noncopyable.h>
 #include "ast_fwd.h"
 #include "factory.h"
+#include "analyze_map.h"
 
 namespace az {
+
 
 class Analyzer
   : public iv::core::ast::AstVisitor<AstFactory>::type,
@@ -27,9 +29,13 @@ class Analyzer
     Statement* raised_;
   };
 
-  void Analyze(FunctionLiteral* global) {
+  std::shared_ptr<FunctionMap> Analyze(FunctionLiteral* global) {
     normal_ = NULL;
+    std::shared_ptr<FunctionMap> result(new FunctionMap());
+    map_ = result;
     AnalyzeStatements(global->body());
+    map_.reset();
+    return result;
   }
 
  private:
@@ -120,8 +126,30 @@ class Analyzer
   }
 
   void Visit(SwitchStatement* stmt) {
-    // TODO(Constellation) analyze switch
-    stmt->set_normal(normal_);
+    typedef SwitchStatement::CaseClauses CaseClauses;
+    const CaseClauses& clauses = stmt->clauses();
+    Statement* normal = normal_;
+    for (CaseClauses::const_iterator it = clauses.begin(),
+         start = clauses.begin(), last = clauses.end(); it != last; ++it) {
+      CaseClauses::const_iterator next = it;
+      ++next;
+      if (next != last) {
+        // search next stmt
+        for (;next != last; ++next) {
+          if (!(*next)->body().empty()) {
+            // found next stmt
+            normal_ = (*next)->body().front();
+            break;
+          }
+        }
+        if (next == last) {
+          normal_ = normal;
+        }
+      } else {
+        normal_ = normal;
+      }
+      AnalyzeStatements((*it)->body());
+    }
   }
 
   void Visit(ThrowStatement* stmt) {
@@ -210,7 +238,14 @@ class Analyzer
 
   Statement* normal_;
   Statement* raised_;
+  std::shared_ptr<FunctionMap> map_;
 };
+
+template<typename Source>
+inline void Analyze(FunctionLiteral* global, const Source& src) {
+  Analyzer analyzer;
+  std::shared_ptr<FunctionMap> result = analyzer.Analyze(global);
+}
 
 }  // namespace az
 #endif  // _AZ_ANALYZER_H_

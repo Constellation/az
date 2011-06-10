@@ -14,8 +14,7 @@ int main(int argc, char** argv) {
     // syntax error occurred
     std::fprintf(stderr, "%s\n", parser.error().c_str());
   } else {
-    az::Analyzer analyzer;
-    analyzer.Analyze(global);
+    az::Analyze(global, src);
   }
   return 0;
 }
