@@ -70,7 +70,7 @@ def Build():
       "-Wall", "-Wextra", "-Werror", '-pipe',
       "-Wno-unused-parameter", "-Wwrite-strings", "-Wreturn-type", "-Wpointer-arith",
       "-Wwrite-strings", "-Wno-long-long", "-Wno-missing-field-initializers"],
-    CPPPATH=[join(root_dir, 'src'), join(root_dir, 'iv')],
+    CPPPATH=[join(root_dir, 'iv'), join(root_dir)],
     CPPDEFINES=[
       "_GNU_SOURCE",
       "__STDC_LIMIT_MACROS",
