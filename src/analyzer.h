@@ -30,10 +30,13 @@ class Analyzer
   };
 
   std::shared_ptr<FunctionMap> Analyze(FunctionLiteral* global) {
+    // Global Settings
     normal_ = NULL;
     std::shared_ptr<FunctionMap> result(new FunctionMap());
     map_ = result;
-    AnalyzeStatements(global->body());
+
+    Visit(global);
+
     map_.reset();
     return result;
   }
@@ -55,77 +58,99 @@ class Analyzer
   }
 
   void Visit(Block* block) {
+    StoreStatement(block);
     block->set_normal(normal_);
     AnalyzeStatements(block->body());
   }
 
   void Visit(FunctionStatement* func) {
+    StoreStatement(func);
     func->set_normal(normal_);
+
+    // analyze function
+    Visit(func->function());
   }
 
   void Visit(FunctionDeclaration* func) {
+    StoreStatement(func);
     func->set_normal(normal_);
+
+    // analyze function
+    Visit(func->function());
   }
 
   void Visit(VariableStatement* var) {
+    StoreStatement(var);
     var->set_normal(normal_);
   }
 
   void Visit(EmptyStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(IfStatement* stmt) {
     // TODO(Constellation) analyze then and else
+    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(DoWhileStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
 
   void Visit(WhileStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
 
   void Visit(ForStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
 
   void Visit(ForInStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
 
   void Visit(ContinueStatement* stmt) {
     // TODO(Constellation) analyze continue jump
+    StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
 
   void Visit(BreakStatement* stmt) {
     // TODO(Constellation) analyze break jump
+    StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
 
   void Visit(ReturnStatement* stmt) {
     // TODO(Constellation) analyze return
+    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(WithStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
 
   void Visit(LabelledStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
 
   void Visit(SwitchStatement* stmt) {
+    StoreStatement(stmt);
     typedef SwitchStatement::CaseClauses CaseClauses;
     const CaseClauses& clauses = stmt->clauses();
     Statement* normal = normal_;
@@ -154,19 +179,23 @@ class Analyzer
 
   void Visit(ThrowStatement* stmt) {
     // TODO(Constellation) analyze throw
+    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(TryStatement* stmt) {
     // TODO(Constellation) analyze try
+    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(DebuggerStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(ExpressionStatement* stmt) {
+    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
@@ -215,7 +244,28 @@ class Analyzer
   void Visit(ObjectLiteral* literal) {
   }
 
+  class FunctionInfoSwitcher : private iv::core::Noncopyable<FunctionInfoSwitcher> {
+   public:
+    FunctionInfoSwitcher(Analyzer* analyzer, std::shared_ptr<FunctionInfo> info)
+      : analyzer_(analyzer),
+        prev_(analyzer->current_function_info()) {
+      analyzer_->set_current_function_info(info);
+    }
+
+    ~FunctionInfoSwitcher() {
+      analyzer_->set_current_function_info(prev_);
+    }
+
+   private:
+    Analyzer* analyzer_;
+    std::shared_ptr<FunctionInfo> prev_;
+  };
+
   void Visit(FunctionLiteral* literal) {
+    std::shared_ptr<FunctionInfo> current_info(new FunctionInfo());
+    (*map_)[literal] = current_info;
+    FunctionInfoSwitcher switcher(this, current_info);
+    AnalyzeStatements(literal->body());
   }
 
   void Visit(IdentifierAccess* prop) {
@@ -236,9 +286,22 @@ class Analyzer
   void Visit(CaseClause* dummy) {
   }
 
+  std::shared_ptr<FunctionInfo> current_function_info() const {
+    return current_function_info_;
+  }
+
+  void set_current_function_info(std::shared_ptr<FunctionInfo> info) {
+    current_function_info_ = info;
+  }
+
+  void StoreStatement(Statement* stmt) {
+    current_function_info_->second.insert(std::make_pair(stmt, ReachableAndResult()));
+  }
+
   Statement* normal_;
   Statement* raised_;
   std::shared_ptr<FunctionMap> map_;
+  std::shared_ptr<FunctionInfo> current_function_info_;
 };
 
 template<typename Source>
