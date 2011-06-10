@@ -11,7 +11,7 @@ namespace az {
 
 class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
  public:
-  typedef std::pair<std::size_t, std::vector<uint16_t> > Line;
+  typedef std::pair<std::size_t, std::size_t> Line;  // start position and length
   typedef std::vector<Line> Lines;
 
   explicit StructuredSource(const iv::core::UStringPiece& str)
@@ -30,13 +30,13 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
             ++pos;
           }
         }
-        source_.push_back(std::make_pair(line_start_pos, std::vector<uint16_t>(line_start_it, it + 1)));
+        source_.push_back(std::make_pair(line_start_pos, std::distance(line_start_it, it + 1)));
         line_start_pos = pos + 1;
         line_start_it = it + 1;
       }
     }
     if (line_start_it != str.end()) {
-      source_.push_back(std::make_pair(line_start_pos, std::vector<uint16_t>(line_start_it, str.end())));
+      source_.push_back(std::make_pair(line_start_pos, std::distance(line_start_it, str.end())));
     }
   }
 
