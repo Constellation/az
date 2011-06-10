@@ -2,10 +2,14 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <iterator>
 #include <iv/parser.h>
 #include <iv/detail/array.h>
+#include <iv/ustring.h>
+#include <iv/unicode.h>
 #include "factory.h"
 #include "analyzer.h"
+#include "structured_source.h"
 namespace {
 
 bool ReadFile(const std::string& filename, std::vector<char>* out) {
@@ -31,7 +35,7 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  typedef iv::core::Parser<az::AstFactory, std::string, true, false> Parser;
+  typedef iv::core::Parser<az::AstFactory, iv::core::UString, true, false> Parser;
   if (argc <= 1) {
     std::fprintf(stderr, "%s\n", "filename requred");
     return EXIT_FAILURE;
@@ -42,7 +46,18 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  const std::string src(vec.begin(), vec.end());
+  iv::core::UString src;
+  src.reserve(vec.size());
+  if (iv::core::unicode::UTF8ToUTF16(
+          vec.begin(),
+          vec.end(),
+          std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
+    return EXIT_FAILURE;
+  }
+  const az::StructuredSource structured(src);
+  std::printf("line %u column %u\n",
+              structured.GetLineAndColumn(20).first,
+              structured.GetLineAndColumn(20).second);
   az::AstFactory factory;
   Parser parser(&factory, src);
   az::FunctionLiteral* const global = parser.ParseProgram();
