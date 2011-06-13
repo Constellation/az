@@ -9,7 +9,7 @@
 #include <iv/unicode.h>
 #include "factory.h"
 #include "analyzer.h"
-#include "structured_source.h"
+#include "reporter.h"
 namespace {
 
 bool ReadFile(const std::string& filename, std::vector<char>* out) {
@@ -54,10 +54,6 @@ int main(int argc, char** argv) {
           std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
     return EXIT_FAILURE;
   }
-  const az::StructuredSource structured(src);
-  std::printf("line %u column %u\n",
-              structured.GetLineAndColumn(20).first,
-              structured.GetLineAndColumn(20).second);
   az::AstFactory factory;
   Parser parser(&factory, src);
   az::FunctionLiteral* const global = parser.ParseProgram();
@@ -65,7 +61,8 @@ int main(int argc, char** argv) {
     // syntax error occurred
     std::fprintf(stderr, "%s\n", parser.error().c_str());
   } else {
-    az::Analyze(global, src);
+    az::Reporter reporter(src);
+    az::Analyze(global, src, &reporter);
   }
   return 0;
 }

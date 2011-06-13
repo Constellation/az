@@ -13,11 +13,20 @@
 
 namespace az {
 
-
+template<typename Reporter>
 class Analyzer
   : public iv::core::ast::AstVisitor<AstFactory>::type,
-    private iv::core::Noncopyable<Analyzer> {
+    private iv::core::Noncopyable<Analyzer<Reporter> > {
  public:
+
+  Analyzer(Reporter* reporter)
+    : normal_(NULL),
+      raised_(NULL),
+      map_(),
+      current_function_info_(),
+      reporter_(reporter),
+      current_continuation_set_(NULL) {
+  }
 
   class FlowSwitcher : private iv::core::Noncopyable<FlowSwitcher> {
    public:
@@ -334,11 +343,13 @@ class Analyzer
   Statement* raised_;
   std::shared_ptr<FunctionMap> map_;
   std::shared_ptr<FunctionInfo> current_function_info_;
+  Reporter* reporter_;
+  std::unordered_set<const Statement*>* current_continuation_set_;
 };
 
-template<typename Source>
-inline void Analyze(FunctionLiteral* global, const Source& src) {
-  Analyzer analyzer;
+template<typename Source, typename Reporter>
+inline void Analyze(FunctionLiteral* global, const Source& src, Reporter* reporter) {
+  Analyzer<Reporter> analyzer(reporter);
   std::shared_ptr<FunctionMap> result = analyzer.Analyze(global);
 }
 
