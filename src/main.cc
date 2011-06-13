@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
           vec.begin(),
           vec.end(),
           std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
+    std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
     return EXIT_FAILURE;
   }
   az::AstFactory factory;
