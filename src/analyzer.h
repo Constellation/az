@@ -18,6 +18,82 @@ const Statement* kNextStatement = NULL;
 
 }  // namespace detail
 
+class StatusSetRAII;
+
+class ContinuationStatus : private iv::core::Noncopyable<ContinuationStatus> {
+ public:
+  friend class StatusSetRAII;
+  typedef std::unordered_set<const Statement*> ContinuationSet;
+
+  ContinuationStatus()
+    : current_(NULL) {
+  }
+
+  void Insert(const Statement* stmt) {
+    current_->insert(stmt);
+  }
+
+  void Erase(const Statement* stmt) {
+    current_->erase(stmt);
+  }
+
+  void Kill() {
+    Erase(detail::kNextStatement);
+  }
+
+  bool Has(const Statement* stmt) const {
+    return current_->count(stmt) != 0;
+  }
+
+  bool IsDeadStatement() const {
+    return !Has(detail::kNextStatement);
+  }
+
+  void JumpTo(const BreakableStatement* target) {
+    Kill();
+    Insert(target);
+  }
+
+  void ResolveJump(const BreakableStatement* target) {
+    if (Has(target)) {
+      Erase(target);
+      Insert(detail::kNextStatement);
+    }
+  }
+
+ private:
+
+  void set_current(ContinuationSet* set) {
+    current_ = set;
+  }
+
+  ContinuationSet* current() const {
+    return current_;
+  }
+
+  ContinuationSet* current_;
+};
+
+class StatusSetRAII : private iv::core::Noncopyable<StatusSetRAII> {
+ public:
+  StatusSetRAII(ContinuationStatus* status)
+    : status_(status),
+      previous_(status->current()),
+      set_() {
+    set_.insert(detail::kNextStatement);
+    status->set_current(&set_);
+  }
+
+  ~StatusSetRAII() {
+    status_->set_current(previous_);
+  }
+
+ private:
+  ContinuationStatus* status_;
+  ContinuationStatus::ContinuationSet* previous_;
+  ContinuationStatus::ContinuationSet set_;
+};
+
 template<typename Reporter>
 class Analyzer
   : public iv::core::ast::AstVisitor<AstFactory>::type,
@@ -30,7 +106,7 @@ class Analyzer
       map_(),
       current_function_info_(),
       reporter_(reporter),
-      current_continuation_set_(NULL) {
+      status_() {
   }
 
   class FlowSwitcher : private iv::core::Noncopyable<FlowSwitcher> {
@@ -74,11 +150,15 @@ class Analyzer
 
   void Visit(Block* block) {
     CheckDeadStatement(block);
+    const bool dead = IsDeadStatement();
+
     StoreStatement(block);
     block->set_normal(normal_);
     AnalyzeStatements(block->body());
 
-    ResolveContinuationJump(block);
+    if (!dead) {
+      status_.ResolveJump(block);
+    }
   }
 
   void Visit(FunctionStatement* func) {
@@ -112,36 +192,37 @@ class Analyzer
   }
 
   void Visit(IfStatement* stmt) {
-    // TODO(Constellation) analyze then and else
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
 
     // IfStatement
     // this statement have branch
-
     if (stmt->else_statement()) {
       // else statement exists
       Statement* else_statement = stmt->else_statement().Address();
-      current_continuation_set_->insert(else_statement);
       stmt->then_statement()->Accept(this);
-      current_continuation_set_->erase(else_statement);
-      if (IsDeadStatement()) {
-        current_continuation_set_->insert(detail::kNextStatement);
-      } else {
-        current_continuation_set_->insert(stmt);
+      if (!dead) {
+        if (IsDeadStatement()) {
+          status_.Insert(detail::kNextStatement);
+        } else {
+          status_.Insert(stmt);
+        }
       }
       else_statement->Accept(this);
-      if (current_continuation_set_->count(stmt) != 0) {
-        current_continuation_set_->erase(stmt);
-        if (IsDeadStatement()) {
-          current_continuation_set_->insert(detail::kNextStatement);
+      if (!dead) {
+        if (status_.Has(stmt)) {
+          status_.Erase(stmt);
+          if (IsDeadStatement()) {
+            status_.Insert(detail::kNextStatement);
+          }
         }
       }
     } else {
       // then statement only
       stmt->then_statement()->Accept(this);
-      if (IsDeadStatement()) {
-        // recover
-        current_continuation_set_->insert(detail::kNextStatement);
+      if (!dead && IsDeadStatement()) {
+        // recover if this IfStatement is not dead code
+        status_.Insert(detail::kNextStatement);
       }
     }
 
@@ -151,69 +232,87 @@ class Analyzer
 
   void Visit(DoWhileStatement* stmt) {
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
+
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
-    ResolveContinuationJump(stmt);
+
+    if (!dead) {
+      status_.ResolveJump(stmt);
+    }
   }
 
   void Visit(WhileStatement* stmt) {
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
+
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
-    ResolveContinuationJump(stmt);
+
+    if (!dead) {
+      status_.ResolveJump(stmt);
+    }
   }
 
   void Visit(ForStatement* stmt) {
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
+
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
-    ResolveContinuationJump(stmt);
+
+    if (!dead) {
+      status_.ResolveJump(stmt);
+    }
   }
 
   void Visit(ForInStatement* stmt) {
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
+
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
-    ResolveContinuationJump(stmt);
+
+    if (!dead) {
+      status_.ResolveJump(stmt);
+    }
   }
 
   void Visit(ContinueStatement* stmt) {
-    // TODO(Constellation) analyze continue jump
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
 
-    // ContinueStatement
-    // remove kNextStatement and add Target
-    current_continuation_set_->erase(detail::kNextStatement);
-    current_continuation_set_->insert(stmt->target());
+    if (!dead) {
+      status_.JumpTo(stmt->target());
+    }
 
     StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
 
   void Visit(BreakStatement* stmt) {
-    // TODO(Constellation) analyze break jump
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
 
-    // BreakStatement
-    // remove kNextStatement and add Target
-    current_continuation_set_->erase(detail::kNextStatement);
-    current_continuation_set_->insert(stmt->target());
+    if (!dead) {
+      status_.JumpTo(stmt->target());
+    }
 
     StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
 
   void Visit(ReturnStatement* stmt) {
-    // TODO(Constellation) analyze return
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
 
-    // ReturnStatement
-    // remove kNextStatement
-    current_continuation_set_->erase(detail::kNextStatement);
+    if (!dead) {
+      status_.Kill();
+    }
 
     StoreStatement(stmt);
     stmt->set_normal(normal_);
@@ -235,6 +334,8 @@ class Analyzer
 
   void Visit(SwitchStatement* stmt) {
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
+
     StoreStatement(stmt);
     typedef SwitchStatement::CaseClauses CaseClauses;
     const CaseClauses& clauses = stmt->clauses();
@@ -259,20 +360,89 @@ class Analyzer
         normal_ = normal;
       }
       AnalyzeStatements((*it)->body());
+
+      if (!dead) {
+        if (IsDeadStatement()) {
+          if ((it + 1) != last) {
+            status_.Insert(detail::kNextStatement);
+          }
+        }
+      }
     }
-    ResolveContinuationJump(stmt);
+
+    if (!dead) {
+      status_.ResolveJump(stmt);
+    }
   }
 
   void Visit(ThrowStatement* stmt) {
-    // TODO(Constellation) analyze throw
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
+
+    if (!dead) {
+      status_.Kill();
+    }
+
     StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(TryStatement* stmt) {
-    // TODO(Constellation) analyze try
+    // TODO(Constellation)
+    // check try main block is exception-safe or not.
     CheckDeadStatement(stmt);
+    const bool dead = IsDeadStatement();
+
+    Block* catch_block =
+        (stmt->catch_block()) ? stmt->catch_block().Address() : NULL;
+    Block* finally_block =
+        (stmt->finally_block()) ? stmt->finally_block().Address() : NULL;
+
+    stmt->body()->Accept(this);
+
+    if (catch_block) {
+      // catch
+      if (!dead) {
+        if (IsDeadStatement()) {
+          status_.Insert(detail::kNextStatement);
+        } else {
+          status_.Insert(stmt);
+        }
+      }
+      catch_block->Accept(this);
+      if (!dead) {
+        if (status_.Has(stmt)) {
+          status_.Erase(stmt);
+          if (IsDeadStatement()) {
+            status_.Insert(detail::kNextStatement);
+          }
+        }
+      }
+    }
+
+    if (finally_block) {
+      // finally
+      // unless try statement is deadcode,
+      // finally block is always live code.
+      if (!dead) {
+        if (IsDeadStatement()) {
+          status_.Insert(detail::kNextStatement);
+        } else {
+          status_.Insert(stmt);
+        }
+      }
+      finally_block->Accept(this);
+      if (!dead) {
+        if (status_.Has(stmt)) {
+          status_.Erase(stmt);
+        } else {
+          if (!IsDeadStatement()) {
+            status_.Kill();
+          }
+        }
+      }
+    }
+
     StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
@@ -352,39 +522,31 @@ class Analyzer
   };
 
   void Visit(FunctionLiteral* literal) {
-    // TODO(Constellation)
-    // create RAII object
     std::shared_ptr<FunctionInfo> current_info(new FunctionInfo());
     (*map_)[literal] = current_info;
-    std::unordered_set<const Statement*> current_continuation_set;
-    std::unordered_set<const Statement*>* prev = current_continuation_set_;
-    current_continuation_set_ = &current_continuation_set;
-    current_continuation_set_->insert(detail::kNextStatement);  // next statement continuation is default
-    {
-      FunctionInfoSwitcher switcher(this, current_info);
+    const StatusSetRAII status_set_raii(&status_);
+    FunctionInfoSwitcher switcher(this, current_info);
 
-      const Scope& scope = literal->scope();
-      {
-        // function declarations
-        typedef Scope::FunctionLiterals Functions;
-        const Functions& functions = scope.function_declarations();
-        for (Functions::const_iterator it = functions.begin(),
-             last = functions.end(); it != last; ++it) {
-          StoreVariable((*it)->name().Address());
-        }
+    const Scope& scope = literal->scope();
+    {
+      // function declarations
+      typedef Scope::FunctionLiterals Functions;
+      const Functions& functions = scope.function_declarations();
+      for (Functions::const_iterator it = functions.begin(),
+           last = functions.end(); it != last; ++it) {
+        StoreVariable((*it)->name().Address());
       }
-      {
-        // variables
-        typedef Scope::Variables Variables;
-        const Variables& vars = scope.variables();
-        for (Variables::const_iterator it = vars.begin(),
-             last = vars.end(); it != last; ++it) {
-          StoreVariable(it->first);
-        }
-      }
-      AnalyzeStatements(literal->body());
     }
-    current_continuation_set_ = prev;
+    {
+      // variables
+      typedef Scope::Variables Variables;
+      const Variables& vars = scope.variables();
+      for (Variables::const_iterator it = vars.begin(),
+           last = vars.end(); it != last; ++it) {
+        StoreVariable(it->first);
+      }
+    }
+    AnalyzeStatements(literal->body());
   }
 
   void Visit(IdentifierAccess* prop) {
@@ -433,14 +595,7 @@ class Analyzer
   }
 
   bool IsDeadStatement() const {
-    return current_continuation_set_->count(detail::kNextStatement) == 0;
-  }
-
-  void ResolveContinuationJump(const BreakableStatement* target) {
-    if (current_continuation_set_->count(target) != 0) {
-      current_continuation_set_->erase(target);
-      current_continuation_set_->insert(detail::kNextStatement);
-    }
+    return status_.IsDeadStatement();
   }
 
   Statement* normal_;
@@ -448,7 +603,7 @@ class Analyzer
   std::shared_ptr<FunctionMap> map_;
   std::shared_ptr<FunctionInfo> current_function_info_;
   Reporter* reporter_;
-  std::unordered_set<const Statement*>* current_continuation_set_;
+  ContinuationStatus status_;
 };
 
 template<typename Source, typename Reporter>
