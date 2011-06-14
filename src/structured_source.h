@@ -1,3 +1,5 @@
+// StructuredSource provides
+// interface for conversion from position to row and column
 #ifndef _AZ_STRUCTURED_SOURCE_H_
 #define _AZ_STRUCTURED_SOURCE_H_
 #include <cstddef>
