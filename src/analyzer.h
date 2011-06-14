@@ -77,6 +77,8 @@ class Analyzer
     StoreStatement(block);
     block->set_normal(normal_);
     AnalyzeStatements(block->body());
+
+    ResolveContinuationJump(block);
   }
 
   void Visit(FunctionStatement* func) {
@@ -112,6 +114,37 @@ class Analyzer
   void Visit(IfStatement* stmt) {
     // TODO(Constellation) analyze then and else
     CheckDeadStatement(stmt);
+
+    // IfStatement
+    // this statement have branch
+
+    if (stmt->else_statement()) {
+      // else statement exists
+      Statement* else_statement = stmt->else_statement().Address();
+      current_continuation_set_->insert(else_statement);
+      stmt->then_statement()->Accept(this);
+      current_continuation_set_->erase(else_statement);
+      if (IsDeadStatement()) {
+        current_continuation_set_->insert(detail::kNextStatement);
+      } else {
+        current_continuation_set_->insert(stmt);
+      }
+      else_statement->Accept(this);
+      if (current_continuation_set_->count(stmt) != 0) {
+        current_continuation_set_->erase(stmt);
+        if (IsDeadStatement()) {
+          current_continuation_set_->insert(detail::kNextStatement);
+        }
+      }
+    } else {
+      // then statement only
+      stmt->then_statement()->Accept(this);
+      if (IsDeadStatement()) {
+        // recover
+        current_continuation_set_->insert(detail::kNextStatement);
+      }
+    }
+
     StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
@@ -121,6 +154,7 @@ class Analyzer
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
+    ResolveContinuationJump(stmt);
   }
 
   void Visit(WhileStatement* stmt) {
@@ -128,6 +162,7 @@ class Analyzer
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
+    ResolveContinuationJump(stmt);
   }
 
   void Visit(ForStatement* stmt) {
@@ -135,6 +170,7 @@ class Analyzer
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
+    ResolveContinuationJump(stmt);
   }
 
   void Visit(ForInStatement* stmt) {
@@ -142,11 +178,18 @@ class Analyzer
     StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
+    ResolveContinuationJump(stmt);
   }
 
   void Visit(ContinueStatement* stmt) {
     // TODO(Constellation) analyze continue jump
     CheckDeadStatement(stmt);
+
+    // ContinueStatement
+    // remove kNextStatement and add Target
+    current_continuation_set_->erase(detail::kNextStatement);
+    current_continuation_set_->insert(stmt->target());
+
     StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
@@ -154,6 +197,12 @@ class Analyzer
   void Visit(BreakStatement* stmt) {
     // TODO(Constellation) analyze break jump
     CheckDeadStatement(stmt);
+
+    // BreakStatement
+    // remove kNextStatement and add Target
+    current_continuation_set_->erase(detail::kNextStatement);
+    current_continuation_set_->insert(stmt->target());
+
     StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
@@ -161,6 +210,11 @@ class Analyzer
   void Visit(ReturnStatement* stmt) {
     // TODO(Constellation) analyze return
     CheckDeadStatement(stmt);
+
+    // ReturnStatement
+    // remove kNextStatement
+    current_continuation_set_->erase(detail::kNextStatement);
+
     StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
@@ -206,6 +260,7 @@ class Analyzer
       }
       AnalyzeStatements((*it)->body());
     }
+    ResolveContinuationJump(stmt);
   }
 
   void Visit(ThrowStatement* stmt) {
@@ -379,6 +434,13 @@ class Analyzer
 
   bool IsDeadStatement() const {
     return current_continuation_set_->count(detail::kNextStatement) == 0;
+  }
+
+  void ResolveContinuationJump(const BreakableStatement* target) {
+    if (current_continuation_set_->count(target) != 0) {
+      current_continuation_set_->erase(target);
+      current_continuation_set_->insert(detail::kNextStatement);
+    }
   }
 
   Statement* normal_;

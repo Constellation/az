@@ -13,7 +13,9 @@ class Reporter : public BasicReporter {
 
   void ReportDeadStatement(const Statement& stmt) {
     // report when dead statement is found
-    std::printf("%s\n", "DEAD CODE");
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(stmt.begin_position());
+    std::printf("%s %u:%u\n", "DEAD CODE STATMENT", pair.first, pair.second);
   }
 
  private:
