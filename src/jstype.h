@@ -1,6 +1,7 @@
 // heuristic js type
 #ifndef _AZ_JSTYPE_H_
 #define _AZ_JSTYPE_H_
+#include <iv/detail/functional.h>
 namespace az {
 
 enum JSType {
@@ -26,4 +27,16 @@ enum JSType {
 };
 
 }  // namespace az
+
+namespace IV_HASH_NAMESPACE_START {
+
+template<>
+struct hash<az::JSType>
+  : public std::unary_function<az::JSType, std::size_t> {
+  result_type operator()(const argument_type& x) const {
+    return hash<int>()(static_cast<int>(x));
+  }
+};
+
+} IV_HASH_NAMESPACE_END
 #endif  // _AZ_JSTYPE_H_
