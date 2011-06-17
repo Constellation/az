@@ -26,6 +26,25 @@ enum JSType {
   TYPE_USER_OBJECT
 };
 
+std::array<const char*, 12> kTypeName = { {
+  "NotSearched",
+  "Any",
+  "String",
+  "Number",
+  "Boolean",
+  "Undefined",
+  "Null",
+  "Function",
+  "RegExp",
+  "Array",
+  "Object",
+  "UserObject"
+} };
+
+const char* GetTypeName(JSType type) {
+  return kTypeName[type];
+}
+
 }  // namespace az
 
 namespace IV_HASH_NAMESPACE_START {

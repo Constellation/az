@@ -83,6 +83,10 @@ class Environment : public std::enable_shared_from_this<Environment> {
     return env;
   }
 
+  Var& Get(const iv::core::UStringPiece& piece) {
+    return variables_[piece];
+  }
+
   TrapStatus IsTrapped(const iv::core::UStringPiece& piece) const {
     if (IsObjectEnvironment()) {
       // in WithStatement, this traps all, but it maybe be not allocated at variables.

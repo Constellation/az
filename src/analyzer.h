@@ -117,6 +117,23 @@ class Analyzer
   }
 
  private:
+  class ExecutionSwitcher : private iv::core::Noncopyable<ExecutionSwitcher> {
+   public:
+    ExecutionSwitcher(Analyzer* analyzer, std::shared_ptr<ExecutionContext> ctx)
+      : analyzer_(analyzer),
+        prev_(analyzer->context()) {
+      analyzer_->set_context(ctx);
+    }
+
+    ~ExecutionSwitcher() {
+      analyzer_->set_context(prev_);
+    }
+
+   private:
+    Analyzer* analyzer_;
+    std::shared_ptr<ExecutionContext> prev_;
+  };
+
   void AnalyzeStatements(const Statements& stmts) {
     Statement* normal = normal_;
     for (Statements::const_iterator it = stmts.begin(),
@@ -144,7 +161,10 @@ class Analyzer
       const Functions& functions = scope.function_declarations();
       for (Functions::const_iterator it = functions.begin(),
            last = functions.end(); it != last; ++it) {
-        StoreVariable((*it)->name().Address());
+        if (InstantiateVariable((*it)->name().Address())) {
+          // variable name is duplicate
+          // TODO(Constellation) insert report
+        }
       }
     }
     {
@@ -153,7 +173,10 @@ class Analyzer
       const Variables& vars = scope.variables();
       for (Variables::const_iterator it = vars.begin(),
            last = vars.end(); it != last; ++it) {
-        StoreVariable(it->first);
+        if (InstantiateVariable(it->first)) {
+          // variable name is duplicate
+          // TODO(Constellation) insert report
+        }
       }
     }
     AnalyzeStatements(literal->body());
@@ -176,7 +199,7 @@ class Analyzer
     CheckDeadStatement(stmt);
 
     // report FunctionStatement
-    reporter_->ReportFunctionStatement(stmt);
+    reporter_->ReportFunctionStatement(*stmt);
 
     stmt->set_normal(normal_);
 
@@ -202,6 +225,12 @@ class Analyzer
   void Visit(VariableStatement* var) {
     CheckDeadStatement(var);
     var->set_normal(normal_);
+
+    const Declarations& decls = var->decls();
+    for (Declarations::const_iterator it = decls.begin(),
+         last = decls.end(); it != last; ++it) {
+      Visit(*it);
+    }
   }
 
   void Visit(EmptyStatement* stmt) {
@@ -331,7 +360,11 @@ class Analyzer
   void Visit(WithStatement* stmt) {
     CheckDeadStatement(stmt);
     stmt->set_normal(stmt->body());
+
+    // TODO(Constellation) use RAII
+    context_->DownInWithStatement(stmt);
     stmt->body()->Accept(this);
+    context_->UpFromWithStatement();
   }
 
   void Visit(LabelledStatement* stmt) {
@@ -415,7 +448,11 @@ class Analyzer
           status_.Insert(stmt);
         }
       }
+      context_->DownInCatchBlock(stmt);
+      // catch name instantiation
+      context_->GetLexicalEnvironment()->Instantiate(stmt->catch_name().Address()->value());
       catch_block->Accept(this);
+      context_->UpFromCatchBlock();
       if (!dead) {
         if (status_.Has(stmt)) {
           status_.Erase(stmt);
@@ -460,6 +497,8 @@ class Analyzer
   void Visit(ExpressionStatement* stmt) {
     CheckDeadStatement(stmt);
     stmt->set_normal(normal_);
+
+    stmt->expr()->Accept(this);
   }
 
   void Visit(Assignment* assign) {
@@ -472,61 +511,149 @@ class Analyzer
   }
 
   void Visit(UnaryOperation* unary) {
+    using iv::core::Token;
+    switch (unary->op()) {
+      case Token::DELETE: {
+        Expression* expr = unary->expr();
+        if (expr->IsValidLeftHandSide()) {
+          // Identifier
+          // PropertyAccess
+          // FunctionCall
+          // ConstructorCall
+          expr->Accept(this);
+          if (expr->AsIdentifier()) {
+            // delete Identifier
+            reporter_->ReportDeleteToIdentifier(*unary);
+          } else if (!expr->AsPropertyAccess()) {
+            // delete FunctionCall / delete ConstructorCall
+            reporter_->ReportDeleteToCallResult(*unary);
+          }
+        } else {
+          // delete "OK" etc...
+          expr->Accept(this);
+          reporter_->ReportDeleteToInvalidLHS(*unary);
+        }
+        type_ = TYPE_BOOLEAN;
+        break;
+      }
+
+      case Token::VOID: {
+        unary->expr()->Accept(this);
+        type_ = TYPE_UNDEFINED;
+        break;
+      }
+
+      case Token::TYPEOF: {
+        unary->expr()->Accept(this);
+        type_ = TYPE_STRING;
+        break;
+      }
+
+      case Token::INC: {
+        unary->expr()->Accept(this);
+        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
+      }
+
+      case Token::DEC: {
+        unary->expr()->Accept(this);
+        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
+      }
+
+      case Token::ADD: {
+        unary->expr()->Accept(this);
+        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
+      }
+
+      case Token::SUB: {
+        unary->expr()->Accept(this);
+        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
+      }
+
+      case Token::BIT_NOT: {
+        unary->expr()->Accept(this);
+        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
+      }
+
+      case Token::NOT: {
+        unary->expr()->Accept(this);
+        type_ = TYPE_BOOLEAN;
+        break;
+      }
+
+      default:
+        UNREACHABLE();
+    }
   }
 
   void Visit(PostfixExpression* postfix) {
   }
 
   void Visit(StringLiteral* literal) {
+    // type resolve
+    type_ = TYPE_STRING;
   }
 
   void Visit(NumberLiteral* literal) {
+    // type resolve
+    type_ = TYPE_NUMBER;
   }
 
   void Visit(Identifier* literal) {
   }
 
   void Visit(ThisLiteral* literal) {
+    // type resolve
+    type_ = TYPE_USER_OBJECT;
   }
 
   void Visit(NullLiteral* lit) {
+    type_ = TYPE_NULL;
   }
 
   void Visit(TrueLiteral* lit) {
+    type_ = TYPE_BOOLEAN;
   }
 
   void Visit(FalseLiteral* lit) {
+    type_ = TYPE_BOOLEAN;
   }
 
   void Visit(RegExpLiteral* literal) {
+    type_ = TYPE_REGEXP;
   }
 
   void Visit(ArrayLiteral* literal) {
+    type_ = TYPE_ARRAY;
   }
 
   void Visit(ObjectLiteral* literal) {
+    type_ = TYPE_OBJECT;
   }
-
-  class ExecutionSwitcher : private iv::core::Noncopyable<ExecutionSwitcher> {
-   public:
-    ExecutionSwitcher(Analyzer* analyzer, std::shared_ptr<ExecutionContext> ctx)
-      : analyzer_(analyzer),
-        prev_(analyzer->context()) {
-      analyzer_->set_context(ctx);
-    }
-
-    ~ExecutionSwitcher() {
-      analyzer_->set_context(prev_);
-    }
-
-   private:
-    Analyzer* analyzer_;
-    std::shared_ptr<ExecutionContext> prev_;
-  };
 
   void Visit(FunctionLiteral* literal) {
     std::shared_ptr<ExecutionContext> ctx = context_->Create(literal);
     AnalyzeFunctionLiteral(literal, ctx);
+    type_ = TYPE_FUNCTION;
   }
 
   void Visit(IdentifierAccess* prop) {
@@ -536,15 +663,31 @@ class Analyzer
   }
 
   void Visit(FunctionCall* call) {
+    type_ = TYPE_ANY;
   }
 
   void Visit(ConstructorCall* call) {
+    type_ = TYPE_USER_OBJECT;
   }
 
-  void Visit(Declaration* dummy) {
+  void Visit(Declaration* decl) {
+    Var& ref = context_->GetVariableEnvironment()->Get(decl->name()->value());
+    if (ref.IsDeclared()) {
+      // duplicate declaration
+      reporter_->ReportDuplicateDeclaration(*decl);
+    }
+    ref.AddDeclaration(decl);
+    if (const iv::core::Maybe<Expression> expr = decl->expr()) {
+      JSType type = ResolveType(expr.Address());
+      if (ref.IsType(type)) {
+        ref.InsertType(type);
+      } else {
+        reporter_->ReportTypeConflict(*decl, ref.GetPrimaryType(), type);
+      }
+    }
   }
 
-  void Visit(CaseClause* dummy) {
+  void Visit(CaseClause* clause) {
   }
 
   std::shared_ptr<ExecutionContext> context() const {
@@ -556,7 +699,7 @@ class Analyzer
   }
 
   // remember this variable is located at this function stack
-  bool StoreVariable(Identifier* ident, VariableType type = VARIABLE_STACK) {
+  bool InstantiateVariable(Identifier* ident, VariableType type = VARIABLE_STACK) {
     return context_->GetVariableEnvironment()->Instantiate(ident->value());
   }
 
@@ -573,11 +716,18 @@ class Analyzer
     return status_.IsDeadStatement();
   }
 
+  JSType ResolveType(Expression* expr) {
+    type_ = TYPE_UNDEFINED;
+    expr->Accept(this);
+    return type_;
+  }
+
   Statement* normal_;
   Statement* raised_;
   std::shared_ptr<ExecutionContext> context_;
   Reporter* reporter_;
   ContinuationStatus status_;
+  JSType type_;
 };
 
 template<typename Source, typename Reporter>

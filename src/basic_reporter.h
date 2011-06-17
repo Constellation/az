@@ -10,7 +10,10 @@ class BasicReporter : private iv::core::Noncopyable<BasicReporter> {
   void ReportDeadStatement(const Statement& stmt) {
   }
 
-  void ReportFunctionStatement(const FunctionStatement* stmt) {
+  void ReportFunctionStatement(const FunctionStatement& stmt) {
+  }
+
+  void ReportDuplicateDeclaration(const Declaration& decl) {
   }
 };
 
