@@ -7,6 +7,7 @@
 #include <iv/maybe.h>
 #include <iv/noncopyable.h>
 #include <iv/unicode.h>
+#include <iv/ustringpiece.h>
 #include "ast_fwd.h"
 #include "factory.h"
 #include "environment.h"
@@ -183,7 +184,8 @@ class Analyzer
     FunctionLiteral* literal = stmt->function();
 
     // the name is trapped, get environment.
-    std::shared_ptr<Environment> target = context_->GetLexicalEnvironment()->Lookup(literal->name().Address()->value());
+    std::shared_ptr<Environment> target =
+        context_->GetLexicalEnvironment()->Lookup(literal->name().Address()->value());
 
     // analyze function
     Visit(literal);
@@ -554,8 +556,8 @@ class Analyzer
   }
 
   // remember this variable is located at this function stack
-  void StoreVariable(Identifier* ident, VariableType type = VARIABLE_STACK) {
-    // const iv::core::UString key(ident->value().begin(), ident->value().end());
+  bool StoreVariable(Identifier* ident, VariableType type = VARIABLE_STACK) {
+    return context_->GetVariableEnvironment()->Instantiate(ident->value());
   }
 
   bool CheckDeadStatement(const Statement* stmt) {
