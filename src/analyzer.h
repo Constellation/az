@@ -513,8 +513,11 @@ class Analyzer
         const JSType lhs = type_;
         binary->right()->Accept(this);
         const JSType rhs = type_;
-        CompareType(lhs, rhs);
         // TODO(Constellation) multiple type
+        // same type
+        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
+        }
         type_ = rhs;
         break;
       }
@@ -524,8 +527,9 @@ class Analyzer
         const JSType lhs = type_;
         binary->right()->Accept(this);
         const JSType rhs = type_;
-        CompareType(lhs, rhs);
-        // TODO(Constellation) multiple type
+        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
+        }
         type_ = lhs;
         break;
       }
@@ -542,13 +546,14 @@ class Analyzer
         } else {
           // not allow Number + Any(except String)
           if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
-            reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+            reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
           }
           if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
-            reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+            reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
           }
           type_ = TYPE_NUMBER;
         }
+        break;
       }
 
       case Token::SUB: {  // -
@@ -561,13 +566,13 @@ class Analyzer
         // "1000" - 0 is allowed?
         // this case is allowed mode
         if (lhs != TYPE_NUMBER && lhs != TYPE_STRING && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
         if (rhs != TYPE_NUMBER && rhs != TYPE_STRING && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
         type_ = TYPE_NUMBER;
-        return;
+        break;
       }
 
       case Token::SHR: {  // >>>
@@ -576,13 +581,13 @@ class Analyzer
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
         if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
         type_ = TYPE_NUMBER;
-        return;
+        break;
       }
 
       case Token::SAR: {  // >>
@@ -591,13 +596,13 @@ class Analyzer
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
         if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
         type_ = TYPE_NUMBER;
-        return;
+        break;
       }
 
       case Token::SHL: {  // <<
@@ -606,13 +611,13 @@ class Analyzer
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
         if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
         type_ = TYPE_NUMBER;
-        return;
+        break;
       }
 
       case Token::MUL: {  // *
@@ -621,13 +626,13 @@ class Analyzer
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
         if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
         type_ = TYPE_NUMBER;
-        return;
+        break;
       }
 
       case Token::DIV: {  // /
@@ -636,13 +641,13 @@ class Analyzer
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
         if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
         type_ = TYPE_NUMBER;
-        return;
+        break;
       }
 
       case Token::MOD: {  // %
@@ -651,13 +656,13 @@ class Analyzer
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
         if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_NUMBER);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
         type_ = TYPE_NUMBER;
-        return;
+        break;
       }
 
       case Token::LT: {  // <
@@ -667,10 +672,10 @@ class Analyzer
         const JSType rhs = type_;
         // same type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::GT: {  // >
@@ -680,10 +685,10 @@ class Analyzer
         const JSType rhs = type_;
         // same type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::LTE: {  // <=
@@ -693,10 +698,10 @@ class Analyzer
         const JSType rhs = type_;
         // same type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::GTE: {  // >=
@@ -706,10 +711,10 @@ class Analyzer
         const JSType rhs = type_;
         // same type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::INSTANCEOF: {  // instanceof
@@ -719,25 +724,25 @@ class Analyzer
         const JSType rhs = type_;
         // TODO(Constellation) special instanceof type check
         if (!IsObjectType(lhs) && lhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, TYPE_OBJECT);
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_OBJECT);
         }
         if (!IsObjectType(rhs) && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_OBJECT);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_OBJECT);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::IN: {  // in
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        // const JSType lhs = type_;
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (!IsObjectType(rhs) && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, rhs, TYPE_OBJECT);
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_OBJECT);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::EQ: {  // ==
@@ -747,10 +752,10 @@ class Analyzer
         const JSType rhs = type_;
         // same type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::NE: {  // !=
@@ -761,10 +766,10 @@ class Analyzer
         // same type
         // Array like Object type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
-        return;
+        break;
       }
 
       case Token::EQ_STRICT: {  // ===
@@ -774,9 +779,10 @@ class Analyzer
         const JSType rhs = type_;
         // same type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
+        break;
       }
 
       case Token::NE_STRICT: {  // !==
@@ -786,43 +792,72 @@ class Analyzer
         const JSType rhs = type_;
         // same type
         if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
-          reporter_->ReportTypeConflict(binary, lhs, rhs);
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = TYPE_BOOLEAN;
+        break;
       }
 
       case Token::BIT_AND: {  // &
         binary->left()->Accept(this);
+        const JSType lhs = type_;
         binary->right()->Accept(this);
-        Emit<OP::BINARY_BIT_AND>();
-        return;
+        const JSType rhs = type_;
+        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
+        }
+        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
       }
 
       case Token::BIT_XOR: {  // ^
         binary->left()->Accept(this);
+        const JSType lhs = type_;
         binary->right()->Accept(this);
-        Emit<OP::BINARY_BIT_XOR>();
-        return;
+        const JSType rhs = type_;
+        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
+        }
+        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
       }
 
       case Token::BIT_OR: {  // |
         binary->left()->Accept(this);
+        const JSType lhs = type_;
         binary->right()->Accept(this);
-        Emit<OP::BINARY_BIT_OR>();
-        return;
+        const JSType rhs = type_;
+        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
+        }
+        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
+        }
+        type_ = TYPE_NUMBER;
+        break;
       }
 
       case Token::COMMA: {  // ,
         binary->left()->Accept(this);
-        Emit<OP::POP_TOP>();
+        const JSType lhs = type_;
         binary->right()->Accept(this);
-        return;
+        const JSType rhs = type_;
+        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*binary, lhs, rhs);
+        }
+        type_ = rhs;
+        break;
       }
 
       default:
         UNREACHABLE();
     }
- 
   }
 
   void Visit(ConditionalExpression* cond) {
