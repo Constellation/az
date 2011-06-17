@@ -63,13 +63,9 @@ class Environment : public std::enable_shared_from_this<Environment> {
 
   // returns this variable name is duplicate
   bool Instantiate(const iv::core::UStringPiece& piece) {
-    VariableMap::const_iterator it = variables_.find(piece);
-    if (it == variables_.end()) {
-      variables_.insert(it, VariableMap::value_type());
-      return false;
-    } else {
-      return true;
-    }
+    const std::pair<VariableMap::iterator, bool> v =
+        variables_.insert(VariableMap::value_type(piece, VariableMap::mapped_type()));
+    return !v.second;
   }
 
   std::shared_ptr<Environment> Lookup(const iv::core::UStringPiece& piece) {
