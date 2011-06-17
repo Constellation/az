@@ -6,7 +6,11 @@
 namespace az {
 
 class BasicReporter : private iv::core::Noncopyable<BasicReporter> {
+ public:
   void ReportDeadStatement(const Statement& stmt) {
+  }
+
+  void ReportFunctionStatement(const FunctionStatement* stmt) {
   }
 };
 

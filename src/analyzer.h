@@ -9,7 +9,8 @@
 #include <iv/unicode.h>
 #include "ast_fwd.h"
 #include "factory.h"
-#include "analyze_map.h"
+#include "environment.h"
+#include "execution_context.h"
 
 namespace az {
 namespace detail {
@@ -103,33 +104,15 @@ class Analyzer
   Analyzer(Reporter* reporter)
     : normal_(NULL),
       raised_(NULL),
-      map_(),
-      current_function_info_(),
       reporter_(reporter),
       status_() {
   }
 
-  class FlowSwitcher : private iv::core::Noncopyable<FlowSwitcher> {
-   public:
-    FlowSwitcher(Analyzer* analyzer)
-      : analyzer_(analyzer) {
-    }
-   private:
-    Analyzer* analyzer_;
-    Statement* normal_;
-    Statement* raised_;
-  };
-
-  std::shared_ptr<FunctionMap> Analyze(FunctionLiteral* global) {
+  void Analyze(FunctionLiteral* global) {
     // Global Settings
     normal_ = NULL;
-    std::shared_ptr<FunctionMap> result(new FunctionMap());
-    map_ = result;
-
-    Visit(global);
-
-    map_.reset();
-    return result;
+    std::shared_ptr<ExecutionContext> ctx = ExecutionContext::CreateGlobal(global);
+    AnalyzeFunctionLiteral(global, ctx);
   }
 
  private:
@@ -148,11 +131,38 @@ class Analyzer
     }
   }
 
+  void AnalyzeFunctionLiteral(FunctionLiteral* literal,
+                              std::shared_ptr<ExecutionContext> ctx) {
+    const StatusSetRAII status_set_raii(&status_);
+    ExecutionSwitcher switcher(this, ctx);
+
+    const Scope& scope = literal->scope();
+    {
+      // function declarations
+      typedef Scope::FunctionLiterals Functions;
+      const Functions& functions = scope.function_declarations();
+      for (Functions::const_iterator it = functions.begin(),
+           last = functions.end(); it != last; ++it) {
+        StoreVariable((*it)->name().Address());
+      }
+    }
+    {
+      // variables
+      typedef Scope::Variables Variables;
+      const Variables& vars = scope.variables();
+      for (Variables::const_iterator it = vars.begin(),
+           last = vars.end(); it != last; ++it) {
+        StoreVariable(it->first);
+      }
+    }
+    AnalyzeStatements(literal->body());
+
+  }
+
   void Visit(Block* block) {
     CheckDeadStatement(block);
     const bool dead = IsDeadStatement();
 
-    StoreStatement(block);
     block->set_normal(normal_);
     AnalyzeStatements(block->body());
 
@@ -161,18 +171,26 @@ class Analyzer
     }
   }
 
-  void Visit(FunctionStatement* func) {
-    CheckDeadStatement(func);
-    StoreStatement(func);
-    func->set_normal(normal_);
+  void Visit(FunctionStatement* stmt) {
+    CheckDeadStatement(stmt);
+
+    // report FunctionStatement
+    reporter_->ReportFunctionStatement(stmt);
+
+    stmt->set_normal(normal_);
+
+    // variable analyze
+    FunctionLiteral* literal = stmt->function();
+
+    // the name is trapped, get environment.
+    std::shared_ptr<Environment> target = context_->GetLexicalEnvironment()->Lookup(literal->name().Address()->value());
 
     // analyze function
-    Visit(func->function());
+    Visit(literal);
   }
 
   void Visit(FunctionDeclaration* func) {
     CheckDeadStatement(func);
-    StoreStatement(func);
     func->set_normal(normal_);
 
     // analyze function
@@ -181,13 +199,11 @@ class Analyzer
 
   void Visit(VariableStatement* var) {
     CheckDeadStatement(var);
-    StoreStatement(var);
     var->set_normal(normal_);
   }
 
   void Visit(EmptyStatement* stmt) {
     CheckDeadStatement(stmt);
-    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
@@ -226,7 +242,6 @@ class Analyzer
       }
     }
 
-    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
@@ -234,7 +249,6 @@ class Analyzer
     CheckDeadStatement(stmt);
     const bool dead = IsDeadStatement();
 
-    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
 
@@ -247,7 +261,6 @@ class Analyzer
     CheckDeadStatement(stmt);
     const bool dead = IsDeadStatement();
 
-    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
 
@@ -260,7 +273,6 @@ class Analyzer
     CheckDeadStatement(stmt);
     const bool dead = IsDeadStatement();
 
-    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
 
@@ -273,7 +285,6 @@ class Analyzer
     CheckDeadStatement(stmt);
     const bool dead = IsDeadStatement();
 
-    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
 
@@ -290,7 +301,6 @@ class Analyzer
       status_.JumpTo(stmt->target());
     }
 
-    StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
 
@@ -302,7 +312,6 @@ class Analyzer
       status_.JumpTo(stmt->target());
     }
 
-    StoreStatement(stmt);
     stmt->set_normal(stmt->target());
   }
 
@@ -314,20 +323,17 @@ class Analyzer
       status_.Kill();
     }
 
-    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(WithStatement* stmt) {
     CheckDeadStatement(stmt);
-    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
 
   void Visit(LabelledStatement* stmt) {
     CheckDeadStatement(stmt);
-    StoreStatement(stmt);
     stmt->set_normal(stmt->body());
     stmt->body()->Accept(this);
   }
@@ -336,7 +342,6 @@ class Analyzer
     CheckDeadStatement(stmt);
     const bool dead = IsDeadStatement();
 
-    StoreStatement(stmt);
     typedef SwitchStatement::CaseClauses CaseClauses;
     const CaseClauses& clauses = stmt->clauses();
     Statement* normal = normal_;
@@ -383,7 +388,6 @@ class Analyzer
       status_.Kill();
     }
 
-    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
@@ -443,19 +447,16 @@ class Analyzer
       }
     }
 
-    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(DebuggerStatement* stmt) {
     CheckDeadStatement(stmt);
-    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(ExpressionStatement* stmt) {
     CheckDeadStatement(stmt);
-    StoreStatement(stmt);
     stmt->set_normal(normal_);
   }
 
@@ -504,49 +505,26 @@ class Analyzer
   void Visit(ObjectLiteral* literal) {
   }
 
-  class FunctionInfoSwitcher : private iv::core::Noncopyable<FunctionInfoSwitcher> {
+  class ExecutionSwitcher : private iv::core::Noncopyable<ExecutionSwitcher> {
    public:
-    FunctionInfoSwitcher(Analyzer* analyzer, std::shared_ptr<FunctionInfo> info)
+    ExecutionSwitcher(Analyzer* analyzer, std::shared_ptr<ExecutionContext> ctx)
       : analyzer_(analyzer),
-        prev_(analyzer->current_function_info()) {
-      analyzer_->set_current_function_info(info);
+        prev_(analyzer->context()) {
+      analyzer_->set_context(ctx);
     }
 
-    ~FunctionInfoSwitcher() {
-      analyzer_->set_current_function_info(prev_);
+    ~ExecutionSwitcher() {
+      analyzer_->set_context(prev_);
     }
 
    private:
     Analyzer* analyzer_;
-    std::shared_ptr<FunctionInfo> prev_;
+    std::shared_ptr<ExecutionContext> prev_;
   };
 
   void Visit(FunctionLiteral* literal) {
-    std::shared_ptr<FunctionInfo> current_info(new FunctionInfo());
-    (*map_)[literal] = current_info;
-    const StatusSetRAII status_set_raii(&status_);
-    FunctionInfoSwitcher switcher(this, current_info);
-
-    const Scope& scope = literal->scope();
-    {
-      // function declarations
-      typedef Scope::FunctionLiterals Functions;
-      const Functions& functions = scope.function_declarations();
-      for (Functions::const_iterator it = functions.begin(),
-           last = functions.end(); it != last; ++it) {
-        StoreVariable((*it)->name().Address());
-      }
-    }
-    {
-      // variables
-      typedef Scope::Variables Variables;
-      const Variables& vars = scope.variables();
-      for (Variables::const_iterator it = vars.begin(),
-           last = vars.end(); it != last; ++it) {
-        StoreVariable(it->first);
-      }
-    }
-    AnalyzeStatements(literal->body());
+    std::shared_ptr<ExecutionContext> ctx = context_->Create(literal);
+    AnalyzeFunctionLiteral(literal, ctx);
   }
 
   void Visit(IdentifierAccess* prop) {
@@ -567,30 +545,25 @@ class Analyzer
   void Visit(CaseClause* dummy) {
   }
 
-  std::shared_ptr<FunctionInfo> current_function_info() const {
-    return current_function_info_;
+  std::shared_ptr<ExecutionContext> context() const {
+    return context_;
   }
 
-  void set_current_function_info(std::shared_ptr<FunctionInfo> info) {
-    current_function_info_ = info;
-  }
-
-  // remember this statement is located at this function
-  void StoreStatement(Statement* stmt) {
-    current_function_info_->second.insert(std::make_pair(stmt, ReachableAndResult()));
+  void set_context(std::shared_ptr<ExecutionContext> ctx) {
+    context_ = ctx;
   }
 
   // remember this variable is located at this function stack
-  void StoreVariable(Identifier* ident,
-                     VariableType type = VARIABLE_STACK) {
-    const iv::core::UString key(ident->value().begin(), ident->value().end());
-    // iv::core::unicode::FPutsUTF16(stdout, key.begin(), key.end());
-    current_function_info_->first.insert(std::make_pair(key, std::make_pair(type, TypeSet())));
+  void StoreVariable(Identifier* ident, VariableType type = VARIABLE_STACK) {
+    // const iv::core::UString key(ident->value().begin(), ident->value().end());
   }
 
-  void CheckDeadStatement(const Statement* stmt) {
+  bool CheckDeadStatement(const Statement* stmt) {
     if (IsDeadStatement()) {
       reporter_->ReportDeadStatement(*stmt);
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -600,8 +573,7 @@ class Analyzer
 
   Statement* normal_;
   Statement* raised_;
-  std::shared_ptr<FunctionMap> map_;
-  std::shared_ptr<FunctionInfo> current_function_info_;
+  std::shared_ptr<ExecutionContext> context_;
   Reporter* reporter_;
   ContinuationStatus status_;
 };
@@ -609,7 +581,7 @@ class Analyzer
 template<typename Source, typename Reporter>
 inline void Analyze(FunctionLiteral* global, const Source& src, Reporter* reporter) {
   Analyzer<Reporter> analyzer(reporter);
-  std::shared_ptr<FunctionMap> result = analyzer.Analyze(global);
+  analyzer.Analyze(global);
 }
 
 }  // namespace az
