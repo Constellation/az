@@ -45,6 +45,16 @@ const char* GetTypeName(JSType type) {
   return kTypeName[type];
 }
 
+
+bool IsObjectType(JSType type) {
+  return
+      type == TYPE_FUNCTION ||
+      type == TYPE_REGEXP ||
+      type == TYPE_ARRAY ||
+      type == TYPE_OBJECT ||
+      type == TYPE_USER_OBJECT;
+}
+
 }  // namespace az
 
 namespace IV_HASH_NAMESPACE_START {
