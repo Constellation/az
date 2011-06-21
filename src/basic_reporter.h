@@ -15,6 +15,9 @@ class BasicReporter : private iv::core::Noncopyable<BasicReporter> {
 
   void ReportDuplicateDeclaration(const Declaration& decl) {
   }
+
+  void ReportAutomaticSemicolonInsertion(const Statement& stmt) {
+  }
 };
 
 }  // namespace az

@@ -96,14 +96,15 @@ class StatusSetRAII : private iv::core::Noncopyable<StatusSetRAII> {
   ContinuationStatus::ContinuationSet set_;
 };
 
-template<typename Reporter>
+template<typename Source, typename Reporter>
 class Analyzer
   : public iv::core::ast::AstVisitor<AstFactory>::type,
-    private iv::core::Noncopyable<Analyzer<Reporter> > {
+    private iv::core::Noncopyable<Analyzer<Source, Reporter> > {
  public:
 
-  Analyzer(Reporter* reporter)
-    : normal_(NULL),
+  Analyzer(const Source& src, Reporter* reporter)
+    : src_(src),
+      normal_(NULL),
       raised_(NULL),
       reporter_(reporter),
       status_() {
@@ -224,6 +225,7 @@ class Analyzer
 
   void Visit(VariableStatement* var) {
     CheckDeadStatement(var);
+    CheckAutomaticSemicolonInsertion(var);
     var->set_normal(normal_);
 
     const Declarations& decls = var->decls();
@@ -285,6 +287,9 @@ class Analyzer
 
     if (!dead) {
       status_.ResolveJump(stmt);
+      if (IsDeadStatement()) {
+        status_.Insert(detail::kNextStatement);
+      }
     }
   }
 
@@ -297,6 +302,9 @@ class Analyzer
 
     if (!dead) {
       status_.ResolveJump(stmt);
+      if (IsDeadStatement()) {
+        status_.Insert(detail::kNextStatement);
+      }
     }
   }
 
@@ -309,6 +317,9 @@ class Analyzer
 
     if (!dead) {
       status_.ResolveJump(stmt);
+      if (IsDeadStatement()) {
+        status_.Insert(detail::kNextStatement);
+      }
     }
   }
 
@@ -321,11 +332,15 @@ class Analyzer
 
     if (!dead) {
       status_.ResolveJump(stmt);
+      if (IsDeadStatement()) {
+        status_.Insert(detail::kNextStatement);
+      }
     }
   }
 
   void Visit(ContinueStatement* stmt) {
     CheckDeadStatement(stmt);
+    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -337,6 +352,7 @@ class Analyzer
 
   void Visit(BreakStatement* stmt) {
     CheckDeadStatement(stmt);
+    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -348,6 +364,7 @@ class Analyzer
 
   void Visit(ReturnStatement* stmt) {
     CheckDeadStatement(stmt);
+    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -417,6 +434,7 @@ class Analyzer
 
   void Visit(ThrowStatement* stmt) {
     CheckDeadStatement(stmt);
+    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -491,11 +509,13 @@ class Analyzer
 
   void Visit(DebuggerStatement* stmt) {
     CheckDeadStatement(stmt);
+    CheckAutomaticSemicolonInsertion(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(ExpressionStatement* stmt) {
     CheckDeadStatement(stmt);
+    CheckAutomaticSemicolonInsertion(stmt);
     stmt->set_normal(normal_);
 
     stmt->expr()->Accept(this);
@@ -1075,6 +1095,21 @@ class Analyzer
     return type_;
   }
 
+  void CheckAutomaticSemicolonInsertion(Statement* stmt) {
+    //  VariableStatement
+    //  ContinueStatement
+    //  BreakStatement
+    //  ReturnStatement
+    //  ThrowStatement
+    //  DebuggerStatement
+    //  ExpressionStatement
+    if (src_[stmt->end_position() - 1] != ';') {
+      // not ends with semicolon
+      reporter_->ReportAutomaticSemicolonInsertion(*stmt);
+    }
+  }
+
+  const Source& src_;
   Statement* normal_;
   Statement* raised_;
   std::shared_ptr<ExecutionContext> context_;
@@ -1085,7 +1120,7 @@ class Analyzer
 
 template<typename Source, typename Reporter>
 inline void Analyze(FunctionLiteral* global, const Source& src, Reporter* reporter) {
-  Analyzer<Reporter> analyzer(reporter);
+  Analyzer<Source, Reporter> analyzer(src, reporter);
   analyzer.Analyze(global);
 }
 
