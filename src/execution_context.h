@@ -44,6 +44,23 @@ class ExecutionContext : public std::enable_shared_from_this<ExecutionContext> {
     lexical_environment_ = lexical_environment_->GetUpperEnvironment().lock();
   }
 
+  bool InsertReturnType(JSType type) {
+    if (return_typed_.empty()) {
+      return_primary_typed_ = type;
+      return_typed_.insert(type);
+      return true;
+    }
+    if (return_typed_.find(type) != return_typed_.end()) {
+      return true;
+    }
+    return_typed_.insert(type);
+    return false;
+  }
+
+  JSType GetReturnType() const {
+    return return_primary_typed_;
+  }
+
  private:
   // New Function
   ExecutionContext(std::weak_ptr<ExecutionContext> prev, const FunctionLiteral* literal)
@@ -67,6 +84,8 @@ class ExecutionContext : public std::enable_shared_from_this<ExecutionContext> {
   std::shared_ptr<Environment> variable_environment_;
   std::shared_ptr<Environment> lexical_environment_;
   std::weak_ptr<ExecutionContext> previous_;
+  JSType return_primary_typed_;
+  TypeSet return_typed_;
   std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionContext> > contexts_;
 };
 

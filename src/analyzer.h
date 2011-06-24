@@ -375,7 +375,14 @@ class Analyzer
     if (!dead) {
       status_.Kill();
     }
-
+    if (stmt->expr()) {
+      stmt->expr().Address()->Accept(this);
+      if (!context_->InsertReturnType(type_)) {
+        if (type_ != TYPE_ANY) {
+          reporter_->ReportTypeConflict(*stmt, context_->GetReturnType(), type_);
+        }
+      }
+    }
     stmt->set_normal(normal_);
   }
 
@@ -1070,7 +1077,11 @@ class Analyzer
       if (!var.IsDeclared()) {
         reporter_->ReportLookupNotDeclaredVariable(*literal);
       }
-      type_ = var.GetPrimaryType();
+      if (var.GetPrimaryType() != TYPE_NOT_SEARCHED) {
+        type_ = var.GetPrimaryType();
+      } else {
+        type_ = TYPE_ANY;
+      }
     } else if (stat == Environment::TRAP_ONLY) {
       // implicit global
       if (env->IsGlobal()) {
