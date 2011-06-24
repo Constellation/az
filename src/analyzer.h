@@ -170,6 +170,7 @@ class Analyzer
         // TYPE_FUNCTION
         Var& ref = context_->GetVariableEnvironment()->Get((*it)->name().Address()->value());
         ref.InsertType(TYPE_FUNCTION);
+        ref.AddDeclaration(*it);
       }
     }
     {
@@ -1070,11 +1071,11 @@ class Analyzer
         reporter_->ReportLookupNotDeclaredVariable(*literal);
       }
       type_ = var.GetPrimaryType();
-    } else if (stat == Environment::VARIABLE_NOT_FOUND) {
+    } else if (stat == Environment::TRAP_ONLY) {
       // implicit global
-      reporter_->ReportLookupImplicitGlobalVariable(*literal);
-      type_ = TYPE_ANY;
-    } else {
+      if (env->IsGlobal()) {
+        reporter_->ReportLookupImplicitGlobalVariable(*literal);
+      }
       type_ = TYPE_ANY;
     }
   }

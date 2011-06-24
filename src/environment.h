@@ -84,16 +84,12 @@ class Environment : public std::enable_shared_from_this<Environment> {
   }
 
   TrapStatus IsTrapped(const iv::core::UStringPiece& piece) const {
-    if (IsObjectEnvironment()) {
-      // in WithStatement, this traps all, but it maybe be not allocated at variables.
-      return TRAP_ONLY;
-    }
     if (variables_.find(piece) != variables_.end()) {
       // variable is found
       return VARIABLE_FOUND;
     } else {
-      if (HasEval()) {
-        // maybe eval called, this traps all, but it maybe be not allocated at variables.
+      if (HasEval() || IsObjectEnvironment()) {
+        // this traps all, but it maybe be not allocated at variables.
         return TRAP_ONLY;
       } else {
         return VARIABLE_NOT_FOUND;
@@ -103,7 +99,7 @@ class Environment : public std::enable_shared_from_this<Environment> {
 
   bool HasEval() const {
     // TODO(Constellation) implement it
-    return true;
+    return false;
   }
 
  private:
