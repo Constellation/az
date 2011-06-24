@@ -333,6 +333,12 @@ class Analyzer
     const bool dead = IsDeadStatement();
 
     stmt->set_normal(stmt->body());
+    stmt->each()->Accept(this);
+    stmt->enumerable()->Accept(this);
+    if (VariableStatement* var = stmt->each()->AsVariableStatement()) {
+      Var& ref = context_->GetVariableEnvironment()->Get(var->decls()[0]->name()->value());
+      ref.InsertType(TYPE_ANY);
+    }
     stmt->body()->Accept(this);
 
     if (!dead) {
@@ -549,6 +555,9 @@ class Analyzer
       Environment::TrapStatus stat = env->IsTrapped(ident->value());
       if (stat == Environment::VARIABLE_FOUND) {
         type_ = env->Get(ident->value()).GetPrimaryType();
+        if (type_ == TYPE_NOT_SEARCHED) {
+          type_ = TYPE_ANY;
+        }
         variable_found = true;
       } else if (stat == Environment::VARIABLE_NOT_FOUND) {
         // implicit global
