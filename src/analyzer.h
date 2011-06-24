@@ -187,6 +187,12 @@ class Analyzer
     }
     AnalyzeStatements(literal->body());
 
+    if (!status_.IsDeadStatement() && !literal->body().empty()) {
+      // last statement is not dead and return type is exists,
+      if (context_->IsReturnedWithValue()) {
+        reporter_->ReportNotProcedure(*literal->body().back());
+      }
+    }
   }
 
   void Visit(Block* block) {

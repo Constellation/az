@@ -57,6 +57,10 @@ class ExecutionContext : public std::enable_shared_from_this<ExecutionContext> {
     return false;
   }
 
+  bool IsReturnedWithValue() const {
+    return !return_typed_.empty();
+  }
+
   JSType GetReturnType() const {
     return return_primary_typed_;
   }

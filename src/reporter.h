@@ -190,6 +190,15 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
+  void ReportNotProcedure(const Statement& stmt) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(stmt.begin_position());
+    std::printf("%s %lu:%lu\n",
+                "NOT PROCEDURE: REQUIRE RETURN VALUE",
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
  private:
   StructuredSource structured_;
 };
