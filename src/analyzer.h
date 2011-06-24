@@ -166,6 +166,10 @@ class Analyzer
           // variable name is duplicate
           // TODO(Constellation) insert report
         }
+        // because this expr is Function Declaration, so instantiate as
+        // TYPE_FUNCTION
+        Var& ref = context_->GetVariableEnvironment()->Get((*it)->name().Address()->value());
+        ref.InsertType(TYPE_FUNCTION);
       }
     }
     {
@@ -397,6 +401,7 @@ class Analyzer
     typedef SwitchStatement::CaseClauses CaseClauses;
     const CaseClauses& clauses = stmt->clauses();
     Statement* normal = normal_;
+    bool has_default_clause = false;
     for (CaseClauses::const_iterator it = clauses.begin(),
          start = clauses.begin(), last = clauses.end(); it != last; ++it) {
       CaseClauses::const_iterator next = it;
@@ -416,6 +421,9 @@ class Analyzer
       } else {
         normal_ = normal;
       }
+      if ((*it)->IsDefault()) {
+        has_default_clause = true;
+      }
       AnalyzeStatements((*it)->body());
 
       if (!dead) {
@@ -429,6 +437,9 @@ class Analyzer
 
     if (!dead) {
       status_.ResolveJump(stmt);
+      if (IsDeadStatement() && !has_default_clause) {
+        status_.Insert(detail::kNextStatement);
+      }
     }
   }
 
@@ -522,6 +533,35 @@ class Analyzer
   }
 
   void Visit(Assignment* assign) {
+    Identifier* ident = assign->left()->AsIdentifier();
+    std::shared_ptr<Environment> env;
+    bool variable_found = false;
+    if (ident) {
+      env = context_->GetLexicalEnvironment()->Lookup(ident->value());
+      Environment::TrapStatus stat = env->IsTrapped(ident->value());
+      if (stat == Environment::VARIABLE_FOUND) {
+        type_ = env->Get(ident->value()).GetPrimaryType();
+        variable_found = true;
+      } else if (stat == Environment::VARIABLE_NOT_FOUND) {
+        // implicit global
+        reporter_->ReportLookupImplicitGlobalVariable(*ident);
+        type_ = TYPE_ANY;
+      } else {
+        type_ = TYPE_ANY;
+      }
+    } else {
+      assign->left()->Accept(this);
+    }
+    const JSType lhs = type_;
+    assign->right()->Accept(this);
+    const JSType rhs = type_;
+    if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+      reporter_->ReportTypeConflict(*assign, lhs, rhs);
+    }
+    if (variable_found) {
+      env->Get(ident->value()).InsertType(rhs);
+    }
+    type_ = rhs;
   }
 
   void Visit(BinaryOperation* binary) {
@@ -755,7 +795,6 @@ class Analyzer
 
       case Token::IN: {  // in
         binary->left()->Accept(this);
-        // const JSType lhs = type_;
         binary->right()->Accept(this);
         const JSType rhs = type_;
         if (!IsObjectType(rhs) && rhs != TYPE_ANY) {
@@ -881,6 +920,15 @@ class Analyzer
   }
 
   void Visit(ConditionalExpression* cond) {
+    cond->cond()->Accept(this);
+    cond->left()->Accept(this);
+    const JSType lhs = type_;
+    cond->right()->Accept(this);
+    const JSType rhs = type_;
+    if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+      reporter_->ReportTypeConflict(*cond, lhs, rhs);
+    }
+    type_ = lhs;
   }
 
   void Visit(UnaryOperation* unary) {
@@ -923,6 +971,9 @@ class Analyzer
       }
 
       case Token::INC: {
+        if (unary->expr()->AsCall()) {
+          reporter_->ReportIncrementToCallResult(*unary);
+        }
         unary->expr()->Accept(this);
         if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
           reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
@@ -932,6 +983,9 @@ class Analyzer
       }
 
       case Token::DEC: {
+        if (unary->expr()->AsCall()) {
+          reporter_->ReportDecrementToCallResult(*unary);
+        }
         unary->expr()->Accept(this);
         if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
           reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
@@ -979,6 +1033,21 @@ class Analyzer
   }
 
   void Visit(PostfixExpression* postfix) {
+    using iv::core::Token;
+    const Token::Type token = postfix->op();
+    Expression* expr = postfix->expr();
+    if (expr->AsCall()) {
+      if (token == Token::INC) {
+        reporter_->ReportPostfixIncrementToCallResult(*postfix);
+      } else {
+        reporter_->ReportPostfixDecrementToCallResult(*postfix);
+      }
+    }
+    expr->Accept(this);
+    if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+      reporter_->ReportTypeConflict(*postfix, type_, TYPE_NUMBER);
+    }
+    type_ = TYPE_NUMBER;
   }
 
   void Visit(StringLiteral* literal) {
@@ -992,6 +1061,22 @@ class Analyzer
   }
 
   void Visit(Identifier* literal) {
+    std::shared_ptr<Environment> env =
+        context_->GetLexicalEnvironment()->Lookup(literal->value());
+    Environment::TrapStatus stat = env->IsTrapped(literal->value());
+    if (stat == Environment::VARIABLE_FOUND) {
+      Var& var = env->Get(literal->value());
+      if (!var.IsDeclared()) {
+        reporter_->ReportLookupNotDeclaredVariable(*literal);
+      }
+      type_ = var.GetPrimaryType();
+    } else if (stat == Environment::VARIABLE_NOT_FOUND) {
+      // implicit global
+      reporter_->ReportLookupImplicitGlobalVariable(*literal);
+      type_ = TYPE_ANY;
+    } else {
+      type_ = TYPE_ANY;
+    }
   }
 
   void Visit(ThisLiteral* literal) {
@@ -1030,16 +1115,38 @@ class Analyzer
   }
 
   void Visit(IdentifierAccess* prop) {
+    prop->target()->Accept(this);
+    if (!IsObjectType(type_) && type_ != TYPE_ANY) {
+      reporter_->ReportIdentifierAccessToNotObjectType(*prop, type_);
+    }
+    type_ = TYPE_ANY;
   }
 
   void Visit(IndexAccess* prop) {
+    prop->target()->Accept(this);
+    if (!IsObjectType(type_) && type_ != TYPE_ANY) {
+      reporter_->ReportIndexAccessToNotObjectType(*prop, type_);
+    }
+    prop->key()->Accept(this);
+    if (type_ != TYPE_ANY && type_ != TYPE_STRING && type_ != TYPE_NUMBER) {
+      reporter_->ReportIndexKeyIsNotStringOrNumber(*prop, type_);
+    }
+    type_ = TYPE_ANY;
   }
 
   void Visit(FunctionCall* call) {
+    call->target()->Accept(this);
+    if (type_ != TYPE_ANY && type_ != TYPE_FUNCTION) {
+      reporter_->ReportCallToNotFunction(*call, type_);
+    }
     type_ = TYPE_ANY;
   }
 
   void Visit(ConstructorCall* call) {
+    call->target()->Accept(this);
+    if (type_ != TYPE_ANY && type_ != TYPE_FUNCTION) {
+      reporter_->ReportConstructToNotFunction(*call, type_);
+    }
     type_ = TYPE_USER_OBJECT;
   }
 
@@ -1056,6 +1163,7 @@ class Analyzer
         ref.InsertType(type);
       } else {
         reporter_->ReportTypeConflict(*decl, ref.GetPrimaryType(), type);
+        ref.InsertType(type);
       }
     }
   }

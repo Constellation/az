@@ -66,6 +66,42 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
+  void ReportIncrementToCallResult(const UnaryOperation& unary) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(unary.begin_position());
+    std::printf("%s %lu:%lu\n",
+                "INCREMENT TO CALL RESULT",
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportDecrementToCallResult(const UnaryOperation& unary) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(unary.begin_position());
+    std::printf("%s %lu:%lu\n",
+                "DECREMENT TO CALL RESULT",
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportPostfixIncrementToCallResult(const PostfixExpression& unary) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(unary.begin_position());
+    std::printf("%s %lu:%lu\n",
+                "POSTFIX INCREMENT TO CALL RESULT",
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportPostfixDecrementToCallResult(const PostfixExpression& unary) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(unary.begin_position());
+    std::printf("%s %lu:%lu\n",
+                "POSTFIX DECREMENT TO CALL RESULT",
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
   void ReportTypeConflict(const AstNode& node, JSType lhs, JSType rhs) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(node.begin_position());
@@ -73,6 +109,74 @@ class Reporter : public BasicReporter {
                 "TYPE CONFLICT",
                 GetTypeName(lhs),
                 GetTypeName(rhs),
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportIdentifierAccessToNotObjectType(const IdentifierAccess& expr, JSType type) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(expr.begin_position());
+    std::printf("%s => %s %lu:%lu\n",
+                "IDENTIFIER ACCESS TO NOT OBJECT TYPE",
+                GetTypeName(type),
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportIndexAccessToNotObjectType(const IndexAccess& expr, JSType type) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(expr.begin_position());
+    std::printf("%s => %s %lu:%lu\n",
+                "INDEX ACCESS TO NOT OBJECT TYPE",
+                GetTypeName(type),
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportIndexKeyIsNotStringOrNumber(const IndexAccess& expr, JSType type) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(expr.begin_position());
+    std::printf("%s => %s %lu:%lu\n",
+                "INDEX KEY IS NOT STRING OR NUMBER",
+                GetTypeName(type),
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportCallToNotFunction(const FunctionCall& expr, JSType type) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(expr.begin_position());
+    std::printf("%s => %s %lu:%lu\n",
+                "CALL TO NOT FUNCTION",
+                GetTypeName(type),
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportConstructToNotFunction(const ConstructorCall& expr, JSType type) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(expr.begin_position());
+    std::printf("%s => %s %lu:%lu\n",
+                "CONSTRUCT TO NOT FUNCTION",
+                GetTypeName(type),
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportLookupImplicitGlobalVariable(const Identifier& ident) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(ident.begin_position());
+    std::printf("%s %lu:%lu\n",
+                "LOOKUP IMPLICIT GLOBAL VARIABLE",
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
+  void ReportLookupNotDeclaredVariable(const Identifier& ident) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(ident.begin_position());
+    std::printf("%s %lu:%lu\n",
+                "LOOKUP NOT DECLARED VARIABLE",
                 static_cast<unsigned long>(pair.first),
                 static_cast<unsigned long>(pair.second));
   }

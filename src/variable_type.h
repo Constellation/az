@@ -38,7 +38,8 @@ class Var {
 
   bool IsType(JSType type) const {
     if (primary_typed_ == TYPE_NOT_SEARCHED ||
-        primary_typed_ == TYPE_ANY) {
+        primary_typed_ == TYPE_ANY ||
+        type == TYPE_ANY) {
       return true;
     }
     return primary_typed_ == type;
@@ -56,9 +57,7 @@ class Var {
   }
 
   void InsertType(JSType type) {
-    if (primary_typed_ == TYPE_NOT_SEARCHED) {
-      primary_typed_ = type;
-    }
+    primary_typed_ = type;
     typed_.insert(type);
   }
 
