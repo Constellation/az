@@ -318,7 +318,22 @@ class Analyzer
     const bool dead = IsDeadStatement();
 
     stmt->set_normal(stmt->body());
+    if (stmt->init()) {
+      if (VariableStatement* var = stmt->init().Address()->AsVariableStatement()) {
+        Visit(var->decls()[0]);
+        Var& ref = context_->GetVariableEnvironment()->Get(var->decls()[0]->name()->value());
+        ref.InsertType(TYPE_ANY);
+      } else {
+        stmt->init().Address()->AsExpressionStatement()->expr()->Accept(this);
+      }
+    }
+    if (stmt->cond()) {
+      stmt->cond().Address()->Accept(this);
+    }
     stmt->body()->Accept(this);
+    if (stmt->next()) {
+      stmt->next().Address()->Accept(this);
+    }
 
     if (!dead) {
       status_.ResolveJump(stmt);
@@ -333,12 +348,14 @@ class Analyzer
     const bool dead = IsDeadStatement();
 
     stmt->set_normal(stmt->body());
-    stmt->each()->Accept(this);
-    stmt->enumerable()->Accept(this);
     if (VariableStatement* var = stmt->each()->AsVariableStatement()) {
+      Visit(var->decls()[0]);
       Var& ref = context_->GetVariableEnvironment()->Get(var->decls()[0]->name()->value());
       ref.InsertType(TYPE_ANY);
+    } else {
+      stmt->each()->AsExpressionStatement()->expr()->Accept(this);
     }
+    stmt->enumerable()->Accept(this);
     stmt->body()->Accept(this);
 
     if (!dead) {
@@ -1137,7 +1154,7 @@ class Analyzer
 
   void Visit(IdentifierAccess* prop) {
     prop->target()->Accept(this);
-    if (!IsObjectType(type_) && type_ != TYPE_ANY) {
+    if (type_ == TYPE_UNDEFINED || type_ == TYPE_NULL) {
       reporter_->ReportIdentifierAccessToNotObjectType(*prop, type_);
     }
     type_ = TYPE_ANY;
@@ -1145,7 +1162,7 @@ class Analyzer
 
   void Visit(IndexAccess* prop) {
     prop->target()->Accept(this);
-    if (!IsObjectType(type_) && type_ != TYPE_ANY) {
+    if (type_ == TYPE_UNDEFINED || type_ == TYPE_NULL) {
       reporter_->ReportIndexAccessToNotObjectType(*prop, type_);
     }
     prop->key()->Accept(this);
