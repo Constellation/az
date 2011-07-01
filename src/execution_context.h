@@ -63,6 +63,20 @@ class ExecutionContext : public std::enable_shared_from_this<ExecutionContext> {
     return return_typed_;
   }
 
+  void AddProceduralReturn(const ReturnStatement* stmt) {
+    procedural_returns_.push_back(stmt);
+  }
+
+  template<typename Reporter>
+  void ReportNotProcedure(Reporter* reporter) {
+    if (found_return_) {
+      for (std::vector<const ReturnStatement*>::const_iterator it = procedural_returns_.begin(),
+           last = procedural_returns_.end(); it != last; ++it) {
+        reporter->ReportNotProcedure(**it);
+      }
+    }
+  }
+
  private:
   // New Function
   ExecutionContext(std::weak_ptr<ExecutionContext> prev, const FunctionLiteral* literal)
@@ -89,6 +103,7 @@ class ExecutionContext : public std::enable_shared_from_this<ExecutionContext> {
   bool found_return_;
   AType return_typed_;
   std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionContext> > contexts_;
+  std::vector<const ReturnStatement*> procedural_returns_;
 };
 
 }  // namespace az

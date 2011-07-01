@@ -193,6 +193,7 @@ class Analyzer
         reporter_->ReportNotProcedure(*literal->body().back());
       }
     }
+    context_->ReportNotProcedure(reporter_);
   }
 
   void Visit(Block* block) {
@@ -411,6 +412,8 @@ class Analyzer
           reporter_->ReportTypeConflict(*stmt, context_->GetReturnType(), type_);
         }
       }
+    } else {
+      context_->AddProceduralReturn(stmt);
     }
     stmt->set_normal(normal_);
   }
