@@ -10,6 +10,7 @@
 #include "factory.h"
 #include "analyzer.h"
 #include "reporter.h"
+#include "parser.h"
 namespace {
 
 bool ReadFile(const std::string& filename, std::vector<char>* out) {
@@ -35,7 +36,7 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  typedef iv::core::Parser<az::AstFactory, iv::core::UString, true, false> Parser;
+  typedef az::Parser<iv::core::UString> Parser;
   if (argc <= 1) {
     std::fprintf(stderr, "%s\n", "filename requred");
     return EXIT_FAILURE;
