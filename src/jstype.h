@@ -70,7 +70,6 @@ class JSObject {
 };
 
 std::array<const char*, 11> kTypeName = { {
-  "NotSearched",
   "Any",
   "String",
   "Number",
