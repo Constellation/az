@@ -169,7 +169,7 @@ class Analyzer
         // because this expr is Function Declaration, so instantiate as
         // TYPE_FUNCTION
         Var& ref = context_->GetVariableEnvironment()->Get((*it)->name().Address()->value());
-        ref.InsertType(TYPE_FUNCTION);
+        ref.InsertType(AType(TYPE_FUNCTION));
         ref.AddDeclaration(*it);
       }
     }
@@ -328,7 +328,7 @@ class Analyzer
       if (VariableStatement* var = stmt->init().Address()->AsVariableStatement()) {
         Visit(var->decls()[0]);
         Var& ref = context_->GetVariableEnvironment()->Get(var->decls()[0]->name()->value());
-        ref.InsertType(TYPE_ANY);
+        ref.InsertType(AType(TYPE_ANY));
       } else {
         stmt->init().Address()->AsExpressionStatement()->expr()->Accept(this);
       }
@@ -357,7 +357,7 @@ class Analyzer
     if (VariableStatement* var = stmt->each()->AsVariableStatement()) {
       Visit(var->decls()[0]);
       Var& ref = context_->GetVariableEnvironment()->Get(var->decls()[0]->name()->value());
-      ref.InsertType(TYPE_ANY);
+      ref.InsertType(AType(TYPE_ANY));
     } else {
       stmt->each()->AsExpressionStatement()->expr()->Accept(this);
     }
@@ -407,7 +407,7 @@ class Analyzer
     if (stmt->expr()) {
       stmt->expr().Address()->Accept(this);
       if (!context_->InsertReturnType(type_)) {
-        if (type_ != TYPE_ANY) {
+        if (!type_.IsVacantType()) {
           reporter_->ReportTypeConflict(*stmt, context_->GetReturnType(), type_);
         }
       }
@@ -577,25 +577,22 @@ class Analyzer
       env = context_->GetLexicalEnvironment()->Lookup(ident->value());
       Environment::TrapStatus stat = env->IsTrapped(ident->value());
       if (stat == Environment::VARIABLE_FOUND) {
-        type_ = env->Get(ident->value()).GetPrimaryType();
-        if (type_ == TYPE_NOT_SEARCHED) {
-          type_ = TYPE_ANY;
-        }
+        type_ = env->Get(ident->value()).GetType();
         variable_found = true;
       } else if (stat == Environment::VARIABLE_NOT_FOUND) {
         // implicit global
         reporter_->ReportLookupImplicitGlobalVariable(*ident);
-        type_ = TYPE_ANY;
+        type_ = AType();
       } else {
-        type_ = TYPE_ANY;
+        type_ = AType();
       }
     } else {
       assign->left()->Accept(this);
     }
-    const JSType lhs = type_;
+    const AType lhs = type_;
     assign->right()->Accept(this);
-    const JSType rhs = type_;
-    if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+    const AType rhs = type_;
+    if (!IsConservativeEqualType(lhs, rhs)) {
       reporter_->ReportTypeConflict(*assign, lhs, rhs);
     }
     if (variable_found) {
@@ -610,12 +607,12 @@ class Analyzer
     switch (token) {
       case Token::LOGICAL_AND: {  // &&
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // TODO(Constellation) multiple type
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = rhs;
@@ -624,10 +621,10 @@ class Analyzer
 
       case Token::LOGICAL_OR: {  // ||
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = lhs;
@@ -636,318 +633,323 @@ class Analyzer
 
       case Token::ADD: {  // +
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
 
-        if (lhs == TYPE_STRING || rhs == TYPE_STRING) {
+        if (lhs.IsPrimaryTyped(TYPE_STRING) ||
+            rhs.IsPrimaryTyped(TYPE_STRING)) {
           // allow String + Any
-          type_ = TYPE_STRING;
+          type_ = AType(TYPE_STRING);
         } else {
           // not allow Number + Any(except String)
-          if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+          if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
             reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
           }
-          if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+          if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
             reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
           }
-          type_ = TYPE_NUMBER;
+          type_ = AType(TYPE_NUMBER);
         }
         break;
       }
 
       case Token::SUB: {  // -
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
 
         // TODO(Constellation)
         // "1000" - 0 is allowed?
         // this case is allowed mode
-        if (lhs != TYPE_NUMBER && lhs != TYPE_STRING && lhs != TYPE_ANY) {
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) &&
+            !lhs.IsPrimaryTyped(TYPE_STRING) &&
+            !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_STRING && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) &&
+            !rhs.IsPrimaryTyped(TYPE_STRING) &&
+            !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::SHR: {  // >>>
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::SAR: {  // >>
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::SHL: {  // <<
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::MUL: {  // *
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::DIV: {  // /
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::MOD: {  // %
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::LT: {  // <
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::GT: {  // >
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::LTE: {  // <=
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::GTE: {  // >=
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::INSTANCEOF: {  // instanceof
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // TODO(Constellation) special instanceof type check
-        if (!IsObjectType(lhs) && lhs != TYPE_ANY) {
+        if (!lhs.IsObjectType() && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_OBJECT);
         }
-        if (!IsObjectType(rhs) && rhs != TYPE_ANY) {
+        if (!rhs.IsObjectType() && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_OBJECT);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::IN: {  // in
         binary->left()->Accept(this);
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (!IsObjectType(rhs) && rhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!rhs.IsObjectType() && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_OBJECT);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::EQ: {  // ==
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::NE: {  // !=
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
         // Array like Object type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::EQ_STRICT: {  // ===
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::NE_STRICT: {  // !==
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
+        const AType rhs = type_;
         // same type
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::BIT_AND: {  // &
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::BIT_XOR: {  // ^
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::BIT_OR: {  // |
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != TYPE_NUMBER && lhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!lhs.IsPrimaryTyped(TYPE_NUMBER) && !lhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, lhs, TYPE_NUMBER);
         }
-        if (rhs != TYPE_NUMBER && rhs != TYPE_ANY) {
+        if (!rhs.IsPrimaryTyped(TYPE_NUMBER) && !rhs.IsVacantType()) {
           reporter_->ReportTypeConflict(*binary, rhs, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::COMMA: {  // ,
         binary->left()->Accept(this);
-        const JSType lhs = type_;
+        const AType lhs = type_;
         binary->right()->Accept(this);
-        const JSType rhs = type_;
-        if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+        const AType rhs = type_;
+        if (!IsConservativeEqualType(lhs, rhs)) {
           reporter_->ReportTypeConflict(*binary, lhs, rhs);
         }
         type_ = rhs;
@@ -962,13 +964,13 @@ class Analyzer
   void Visit(ConditionalExpression* cond) {
     cond->cond()->Accept(this);
     cond->left()->Accept(this);
-    const JSType lhs = type_;
+    const AType lhs = type_;
     cond->right()->Accept(this);
-    const JSType rhs = type_;
-    if (lhs != rhs && lhs != TYPE_ANY && rhs != TYPE_ANY) {
+    const AType rhs = type_;
+    if (!IsConservativeEqualType(lhs, rhs)) {
       reporter_->ReportTypeConflict(*cond, lhs, rhs);
     }
-    type_ = lhs;
+    type_ = AType::Merged(lhs, rhs);
   }
 
   void Visit(UnaryOperation* unary) {
@@ -994,19 +996,19 @@ class Analyzer
           expr->Accept(this);
           reporter_->ReportDeleteToInvalidLHS(*unary);
         }
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
       case Token::VOID: {
         unary->expr()->Accept(this);
-        type_ = TYPE_UNDEFINED;
+        type_ = AType(TYPE_UNDEFINED);
         break;
       }
 
       case Token::TYPEOF: {
         unary->expr()->Accept(this);
-        type_ = TYPE_STRING;
+        type_ = AType(TYPE_STRING);
         break;
       }
 
@@ -1015,10 +1017,11 @@ class Analyzer
           reporter_->ReportIncrementToCallResult(*unary);
         }
         unary->expr()->Accept(this);
-        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+        if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
+            type_.IsVacantType()) {
           reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
@@ -1027,43 +1030,47 @@ class Analyzer
           reporter_->ReportDecrementToCallResult(*unary);
         }
         unary->expr()->Accept(this);
-        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+        if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
+            type_.IsVacantType()) {
           reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::ADD: {
         unary->expr()->Accept(this);
-        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+        if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
+            type_.IsVacantType()) {
           reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::SUB: {
         unary->expr()->Accept(this);
-        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+        if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
+            type_.IsVacantType()) {
           reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::BIT_NOT: {
         unary->expr()->Accept(this);
-        if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+        if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
+            type_.IsVacantType()) {
           reporter_->ReportTypeConflict(*unary, type_, TYPE_NUMBER);
         }
-        type_ = TYPE_NUMBER;
+        type_ = AType(TYPE_NUMBER);
         break;
       }
 
       case Token::NOT: {
         unary->expr()->Accept(this);
-        type_ = TYPE_BOOLEAN;
+        type_ = AType(TYPE_BOOLEAN);
         break;
       }
 
@@ -1084,20 +1091,20 @@ class Analyzer
       }
     }
     expr->Accept(this);
-    if (type_ != TYPE_NUMBER && type_ != TYPE_ANY) {
+    if (type_.IsPrimaryTyped(TYPE_NUMBER) && type_.IsVacantType()) {
       reporter_->ReportTypeConflict(*postfix, type_, TYPE_NUMBER);
     }
-    type_ = TYPE_NUMBER;
+    type_ = AType(TYPE_NUMBER);
   }
 
   void Visit(StringLiteral* literal) {
     // type resolve
-    type_ = TYPE_STRING;
+    type_ = AType(TYPE_STRING);
   }
 
   void Visit(NumberLiteral* literal) {
     // type resolve
-    type_ = TYPE_NUMBER;
+    type_ = AType(TYPE_NUMBER);
   }
 
   void Visit(Identifier* literal) {
@@ -1109,89 +1116,90 @@ class Analyzer
       if (!var.IsDeclared()) {
         reporter_->ReportLookupNotDeclaredVariable(*literal);
       }
-      if (var.GetPrimaryType() != TYPE_NOT_SEARCHED) {
-        type_ = var.GetPrimaryType();
-      } else {
-        type_ = TYPE_ANY;
-      }
+      type_ = var.GetType();
     } else if (stat == Environment::TRAP_ONLY) {
       // implicit global
       if (env->IsGlobal()) {
         reporter_->ReportLookupImplicitGlobalVariable(*literal);
       }
-      type_ = TYPE_ANY;
+      type_ = AType(TYPE_ANY);
     }
   }
 
   void Visit(ThisLiteral* literal) {
     // type resolve
-    type_ = TYPE_USER_OBJECT;
+    type_ = AType(TYPE_OBJECT);
   }
 
   void Visit(NullLiteral* lit) {
-    type_ = TYPE_NULL;
+    type_ = AType(TYPE_NULL);
   }
 
   void Visit(TrueLiteral* lit) {
-    type_ = TYPE_BOOLEAN;
+    type_ = AType(TYPE_BOOLEAN);
   }
 
   void Visit(FalseLiteral* lit) {
-    type_ = TYPE_BOOLEAN;
+    type_ = AType(TYPE_BOOLEAN);
   }
 
   void Visit(RegExpLiteral* literal) {
-    type_ = TYPE_REGEXP;
+    type_ = AType(TYPE_REGEXP);
   }
 
   void Visit(ArrayLiteral* literal) {
-    type_ = TYPE_ARRAY;
+    type_ = AType(TYPE_ARRAY);
   }
 
   void Visit(ObjectLiteral* literal) {
-    type_ = TYPE_OBJECT;
+    type_ = AType(TYPE_OBJECT);
   }
 
   void Visit(FunctionLiteral* literal) {
     std::shared_ptr<ExecutionContext> ctx = context_->Create(literal);
     AnalyzeFunctionLiteral(literal, ctx);
-    type_ = TYPE_FUNCTION;
+    type_ = AType(TYPE_FUNCTION);
   }
 
   void Visit(IdentifierAccess* prop) {
     prop->target()->Accept(this);
-    if (type_ == TYPE_UNDEFINED || type_ == TYPE_NULL) {
+    if (!type_.IsVacantType() &&
+        (type_.IsPrimaryTyped(TYPE_UNDEFINED) || type_.IsPrimaryTyped(TYPE_NULL))) {
       reporter_->ReportIdentifierAccessToNotObjectType(*prop, type_);
     }
-    type_ = TYPE_ANY;
+    // TODO(Constellation) fix
+    type_ = AType();
   }
 
   void Visit(IndexAccess* prop) {
     prop->target()->Accept(this);
-    if (type_ == TYPE_UNDEFINED || type_ == TYPE_NULL) {
+    if (!type_.IsVacantType() &&
+        (type_.IsPrimaryTyped(TYPE_UNDEFINED) || type_.IsPrimaryTyped(TYPE_NULL))) {
       reporter_->ReportIndexAccessToNotObjectType(*prop, type_);
     }
     prop->key()->Accept(this);
-    if (type_ != TYPE_ANY && type_ != TYPE_STRING && type_ != TYPE_NUMBER) {
+    if (!type_.IsVacantType() &&
+        (type_.IsPrimaryTyped(TYPE_STRING) || type_.IsPrimaryTyped(TYPE_NUMBER))) {
       reporter_->ReportIndexKeyIsNotStringOrNumber(*prop, type_);
     }
-    type_ = TYPE_ANY;
+    // TODO(Constellation) fix
+    type_ = AType();
   }
 
   void Visit(FunctionCall* call) {
     call->target()->Accept(this);
-    if (type_ != TYPE_ANY && type_ != TYPE_FUNCTION) {
+    if (!type_.IsVacantType() && type_.IsPrimaryTyped(TYPE_FUNCTION)) {
       reporter_->ReportCallToNotFunction(*call, type_);
     }
-    type_ = TYPE_ANY;
+    type_ = AType();
   }
 
   void Visit(ConstructorCall* call) {
     call->target()->Accept(this);
-    if (type_ != TYPE_ANY && type_ != TYPE_FUNCTION) {
+    if (!type_.IsVacantType() && type_.IsPrimaryTyped(TYPE_FUNCTION)) {
       reporter_->ReportConstructToNotFunction(*call, type_);
     }
-    type_ = TYPE_USER_OBJECT;
+    type_ = AType(TYPE_OBJECT);
   }
 
   void Visit(Declaration* decl) {
@@ -1202,18 +1210,17 @@ class Analyzer
     }
     ref.AddDeclaration(decl);
     if (const iv::core::Maybe<Expression> expr = decl->expr()) {
-      JSType type = ResolveType(expr.Address());
-      if (ref.IsType(type)) {
+      const AType type = ResolveType(expr.Address());
+      if (IsConservativeEqualType(ref.GetType(), type)) {
         ref.InsertType(type);
       } else {
-        reporter_->ReportTypeConflict(*decl, ref.GetPrimaryType(), type);
+        reporter_->ReportTypeConflict(*decl, ref.GetType(), type);
         ref.InsertType(type);
       }
     }
   }
 
-  void Visit(CaseClause* clause) {
-  }
+  void Visit(CaseClause* dummy) { }
 
   std::shared_ptr<ExecutionContext> context() const {
     return context_;
@@ -1241,8 +1248,8 @@ class Analyzer
     return status_.IsDeadStatement();
   }
 
-  JSType ResolveType(Expression* expr) {
-    type_ = TYPE_UNDEFINED;
+  AType ResolveType(Expression* expr) {
+    type_ = AType(TYPE_UNDEFINED);
     expr->Accept(this);
     return type_;
   }
@@ -1267,7 +1274,7 @@ class Analyzer
   std::shared_ptr<ExecutionContext> context_;
   Reporter* reporter_;
   ContinuationStatus status_;
-  JSType type_;
+  AType type_;
 };
 
 template<typename Source, typename Reporter>

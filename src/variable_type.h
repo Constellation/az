@@ -9,7 +9,6 @@
 namespace az {
 
 typedef std::unordered_set<const AstNode*> DeclaredSet;
-typedef std::unordered_set<JSType> TypeSet;
 
 enum VariableType {
   VARIABLE_STACK,     // explicitly defined stack  variable
@@ -36,36 +35,18 @@ class Var {
     return !declared_.empty();
   }
 
-  bool IsType(JSType type) const {
-    if (primary_typed_ == TYPE_NOT_SEARCHED ||
-        primary_typed_ == TYPE_ANY ||
-        type == TYPE_ANY) {
-      return true;
-    }
-    return primary_typed_ == type;
+  AType GetType() const {
+    return typed_;
   }
 
-  JSType GetPrimaryType() const {
-    return primary_typed_;
-  }
-
-  void ToInitilaize(JSType type) {
-    // this type as primary_typed_
-    primary_typed_ = type;
-    typed_.insert(type);
-    is_initialized_ = true;
-  }
-
-  void InsertType(JSType type) {
-    primary_typed_ = type;
-    typed_.insert(type);
+  void InsertType(AType type) {
+    typed_ = AType::Merged(typed_, type);
   }
 
  private:
   VariableType variable_type_;
   DeclaredSet declared_;
-  JSType primary_typed_;
-  TypeSet typed_;
+  AType typed_;
   bool is_initialized_;
   std::size_t assigned_count_;
   bool is_referenced_;

@@ -102,7 +102,7 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
-  void ReportTypeConflict(const AstNode& node, JSType lhs, JSType rhs) {
+  void ReportTypeConflict(const AstNode& node, const AType& lhs, const AType& rhs) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(node.begin_position());
     std::printf("%s %s <=> %s %lu:%lu\n",
@@ -113,7 +113,7 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
-  void ReportIdentifierAccessToNotObjectType(const IdentifierAccess& expr, JSType type) {
+  void ReportIdentifierAccessToNotObjectType(const IdentifierAccess& expr, const AType& type) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(expr.begin_position());
     std::printf("%s => %s %lu:%lu\n",
@@ -123,7 +123,7 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
-  void ReportIndexAccessToNotObjectType(const IndexAccess& expr, JSType type) {
+  void ReportIndexAccessToNotObjectType(const IndexAccess& expr, const AType& type) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(expr.begin_position());
     std::printf("%s => %s %lu:%lu\n",
@@ -133,7 +133,7 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
-  void ReportIndexKeyIsNotStringOrNumber(const IndexAccess& expr, JSType type) {
+  void ReportIndexKeyIsNotStringOrNumber(const IndexAccess& expr, const AType& type) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(expr.begin_position());
     std::printf("%s => %s %lu:%lu\n",
@@ -143,7 +143,7 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
-  void ReportCallToNotFunction(const FunctionCall& expr, JSType type) {
+  void ReportCallToNotFunction(const FunctionCall& expr, const AType& type) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(expr.begin_position());
     std::printf("%s => %s %lu:%lu\n",
@@ -153,7 +153,7 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
-  void ReportConstructToNotFunction(const ConstructorCall& expr, JSType type) {
+  void ReportConstructToNotFunction(const ConstructorCall& expr, const AType& type) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(expr.begin_position());
     std::printf("%s => %s %lu:%lu\n",
