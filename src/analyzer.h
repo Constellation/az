@@ -1182,7 +1182,7 @@ class Analyzer
     }
     prop->key()->Accept(this);
     if (!type_.IsVacantType() &&
-        (type_.IsPrimaryTyped(TYPE_STRING) || type_.IsPrimaryTyped(TYPE_NUMBER))) {
+        (!type_.IsPrimaryTyped(TYPE_STRING) && !type_.IsPrimaryTyped(TYPE_NUMBER))) {
       reporter_->ReportIndexKeyIsNotStringOrNumber(*prop, type_);
     }
     // TODO(Constellation) fix

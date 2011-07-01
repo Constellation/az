@@ -23,6 +23,7 @@
 #include <iv/none.h>
 #include "ast_fwd.h"
 #include "ast_factory.h"
+#include "skip.h"
 namespace az {
 
 using iv::core::Token;
@@ -103,6 +104,7 @@ class Parser : private iv::core::Noncopyable<> {
   typedef Parser<Source> this_type;
   typedef this_type parser_type;
   typedef iv::core::Lexer<Source> lexer_type;
+  typedef BasicSkip<lexer_type> Skip;
 
   enum ErrorState {
     kNotRecoverable = 1
@@ -207,11 +209,6 @@ class Parser : private iv::core::Noncopyable<> {
     Next();
     const bool strict = ParseSourceElements(Token::EOS, body, CHECK);
     const std::size_t end_position = lexer_.end_position();
-#ifdef DEBUG
-    if (error_flag) {
-      assert(params && body && scope);
-    }
-#endif
     return (error_flag) ?
         factory_->NewFunctionLiteral(FunctionLiteral::GLOBAL,
                                      NULL,
@@ -246,8 +243,7 @@ class Parser : private iv::core::Noncopyable<> {
           break;
         }
         const typename lexer_type::State state = lexer_.StringEscapeType();
-        if (!octal_escaped_directive_found &&
-            state == lexer_type::OCTAL) {
+        if (!octal_escaped_directive_found && state == lexer_type::OCTAL) {
             // octal escaped string literal
             octal_escaped_directive_found = true;
             line = lexer_.line_number();
@@ -292,6 +288,7 @@ class Parser : private iv::core::Noncopyable<> {
         stmt = ParseFunctionDeclaration(CHECK);
         body->push_back(stmt);
       } else {
+        // heuristic end of Statement
         stmt = ParseStatement(CHECK);
         body->push_back(stmt);
       }
@@ -1063,9 +1060,23 @@ class Parser : private iv::core::Noncopyable<> {
     assert(token_ == Token::DEBUGGER);
     const std::size_t begin = lexer_.begin_position();
     Next();
-    ExpectSemicolon(CHECK);
-    return factory_->NewDebuggerStatement(begin,
-                                          lexer_.previous_end_position());
+    const std::size_t end = lexer_.end_position();
+    ExpectSemicolon(res);
+    if (*res) {
+      // recovery
+      //
+      // debugger TOKEN    ....;  <= SKIP UNTIL THIS
+      //
+      Skip skip(lexer_);
+      skip.SkipUntilSemicolonOrLineTerminator(lexer_.end_position());
+      *res = false;  // recovery
+      Statement* stmt = factory_->NewDebuggerStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      return stmt;
+    } else {
+      return  factory_->NewDebuggerStatement(begin,
+                                             lexer_.previous_end_position());
+    }
   }
 
   Statement* ParseExpressionStatement(bool *res) {

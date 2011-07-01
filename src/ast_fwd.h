@@ -65,9 +65,14 @@ class StatementBase<az::AstFactory>
     raised_ = raised;
   }
 
+  void set_is_failed_node(bool val) {
+    is_failed_node_ = val;
+  }
+
  private:
   StatementType* normal_;
   StatementType* raised_;
+  bool is_failed_node_;
 };
 
 template<>
@@ -104,6 +109,7 @@ class FunctionLiteralBase<az::AstFactory>
  public:
  private:
 };
+
 
 } } }  // namespace iv::core::ast
 namespace az {
