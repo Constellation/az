@@ -1194,6 +1194,10 @@ class Analyzer
     if (!type_.IsVacantType() && type_.IsPrimaryTyped(TYPE_FUNCTION)) {
       reporter_->ReportCallToNotFunction(*call, type_);
     }
+    for (Expressions::const_iterator it = call->args().begin(),
+         last = call->args().end(); it != last; ++it) {
+      (*it)->Accept(this);
+    }
     type_ = AType();
   }
 
@@ -1201,6 +1205,10 @@ class Analyzer
     call->target()->Accept(this);
     if (!type_.IsVacantType() && type_.IsPrimaryTyped(TYPE_FUNCTION)) {
       reporter_->ReportConstructToNotFunction(*call, type_);
+    }
+    for (Expressions::const_iterator it = call->args().begin(),
+         last = call->args().end(); it != last; ++it) {
+      (*it)->Accept(this);
     }
     type_ = AType(TYPE_OBJECT);
   }
