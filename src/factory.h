@@ -5,7 +5,6 @@
 #include <iv/alloc.h>
 #include <iv/ustringpiece.h>
 #include <iv/space.h>
-#include <iv/uchar.h>
 #include <iv/utils.h>
 #include <iv/maybe.h>
 #include <iv/noncopyable.h>
@@ -48,15 +47,15 @@ class AstFactory
     return NULL;
   }
 
-  StringLiteral* NewStringLiteral(const std::vector<iv::uc16>& buffer,
+  StringLiteral* NewStringLiteral(const std::vector<uint16_t>& buffer,
                                   std::size_t begin, std::size_t end) {
     StringLiteral* str = new (this) StringLiteral(buffer, this);
     str->Location(begin, end);
     return str;
   }
 
-  RegExpLiteral* NewRegExpLiteral(const std::vector<iv::uc16>& content,
-                                  const std::vector<iv::uc16>& flags,
+  RegExpLiteral* NewRegExpLiteral(const std::vector<uint16_t>& content,
+                                  const std::vector<uint16_t>& flags,
                                   std::size_t begin,
                                   std::size_t end) {
     RegExpLiteral* reg = new (this) RegExpLiteral(content, flags, this);

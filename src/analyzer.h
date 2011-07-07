@@ -608,7 +608,7 @@ class Analyzer
     using iv::core::Token;
     const Token::Type token = binary->op();
     switch (token) {
-      case Token::LOGICAL_AND: {  // &&
+      case Token::TK_LOGICAL_AND: {  // &&
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -622,7 +622,7 @@ class Analyzer
         break;
       }
 
-      case Token::LOGICAL_OR: {  // ||
+      case Token::TK_LOGICAL_OR: {  // ||
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -634,7 +634,7 @@ class Analyzer
         break;
       }
 
-      case Token::ADD: {  // +
+      case Token::TK_ADD: {  // +
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -657,7 +657,7 @@ class Analyzer
         break;
       }
 
-      case Token::SUB: {  // -
+      case Token::TK_SUB: {  // -
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -680,7 +680,7 @@ class Analyzer
         break;
       }
 
-      case Token::SHR: {  // >>>
+      case Token::TK_SHR: {  // >>>
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -695,7 +695,7 @@ class Analyzer
         break;
       }
 
-      case Token::SAR: {  // >>
+      case Token::TK_SAR: {  // >>
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -710,7 +710,7 @@ class Analyzer
         break;
       }
 
-      case Token::SHL: {  // <<
+      case Token::TK_SHL: {  // <<
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -725,7 +725,7 @@ class Analyzer
         break;
       }
 
-      case Token::MUL: {  // *
+      case Token::TK_MUL: {  // *
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -740,7 +740,7 @@ class Analyzer
         break;
       }
 
-      case Token::DIV: {  // /
+      case Token::TK_DIV: {  // /
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -755,7 +755,7 @@ class Analyzer
         break;
       }
 
-      case Token::MOD: {  // %
+      case Token::TK_MOD: {  // %
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -770,7 +770,7 @@ class Analyzer
         break;
       }
 
-      case Token::LT: {  // <
+      case Token::TK_LT: {  // <
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -783,7 +783,7 @@ class Analyzer
         break;
       }
 
-      case Token::GT: {  // >
+      case Token::TK_GT: {  // >
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -796,7 +796,7 @@ class Analyzer
         break;
       }
 
-      case Token::LTE: {  // <=
+      case Token::TK_LTE: {  // <=
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -809,7 +809,7 @@ class Analyzer
         break;
       }
 
-      case Token::GTE: {  // >=
+      case Token::TK_GTE: {  // >=
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -822,7 +822,7 @@ class Analyzer
         break;
       }
 
-      case Token::INSTANCEOF: {  // instanceof
+      case Token::TK_INSTANCEOF: {  // instanceof
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -838,7 +838,7 @@ class Analyzer
         break;
       }
 
-      case Token::IN: {  // in
+      case Token::TK_IN: {  // in
         binary->left()->Accept(this);
         binary->right()->Accept(this);
         const AType rhs = type_;
@@ -849,7 +849,7 @@ class Analyzer
         break;
       }
 
-      case Token::EQ: {  // ==
+      case Token::TK_EQ: {  // ==
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -862,7 +862,7 @@ class Analyzer
         break;
       }
 
-      case Token::NE: {  // !=
+      case Token::TK_NE: {  // !=
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -876,7 +876,7 @@ class Analyzer
         break;
       }
 
-      case Token::EQ_STRICT: {  // ===
+      case Token::TK_EQ_STRICT: {  // ===
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -889,7 +889,7 @@ class Analyzer
         break;
       }
 
-      case Token::NE_STRICT: {  // !==
+      case Token::TK_NE_STRICT: {  // !==
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -902,7 +902,7 @@ class Analyzer
         break;
       }
 
-      case Token::BIT_AND: {  // &
+      case Token::TK_BIT_AND: {  // &
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -917,7 +917,7 @@ class Analyzer
         break;
       }
 
-      case Token::BIT_XOR: {  // ^
+      case Token::TK_BIT_XOR: {  // ^
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -932,7 +932,7 @@ class Analyzer
         break;
       }
 
-      case Token::BIT_OR: {  // |
+      case Token::TK_BIT_OR: {  // |
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -947,7 +947,7 @@ class Analyzer
         break;
       }
 
-      case Token::COMMA: {  // ,
+      case Token::TK_COMMA: {  // ,
         binary->left()->Accept(this);
         const AType lhs = type_;
         binary->right()->Accept(this);
@@ -979,7 +979,7 @@ class Analyzer
   void Visit(UnaryOperation* unary) {
     using iv::core::Token;
     switch (unary->op()) {
-      case Token::DELETE: {
+      case Token::TK_DELETE: {
         Expression* expr = unary->expr();
         if (expr->IsValidLeftHandSide()) {
           // Identifier
@@ -1003,19 +1003,19 @@ class Analyzer
         break;
       }
 
-      case Token::VOID: {
+      case Token::TK_VOID: {
         unary->expr()->Accept(this);
         type_ = AType(TYPE_UNDEFINED);
         break;
       }
 
-      case Token::TYPEOF: {
+      case Token::TK_TYPEOF: {
         unary->expr()->Accept(this);
         type_ = AType(TYPE_STRING);
         break;
       }
 
-      case Token::INC: {
+      case Token::TK_INC: {
         if (unary->expr()->AsCall()) {
           reporter_->ReportIncrementToCallResult(*unary);
         }
@@ -1028,7 +1028,7 @@ class Analyzer
         break;
       }
 
-      case Token::DEC: {
+      case Token::TK_DEC: {
         if (unary->expr()->AsCall()) {
           reporter_->ReportDecrementToCallResult(*unary);
         }
@@ -1041,7 +1041,7 @@ class Analyzer
         break;
       }
 
-      case Token::ADD: {
+      case Token::TK_ADD: {
         unary->expr()->Accept(this);
         if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
             type_.IsVacantType()) {
@@ -1051,7 +1051,7 @@ class Analyzer
         break;
       }
 
-      case Token::SUB: {
+      case Token::TK_SUB: {
         unary->expr()->Accept(this);
         if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
             type_.IsVacantType()) {
@@ -1061,7 +1061,7 @@ class Analyzer
         break;
       }
 
-      case Token::BIT_NOT: {
+      case Token::TK_BIT_NOT: {
         unary->expr()->Accept(this);
         if (type_.IsPrimaryTyped(TYPE_NUMBER) &&
             type_.IsVacantType()) {
@@ -1071,7 +1071,7 @@ class Analyzer
         break;
       }
 
-      case Token::NOT: {
+      case Token::TK_NOT: {
         unary->expr()->Accept(this);
         type_ = AType(TYPE_BOOLEAN);
         break;
@@ -1087,7 +1087,7 @@ class Analyzer
     const Token::Type token = postfix->op();
     Expression* expr = postfix->expr();
     if (expr->AsCall()) {
-      if (token == Token::INC) {
+      if (token == Token::TK_INC) {
         reporter_->ReportPostfixIncrementToCallResult(*postfix);
       } else {
         reporter_->ReportPostfixDecrementToCallResult(*postfix);
