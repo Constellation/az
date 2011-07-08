@@ -67,7 +67,7 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
     return source_;
   }
 
-  struct LowerBoundFinder {
+  struct UpperBoundFinder {
     bool operator()(const Line& lhs, std::size_t rhs) const {
       return std::get<0>(lhs) < rhs;
     }
@@ -87,7 +87,7 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
     }
     // Lines <0> is always 0
     Lines::const_iterator it =
-        std::upper_bound(source_.begin(), source_.end(), pos, LowerBoundFinder());
+        std::upper_bound(source_.begin(), source_.end(), pos, UpperBoundFinder());
     std::advance(it, -1);
     assert(it != source_.end());
     return std::make_pair(

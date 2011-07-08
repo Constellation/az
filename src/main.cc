@@ -56,9 +56,10 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
     return EXIT_FAILURE;
   }
-  az::Reporter reporter(src);
+  az::StructuredSource structured(src);
+  az::Reporter reporter(structured);
   az::AstFactory factory;
-  Parser parser(&factory, src, &reporter);
+  Parser parser(&factory, src, &reporter, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   if (!global) {
     // syntax error occurred

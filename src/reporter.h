@@ -6,9 +6,8 @@ namespace az {
 
 class Reporter : public BasicReporter {
  public:
-  template<typename Source>
-  Reporter(const Source& src)
-    : structured_(src) {
+  Reporter(const StructuredSource& structured)
+    : structured_(structured) {
   }
 
   void ReportDeadStatement(const Statement& stmt) {
@@ -210,7 +209,7 @@ class Reporter : public BasicReporter {
   }
 
  private:
-  StructuredSource structured_;
+  const StructuredSource& structured_;
 };
 
 }  // namespace az

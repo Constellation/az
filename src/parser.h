@@ -216,13 +216,17 @@ class Parser : private iv::core::Noncopyable<> {
     Identifiers* labels_;
   };
 
-  Parser(AstFactory* factory, const Source& source, Reporter* reporter)
+  Parser(AstFactory* factory,
+         const Source& source,
+         Reporter* reporter,
+         const StructuredSource& structured)
     : lexer_(source),
       error_(),
       strict_(false),
       error_state_(0),
       factory_(factory),
       reporter_(reporter),
+      structured_(structured),
       scope_(NULL),
       target_(NULL),
       labels_(NULL) {
@@ -800,7 +804,6 @@ class Parser : private iv::core::Noncopyable<> {
     assert(token_ == Token::TK_CONTINUE);
     const std::size_t begin = lexer_.begin_position();
     std::size_t end = lexer_.end_position();
-    std::size_t line_number = lexer_.line_number();
     Identifier* label = NULL;
     IterationStatement** target;
     Next();
@@ -810,8 +813,8 @@ class Parser : private iv::core::Noncopyable<> {
         token_ != Token::TK_EOS) {
       IS_STATEMENT(Token::TK_IDENTIFIER) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(&lexer_);
-        skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(end);
         *res = true;  // recovery
         Statement* stmt = factory_->NewEmptyStatement(begin, end);
         stmt->set_is_failed_node(true);
@@ -821,7 +824,6 @@ class Parser : private iv::core::Noncopyable<> {
 
       // IDENTIFIER is OK
       end = lexer_.end_position();
-      line_number = lexer_.line_number();
 
       label = ParseIdentifier(lexer_.Buffer());
       target = LookupContinuableTarget(label);
@@ -832,8 +834,8 @@ class Parser : private iv::core::Noncopyable<> {
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
-          Skip skip(&lexer_);
-          skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+          Skip skip(&lexer_, structured_);
+          skip.SkipUntilSemicolonOrLineTerminator(end);
           *res = true;  // recovery
           Statement* stmt = factory_->NewEmptyStatement(begin, end);
           stmt->set_is_failed_node(true);
@@ -855,8 +857,8 @@ class Parser : private iv::core::Noncopyable<> {
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
-          Skip skip(&lexer_);
-          skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+          Skip skip(&lexer_, structured_);
+          skip.SkipUntilSemicolonOrLineTerminator(end);
           *res = true;  // recovery
           Statement* stmt = factory_->NewEmptyStatement(begin, end);
           stmt->set_is_failed_node(true);
@@ -873,8 +875,8 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_);
-      skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
       *res = true;  // recovery
       Statement* stmt = factory_->NewContinueStatement(label, target, begin, end);
       stmt->set_is_failed_node(true);
@@ -893,7 +895,6 @@ class Parser : private iv::core::Noncopyable<> {
     assert(token_ == Token::TK_BREAK);
     const std::size_t begin = lexer_.begin_position();
     std::size_t end = lexer_.end_position();
-    std::size_t line_number = lexer_.line_number();
     Identifier* label = NULL;
     BreakableStatement** target = NULL;
     Next();
@@ -904,8 +905,8 @@ class Parser : private iv::core::Noncopyable<> {
       // label
       IS_STATEMENT(Token::TK_IDENTIFIER) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(&lexer_);
-        skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(end);
         *res = true;  // recovery
         Statement* stmt = factory_->NewEmptyStatement(begin, end);
         stmt->set_is_failed_node(true);
@@ -915,7 +916,6 @@ class Parser : private iv::core::Noncopyable<> {
 
       // IDENTIFIER is OK
       end = lexer_.end_position();
-      line_number = lexer_.line_number();
 
       label = ParseIdentifier(lexer_.Buffer());
       if (ContainsLabel(labels_, label)) {
@@ -937,8 +937,8 @@ class Parser : private iv::core::Noncopyable<> {
           ExpectSemicolon(res);
           if (!*res) {
             reporter_->ReportSyntaxError(errors_.back(), begin);
-            Skip skip(&lexer_);
-            skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+            Skip skip(&lexer_, structured_);
+            skip.SkipUntilSemicolonOrLineTerminator(end);
             *res = true;  // recovery
             Statement* stmt = factory_->NewEmptyStatement(begin, end);
             stmt->set_is_failed_node(true);
@@ -961,8 +961,8 @@ class Parser : private iv::core::Noncopyable<> {
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
-          Skip skip(&lexer_);
-          skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+          Skip skip(&lexer_, structured_);
+          skip.SkipUntilSemicolonOrLineTerminator(end);
           *res = true;  // recovery
           Statement* stmt = factory_->NewEmptyStatement(begin, end);
           stmt->set_is_failed_node(true);
@@ -979,8 +979,8 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_);
-      skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
       *res = true;  // recovery
       Statement* stmt = factory_->NewBreakStatement(label, target, begin, end);
       stmt->set_is_failed_node(true);
@@ -997,25 +997,59 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseReturnStatement(bool *res) {
     assert(token_ == Token::TK_RETURN);
     const std::size_t begin = lexer_.begin_position();
+    std::size_t end = lexer_.end_position();
     Next();
+
+    bool failed = false;
 
     if (scope_->IsGlobal()) {
       // return statement found in global
       // SyntaxError
-      RAISE("\"return\" not in function");
+      RAISE_STATEMENT("\"return\" not in function");
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      failed = true;
     }
 
     if (lexer_.has_line_terminator_before_next() ||
         token_ == Token::TK_SEMICOLON ||
         token_ == Token::TK_RBRACE ||
         token_ == Token::TK_EOS) {
-      ExpectSemicolon(CHECK);
-      return factory_->NewReturnStatement(NULL,
-                                          begin,
-                                          lexer_.previous_end_position());
+      // always pass
+      ExpectSemicolon(res);
+      assert(*res);
+      Statement* stmt = factory_->NewReturnStatement(NULL,
+                                                     begin,
+                                                     lexer_.previous_end_position());
+      stmt->set_is_failed_node(failed);
+      return stmt;
+
     }
-    Expression* const expr = ParseExpression(true, CHECK);
-    ExpectSemicolon(CHECK);
+    Expression* const expr = ParseExpression(true, res);
+    if (!*res) {
+      // expression error occurred
+      const std::size_t end = lexer_.end_position();
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
+    end = lexer_.previous_end_position();
+    ExpectSemicolon(res);
+    if (!*res) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
     return factory_->NewReturnStatement(expr, begin,
                                         lexer_.previous_end_position());
   }
@@ -1220,7 +1254,6 @@ class Parser : private iv::core::Noncopyable<> {
     assert(token_ == Token::TK_DEBUGGER);
     const std::size_t begin = lexer_.begin_position();
     const std::size_t end = lexer_.end_position();
-    const std::size_t line_number = lexer_.line_number();
     Next();
     ExpectSemicolon(res);
     if (!*res) {
@@ -1229,8 +1262,8 @@ class Parser : private iv::core::Noncopyable<> {
       // debugger TOKEN    ....;  <= SKIP UNTIL THIS
       //
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_);
-      skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
       *res = true;  // recovery
       Statement* stmt = factory_->NewDebuggerStatement(begin, end);
       stmt->set_is_failed_node(true);
@@ -2549,6 +2582,7 @@ class Parser : private iv::core::Noncopyable<> {
   int error_state_;
   AstFactory* factory_;
   Reporter* reporter_;
+  const StructuredSource& structured_;
   Scope* scope_;
   Target* target_;
   Identifiers* labels_;

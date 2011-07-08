@@ -1,29 +1,35 @@
 #ifndef _AZ_SKIP_H_
 #define _AZ_SKIP_H_
+#include "structured_source.h"
 namespace az {
+
+// \r\n / \n\r の両方を受け入れる
+inline bool IsLineTerminatorSet(uint16_t first, uint16_t second) {
+  // return (first == '\n' && second == '\r') || (first == '\r' && second == '\n');
+  return (first + second) == ('\r' + '\n');
+}
 
 // Skip class skips heuristic skip sources
 template<typename Lexer>
 class BasicSkip {
  public:
-  explicit BasicSkip(Lexer* lexer)
+  explicit BasicSkip(Lexer* lexer, const StructuredSource& structured)
     : lexer_(lexer),
-      source_(lexer->source()) {
+      source_(lexer->source()),
+      structured_(structured) {
   }
 
-  void SkipUntilSemicolonOrLineTerminator(std::size_t end, std::size_t line_number) {
+  void SkipUntilSemicolonOrLineTerminator(std::size_t end) {
     // TODO(Constellation) refactoring this method
     for (std::size_t i = end, len = source_.size(); i < len; ++i) {
       if (source_[i] == ';') {
-        lexer_->SkipTo(i + 1, line_number, false);
+        lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, false);
         return;
       } else if (iv::core::character::IsLineTerminator(source_[i])) {
-        if (i + 1 < len &&
-            source_[i] + source_[i + 1] == '\r' + '\n') {
+        if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
           ++i;
         }
-        ++line_number;
-        lexer_->SkipTo(i + 1, line_number, true);
+        lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, true);
         return;
       } else if (source_[i] == '"' || source_[i] == '\'') {
         // skip string
@@ -39,23 +45,19 @@ class BasicSkip {
               ++i;
               if (i < len) {
                 if (iv::core::character::IsLineTerminator(source_[i])) {
-                  if (i + 1 < len &&
-                      source_[i] + source_[i + 1] == '\r' + '\n') {
+                  if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
                     ++i;
                   }
-                  ++line_number;
                 }
               } else {
                 break;
               }
             }
           } else if (iv::core::character::IsLineTerminator(ch)) {
-            if (i + 1 < len &&
-                ch + source_[i + 1] == '\r' + '\n') {
+            if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
               ++i;
             }
-            ++line_number;
-            lexer_->SkipTo(i + 1, line_number, true);
+            lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, true);
             return;
           } else {
             // string end found
@@ -71,12 +73,10 @@ class BasicSkip {
             ++i;
             for (; i < len; ++i) {
               if (iv::core::character::IsLineTerminator(source_[i])) {
-                if (i + 1 < len &&
-                    source_[i] + source_[i + 1] == '\r' + '\n') {
+                if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
                   ++i;
                 }
-                ++line_number;
-                lexer_->SkipTo(i + 1, line_number, true);
+                lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, true);
                 return;
               }
             }
@@ -89,17 +89,15 @@ class BasicSkip {
                 // end of multi line comment
                 ++i;
                 if (line_terminator) {
-                  lexer_->SkipTo(i + 1, line_number, true);
+                  lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, true);
                   return;
                 } else {
                   break;
                 }
               } else if (iv::core::character::IsLineTerminator(source_[i])) {
-                if (i + 1 < len &&
-                    source_[i] + source_[i + 1] == '\r' + '\n') {
+                if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
                   ++i;
                 }
-                ++line_number;
                 line_terminator = true;
               }
             }
@@ -108,12 +106,13 @@ class BasicSkip {
       }
     }
     // EOS found...
-    lexer_->SkipTo(source_.size(), line_number, false);
+    lexer_->SkipTo(source_.size(), structured_.GetLineAndColumn(source_.size()).first, true);
   }
 
  private:
   Lexer* lexer_;
   const typename Lexer::source_type& source_;
+  const StructuredSource& structured_;
 };
 
 }  // namespace az
