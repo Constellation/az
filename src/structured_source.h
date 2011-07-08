@@ -10,6 +10,7 @@
 #include <iv/detail/tuple.h>
 #include <iv/ustringpiece.h>
 #include <iv/character.h>
+#include "character.h"
 namespace az {
 
 class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
@@ -20,8 +21,7 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
     LF,
     U2028,
     U2029,
-    CRLF,
-    LFCR
+    CRLF
   };
   typedef std::tuple<std::size_t, std::size_t, LTType> Line;  // start position and length
   typedef std::vector<Line> Lines;
@@ -38,16 +38,16 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
 
         // ECMA262 LineTerminators
         LTType type =
-            (ch == '\n') ? LF :
-            (ch == '\r') ? CR :
+            (ch == character::CR) ? LF :
+            (ch == character::LF) ? CR :
             (ch == 0x2028) ? U2028 : U2029;
 
-        if (type == LF || type == CR) {
+        if (type == CR) {
           iv::core::UStringPiece::const_iterator next_it = it;
           ++next_it;
           if (next_it != last) {
-            if (ch + *next_it == '\n' + '\r') {
-              type = (type == LF) ? LFCR : CRLF;
+            if (*next_it == LF) {
+              type = CRLF;
               it = next_it;
               ++pos;
             }

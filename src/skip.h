@@ -1,13 +1,8 @@
 #ifndef _AZ_SKIP_H_
 #define _AZ_SKIP_H_
+#include "character.h"
 #include "structured_source.h"
 namespace az {
-
-// \r\n / \n\r の両方を受け入れる
-inline bool IsLineTerminatorSet(uint16_t first, uint16_t second) {
-  // return (first == '\n' && second == '\r') || (first == '\r' && second == '\n');
-  return (first + second) == ('\r' + '\n');
-}
 
 // Skip class skips heuristic skip sources
 template<typename Lexer>
@@ -26,7 +21,7 @@ class BasicSkip {
         lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, false);
         return;
       } else if (iv::core::character::IsLineTerminator(source_[i])) {
-        if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
+        if (i + 1 < len && character::IsLineTerminatorCRLF(source_[i], source_[i + 1])) {
           ++i;
         }
         lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, true);
@@ -45,7 +40,7 @@ class BasicSkip {
               ++i;
               if (i < len) {
                 if (iv::core::character::IsLineTerminator(source_[i])) {
-                  if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
+                  if (i + 1 < len && character::IsLineTerminatorCRLF(source_[i], source_[i + 1])) {
                     ++i;
                   }
                 }
@@ -54,7 +49,7 @@ class BasicSkip {
               }
             }
           } else if (iv::core::character::IsLineTerminator(ch)) {
-            if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
+            if (i + 1 < len && character::IsLineTerminatorCRLF(source_[i], source_[i + 1])) {
               ++i;
             }
             lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, true);
@@ -73,7 +68,7 @@ class BasicSkip {
             ++i;
             for (; i < len; ++i) {
               if (iv::core::character::IsLineTerminator(source_[i])) {
-                if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
+                if (i + 1 < len && character::IsLineTerminatorCRLF(source_[i], source_[i + 1])) {
                   ++i;
                 }
                 lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, true);
@@ -95,7 +90,7 @@ class BasicSkip {
                   break;
                 }
               } else if (iv::core::character::IsLineTerminator(source_[i])) {
-                if (i + 1 < len && IsLineTerminatorSet(source_[i], source_[i + 1])) {
+                if (i + 1 < len && character::IsLineTerminatorCRLF(source_[i], source_[i + 1])) {
                   ++i;
                 }
                 line_terminator = true;
