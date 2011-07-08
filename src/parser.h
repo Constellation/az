@@ -884,7 +884,6 @@ class Parser : private iv::core::Noncopyable<> {
     // ExpectSemicolon not failed
     Statement* stmt = factory_->NewContinueStatement(label, target, begin,
                                                      lexer_.previous_end_position());
-    stmt->set_is_failed_node(true);
     return stmt;
   }
 
@@ -893,6 +892,8 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseBreakStatement(bool *res) {
     assert(token_ == Token::TK_BREAK);
     const std::size_t begin = lexer_.begin_position();
+    std::size_t end = lexer_.end_position();
+    std::size_t line_number = lexer_.line_number();
     Identifier* label = NULL;
     BreakableStatement** target = NULL;
     Next();
@@ -901,7 +902,21 @@ class Parser : private iv::core::Noncopyable<> {
         token_ != Token::TK_RBRACE &&
         token_ != Token::TK_EOS) {
       // label
-      IS(Token::TK_IDENTIFIER);
+      IS_STATEMENT(Token::TK_IDENTIFIER) {
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        Skip skip(&lexer_);
+        skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+        *res = true;  // recovery
+        Statement* stmt = factory_->NewEmptyStatement(begin, end);
+        stmt->set_is_failed_node(true);
+        Next();
+        return stmt;
+      }
+
+      // IDENTIFIER is OK
+      end = lexer_.end_position();
+      line_number = lexer_.line_number();
+
       label = ParseIdentifier(lexer_.Buffer());
       if (ContainsLabel(labels_, label)) {
         // example
@@ -916,18 +931,65 @@ class Parser : private iv::core::Noncopyable<> {
       } else {
         target = LookupBreakableTarget(label);
         if (!target) {
-          RAISE("label not found");
+          RAISE_STATEMENT("label not found");
+          reporter_->ReportSyntaxError(errors_.back(), begin);
+          *res = true;  // recovery
+          ExpectSemicolon(res);
+          if (!*res) {
+            reporter_->ReportSyntaxError(errors_.back(), begin);
+            Skip skip(&lexer_);
+            skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+            *res = true;  // recovery
+            Statement* stmt = factory_->NewEmptyStatement(begin, end);
+            stmt->set_is_failed_node(true);
+            Next();
+            return stmt;
+          } else {
+            // ExpectSemicolon not failed
+            Statement* stmt = factory_->NewEmptyStatement(begin, end);
+            stmt->set_is_failed_node(true);
+            return stmt;
+          }
         }
       }
     } else {
       target = LookupBreakableTarget();
       if (!target) {
-        RAISE("label not found");
+        RAISE_STATEMENT("label not found");
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        *res = true;  // recovery
+        ExpectSemicolon(res);
+        if (!*res) {
+          reporter_->ReportSyntaxError(errors_.back(), begin);
+          Skip skip(&lexer_);
+          skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+          *res = true;  // recovery
+          Statement* stmt = factory_->NewEmptyStatement(begin, end);
+          stmt->set_is_failed_node(true);
+          Next();
+          return stmt;
+        } else {
+          // ExpectSemicolon not failed
+          Statement* stmt = factory_->NewEmptyStatement(begin, end);
+          stmt->set_is_failed_node(true);
+          return stmt;
+        }
       }
     }
-    ExpectSemicolon(CHECK);
-    return factory_->NewBreakStatement(label, target, begin,
-                                       lexer_.previous_end_position());
+    ExpectSemicolon(res);
+    if (!*res) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_);
+      skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewBreakStatement(label, target, begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
+    Statement* stmt = factory_->NewBreakStatement(label, target, begin,
+                                                  lexer_.previous_end_position());
+    return stmt;
   }
 
 //  ReturnStatement
