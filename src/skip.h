@@ -13,53 +13,53 @@ class BasicSkip {
 
   void SkipUntilSemicolonOrLineTerminator(std::size_t end, std::size_t line_number) {
     // TODO(Constellation) skip if comment like found
-    enum {
-      NORMAL,
-      STRING,
-      SINGLE_LINE_COMMENT,
-      MULTI_LINE_COMMENT
-    } state = NORMAL;
     for (std::size_t i = end, len = source_.size(); i < len; ++i) {
-      if (state == NORMAL) {
-        if (source_[i] == ';') {
-          lexer_->SkipTo(i + 1, line_number, false);
-          return;
-        } else if (iv::core::character::IsLineTerminator(source_[i])) {
-          if (i + 1 < len &&
-              source_[i] + source_[i + 1] == '\r' + '\n') {
-            ++i;
-          }
-          ++line_number;
-          lexer_->SkipTo(i + 1, line_number, true);
-          return;
-        } else if (source_[i] == '"' || source_[i] == '\'') {
-          // skip string
-          // Lexer#ScanString scans String Format strictly,
-          // but, in recovery phase skips String loosely.
-          const uint16_t quote = source_[i];
+      if (source_[i] == ';') {
+        lexer_->SkipTo(i + 1, line_number, false);
+        return;
+      } else if (iv::core::character::IsLineTerminator(source_[i])) {
+        if (i + 1 < len &&
+            source_[i] + source_[i + 1] == '\r' + '\n') {
           ++i;
-          for (; i < len; ++i) {
-            const uint16_t ch = source_[i];
-            if (ch != quote && !iv::core::character::IsLineTerminator(ch)) {
-              if (ch == '\\') {
-                // loosely scanning in escape phase
-                ++i;
-                if (i < len) {
-                  if (iv::core::character::IsLineTerminator(source_[i])) {
-                    if (i + 1 < len &&
-                        source_[i] + source_[i + 1] == '\r' + '\n') {
-                      ++i;
-                    }
-                    ++line_number;
+        }
+        ++line_number;
+        lexer_->SkipTo(i + 1, line_number, true);
+        return;
+      } else if (source_[i] == '"' || source_[i] == '\'') {
+        // skip string
+        // Lexer#ScanString scans String Format strictly,
+        // but, in recovery phase skips String loosely.
+        const uint16_t quote = source_[i];
+        ++i;
+        for (; i < len; ++i) {
+          const uint16_t ch = source_[i];
+          if (ch != quote && !iv::core::character::IsLineTerminator(ch)) {
+            if (ch == '\\') {
+              // loosely scanning in escape phase
+              ++i;
+              if (i < len) {
+                if (iv::core::character::IsLineTerminator(source_[i])) {
+                  if (i + 1 < len &&
+                      source_[i] + source_[i + 1] == '\r' + '\n') {
+                    ++i;
                   }
-                } else {
-                  break;
+                  ++line_number;
                 }
+              } else {
+                break;
               }
-            } else {
-              // string end found
-              break;
             }
+          } else if (iv::core::character::IsLineTerminator(ch)) {
+            if (i + 1 < len &&
+                ch + source_[i + 1] == '\r' + '\n') {
+              ++i;
+            }
+            ++line_number;
+            lexer_->SkipTo(i + 1, line_number, true);
+            return;
+          } else {
+            // string end found
+            break;
           }
         }
       }
