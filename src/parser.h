@@ -1072,6 +1072,7 @@ class Parser : private iv::core::Noncopyable<> {
     const std::size_t begin = lexer_.begin_position();
     Next();
     const std::size_t end = lexer_.end_position();
+    const std::size_t line_number = lexer_.line_number();
     ExpectSemicolon(res);
     if (!*res) {
       // recovery
@@ -1080,7 +1081,7 @@ class Parser : private iv::core::Noncopyable<> {
       //
       reporter_->ReportSyntaxError(errors_.back(), begin);
       Skip skip(&lexer_);
-      skip.SkipUntilSemicolonOrLineTerminator(lexer_.end_position());
+      skip.SkipUntilSemicolonOrLineTerminator(end, line_number);
       *res = true;  // recovery
       Statement* stmt = factory_->NewDebuggerStatement(begin, end);
       stmt->set_is_failed_node(true);
