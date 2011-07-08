@@ -2436,9 +2436,15 @@ class Parser : private iv::core::Noncopyable<> {
   inline void set_scope(Scope* scope) {
     scope_ = scope;
   }
+
   inline const std::string& error() const {
     return error_;
   }
+
+  inline const std::vector<std::string>& errors() const {
+    return errors_;
+  }
+
   inline Target* target() const {
     return target_;
   }

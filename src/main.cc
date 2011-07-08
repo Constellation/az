@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   az::FunctionLiteral* const global = parser.ParseProgram();
   if (!global) {
     // syntax error occurred
-    std::fprintf(stderr, "%s\n", parser.error().c_str());
+    std::fprintf(stderr, "%s\n", parser.errors().back().c_str());
   } else {
     az::Analyze(global, src, &reporter);
   }
