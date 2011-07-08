@@ -6,15 +6,35 @@ namespace az {
 template<typename Lexer>
 class BasicSkip {
  public:
-  explicit BasicSkip(const Lexer& lexer)
-    : lexer_(lexer) {
+  explicit BasicSkip(Lexer* lexer)
+    : lexer_(lexer),
+      source_(lexer->source()) {
   }
 
   void SkipUntilSemicolonOrLineTerminator(std::size_t end) {
+    // TODO(Constellation) skip if comment like found
+    std::size_t line_number = lexer_->line_number();
+    for (std::size_t i = end, len = source_.size(); i < len; ++i) {
+      if (source_[i] == ';') {
+        lexer_->SkipTo(i + 1, line_number, false);
+        return;
+      } else if (iv::core::character::IsLineTerminator(source_[i])) {
+        if (i + 1 < len &&
+            source_[i] + source_[i + 1] == '\r' + '\n') {
+          ++i;
+        }
+        ++line_number;
+        lexer_->SkipTo(i + 1, line_number, true);
+        return;
+      }
+    }
+    // EOS found...
+    lexer_->SkipTo(source_.size(), line_number, false);
   }
 
  private:
-  const Lexer& lexer_;
+  Lexer* lexer_;
+  const typename Lexer::source_type& source_;
 };
 
 }  // namespace az

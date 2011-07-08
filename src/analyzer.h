@@ -2,6 +2,7 @@
 // rewrite AST and analyze stack and heap variables status
 #ifndef _AZ_ANALYZER_H_
 #define _AZ_ANALYZER_H_
+#include <iostream>
 #include <iv/ast_visitor.h>
 #include <iv/utils.h>
 #include <iv/maybe.h>
@@ -1273,9 +1274,11 @@ class Analyzer
     //  ThrowStatement
     //  DebuggerStatement
     //  ExpressionStatement
-    if (src_[stmt->end_position() - 1] != ';') {
-      // not ends with semicolon
-      reporter_->ReportAutomaticSemicolonInsertion(*stmt);
+    if (!stmt->IsFailed()) {
+      if (src_[stmt->end_position() - 1] != ';') {
+        // not ends with semicolon
+        reporter_->ReportAutomaticSemicolonInsertion(*stmt);
+      }
     }
   }
 

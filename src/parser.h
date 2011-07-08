@@ -42,6 +42,8 @@ using iv::core::Token;
     if (token_ != token) {\
       *res = false;\
       ReportUnexpectedToken(token);\
+      errors_.push_back(error_);\
+      error_.clear();\
       return NULL;\
     }\
     Next();\
@@ -51,6 +53,8 @@ using iv::core::Token;
   do {\
     *res = false;\
     ReportUnexpectedToken(token);\
+      errors_.push_back(error_);\
+      error_.clear();\
     return NULL;\
   } while (0)
 
@@ -60,6 +64,8 @@ using iv::core::Token;
     error_state_ |= kNotRecoverable;\
     SetErrorHeader(lexer_.line_number());\
     error_.append(str);\
+    errors_.push_back(error_);\
+    error_.clear();\
     return NULL;\
   } while (0)
 
@@ -68,6 +74,8 @@ using iv::core::Token;
     *res = false;\
     SetErrorHeader(lexer_.line_number());\
     error_.append(str);\
+    errors_.push_back(error_);\
+    error_.clear();\
     return NULL;\
   } while (0)
 
@@ -77,6 +85,8 @@ using iv::core::Token;
     error_state_ |= kNotRecoverable;\
     SetErrorHeader(line);\
     error_.append(str);\
+    errors_.push_back(error_);\
+    error_.clear();\
     return NULL;\
   } while (0)
 
@@ -98,10 +108,10 @@ static const iv::core::UString kSet = iv::core::ToUString("set");
 
 }  // namespace detail
 
-template<typename Source>
+template<typename Source, typename Reporter>
 class Parser : private iv::core::Noncopyable<> {
  public:
-  typedef Parser<Source> this_type;
+  typedef Parser<Source, Reporter> this_type;
   typedef this_type parser_type;
   typedef iv::core::Lexer<Source> lexer_type;
   typedef BasicSkip<lexer_type> Skip;
@@ -185,12 +195,13 @@ class Parser : private iv::core::Noncopyable<> {
     Identifiers* labels_;
   };
 
-  Parser(AstFactory* factory, const Source& source)
+  Parser(AstFactory* factory, const Source& source, Reporter* reporter)
     : lexer_(source),
       error_(),
       strict_(false),
       error_state_(0),
       factory_(factory),
+      reporter_(reporter),
       scope_(NULL),
       target_(NULL),
       labels_(NULL) {
@@ -1062,16 +1073,18 @@ class Parser : private iv::core::Noncopyable<> {
     Next();
     const std::size_t end = lexer_.end_position();
     ExpectSemicolon(res);
-    if (*res) {
+    if (!*res) {
       // recovery
       //
       // debugger TOKEN    ....;  <= SKIP UNTIL THIS
       //
-      Skip skip(lexer_);
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_);
       skip.SkipUntilSemicolonOrLineTerminator(lexer_.end_position());
-      *res = false;  // recovery
+      *res = true;  // recovery
       Statement* stmt = factory_->NewDebuggerStatement(begin, end);
       stmt->set_is_failed_node(true);
+      Next();
       return stmt;
     } else {
       return  factory_->NewDebuggerStatement(begin,
@@ -2375,9 +2388,11 @@ class Parser : private iv::core::Noncopyable<> {
   lexer_type lexer_;
   Token::Type token_;
   std::string error_;
+  std::vector<std::string> errors_;
   bool strict_;
   int error_state_;
   AstFactory* factory_;
+  Reporter* reporter_;
   Scope* scope_;
   Target* target_;
   Identifiers* labels_;

@@ -69,6 +69,10 @@ class StatementBase<az::AstFactory>
     is_failed_node_ = val;
   }
 
+  bool IsFailed() const {
+    return is_failed_node_;
+  }
+
  private:
   StatementType* normal_;
   StatementType* raised_;

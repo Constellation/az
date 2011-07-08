@@ -36,7 +36,7 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  typedef az::Parser<iv::core::UString> Parser;
+  typedef az::Parser<iv::core::UString, az::Reporter> Parser;
   if (argc <= 1) {
     std::fprintf(stderr, "%s\n", "filename requred");
     return EXIT_FAILURE;
@@ -56,14 +56,14 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
     return EXIT_FAILURE;
   }
+  az::Reporter reporter(src);
   az::AstFactory factory;
-  Parser parser(&factory, src);
+  Parser parser(&factory, src, &reporter);
   az::FunctionLiteral* const global = parser.ParseProgram();
   if (!global) {
     // syntax error occurred
     std::fprintf(stderr, "%s\n", parser.error().c_str());
   } else {
-    az::Reporter reporter(src);
     az::Analyze(global, src, &reporter);
   }
   return 0;
