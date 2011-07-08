@@ -12,7 +12,7 @@ class BasicSkip {
   }
 
   void SkipUntilSemicolonOrLineTerminator(std::size_t end, std::size_t line_number) {
-    // TODO(Constellation) skip if comment like found
+    // TODO(Constellation) refactoring this method
     for (std::size_t i = end, len = source_.size(); i < len; ++i) {
       if (source_[i] == ';') {
         lexer_->SkipTo(i + 1, line_number, false);
@@ -60,6 +60,49 @@ class BasicSkip {
           } else {
             // string end found
             break;
+          }
+        }
+      } else if (source_[i] == '/') {
+        // comment like found
+        if (i + 1 < len) {
+          if (source_[i + 1] == '/') {
+            // single line comment found
+            // skip to LineTerminator
+            ++i;
+            for (; i < len; ++i) {
+              if (iv::core::character::IsLineTerminator(source_[i])) {
+                if (i + 1 < len &&
+                    source_[i] + source_[i + 1] == '\r' + '\n') {
+                  ++i;
+                }
+                ++line_number;
+                lexer_->SkipTo(i + 1, line_number, true);
+                return;
+              }
+            }
+          } else if (source_[i + 1] == '*') {
+            // multi line comment found
+            bool line_terminator = false;
+            ++i;
+            for (; i < len; ++i) {
+              if (source_[i] == '*' && i + 1 < len && source_[i + 1] == '/') {
+                // end of multi line comment
+                ++i;
+                if (line_terminator) {
+                  lexer_->SkipTo(i + 1, line_number, true);
+                  return;
+                } else {
+                  break;
+                }
+              } else if (iv::core::character::IsLineTerminator(source_[i])) {
+                if (i + 1 < len &&
+                    source_[i] + source_[i + 1] == '\r' + '\n') {
+                  ++i;
+                }
+                ++line_number;
+                line_terminator = true;
+              }
+            }
           }
         }
       }
