@@ -1276,8 +1276,31 @@ class Parser : private iv::core::Noncopyable<> {
   }
 
   Statement* ParseExpressionStatement(bool *res) {
-    Expression* const expr = ParseExpression(true, CHECK);
-    ExpectSemicolon(CHECK);
+    const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
+    Expression* const expr = ParseExpression(true, res);
+    if (!*res) {
+      // expr is invalid
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(lexer_.previous_end_position());
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
+    ExpectSemicolon(res);
+    if (!*res) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewExpressionStatement(expr, lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
     assert(expr);
     return factory_->NewExpressionStatement(expr,
                                             lexer_.previous_end_position());
@@ -1290,9 +1313,21 @@ class Parser : private iv::core::Noncopyable<> {
 //    : Expression ';'
   Statement* ParseExpressionOrLabelledStatement(bool *res) {
     assert(token_ == Token::TK_IDENTIFIER);
-    Expression* const expr = ParseExpression(true, CHECK);
-    if (token_ == Token::TK_COLON &&
-        expr->AsIdentifier()) {
+    const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
+    Expression* const expr = ParseExpression(true, res);
+    if (!*res) {
+      // expr is invalid
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(lexer_.previous_end_position());
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
+    if (token_ == Token::TK_COLON && expr->AsIdentifier()) {
       // LabelledStatement
       Next();
 
@@ -1304,16 +1339,29 @@ class Parser : private iv::core::Noncopyable<> {
       }
       if (ContainsLabel(labels, label) || TargetsContainsLabel(label)) {
         // duplicate label
-        RAISE("duplicate label");
+        RAISE_STATEMENT("duplicate label");
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        *res = true;  // recovery
+      } else {
+        labels->push_back(label);
       }
-      labels->push_back(label);
       const LabelSwitcher label_switcher(this, labels, exist_labels);
 
       Statement* const stmt = ParseStatement(CHECK);
       assert(expr && stmt);
       return factory_->NewLabelledStatement(expr, stmt);
     }
-    ExpectSemicolon(CHECK);
+    ExpectSemicolon(res);
+    if (!*res) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewExpressionStatement(expr, lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
     assert(expr);
     return factory_->NewExpressionStatement(expr,
                                             lexer_.previous_end_position());
