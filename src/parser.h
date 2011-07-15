@@ -545,12 +545,19 @@ class Parser : private iv::core::Noncopyable<> {
       Statement* const stmt = ParseStatement(CHECK);
       body->push_back(stmt);
     }
+    const bool failed = (token_ == Token::TK_EOS);
+    if (failed) {
+      UNEXPECT_STATEMENT(token_);
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+    }
     Next();
     assert(body);
     Block* const block = factory_->NewBlock(body,
                                             begin,
                                             lexer_.previous_end_position());
     target.set_node(block);
+    block->set_is_failed_node(failed);
     return block;
   }
 
@@ -751,22 +758,61 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseWhileStatement(bool *res) {
     assert(token_ == Token::TK_WHILE);
     const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
+    bool failed = false;
     Next();
 
-    EXPECT(Token::TK_LPAREN);
+    IS_STATEMENT(Token::TK_LPAREN) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
+    Next();
 
-    Expression* const expr = ParseExpression(true, CHECK);
+    Expression* expr = ParseExpression(true, res);
+    if (!*res) {
+      // if invalid WithStatement is like,
+      // with () {  <= error occurred, but token RPAREN is found.
+      // }
+      // through this error and parse WithStatement body
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      if (token_ != Token::TK_RPAREN) {
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(lexer_.previous_end_position());
+        Next();
+      }
+      *res = true;  // recovery
+      failed = true;
+    }
     Target target(this, Target::kIterationStatement);
 
-    EXPECT(Token::TK_RPAREN);
+    IS_STATEMENT(Token::TK_RPAREN) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      return stmt;
+    }
+    Next();
 
-    Statement* const stmt = ParseStatement(CHECK);
-    assert(stmt);
-    WhileStatement* const whilestmt = factory_->NewWhileStatement(stmt,
-                                                                  expr, begin);
-
-    target.set_node(whilestmt);
-    return whilestmt;
+    Statement* const body = ParseStatement(CHECK);
+    if (!expr) {
+      // expr is not valid, but, only parse Statement phase
+      // FIXME(Constellation)
+      // using true literal instead. but, we should use error expr
+      expr = factory_->NewTrueLiteral(0, 0);
+    }
+    assert(expr && body);
+    WhileStatement* const stmt = factory_->NewWhileStatement(body,
+                                                             expr, begin);
+    stmt->set_is_failed_node(failed);
+    target.set_node(stmt);
+    return stmt;
   }
 
 //  FOR '(' ExpressionNoIn_opt ';' Expression_opt ';' Expression_opt ')'
@@ -1351,6 +1397,7 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseTryStatement(bool *res) {
     assert(token_ == Token::TK_TRY);
     const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
     Identifier* name = NULL;
     Block* catch_block = NULL;
     Block* finally_block = NULL;
@@ -1358,32 +1405,86 @@ class Parser : private iv::core::Noncopyable<> {
 
     Next();
 
-    IS(Token::TK_LBRACE);
+    IS_STATEMENT(Token::TK_LBRACE) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
     Block* const try_block = ParseBlock(CHECK);
 
     if (token_ == Token::TK_CATCH) {
       // Catch
       has_catch_or_finally = true;
       Next();
-      EXPECT(Token::TK_LPAREN);
-      IS(Token::TK_IDENTIFIER);
-      name = ParseIdentifier(lexer_.Buffer());
-      // section 12.14.1
-      // within the strict code, Identifier must not be "eval" or "arguments"
-      if (strict_) {
-        const EvalOrArguments val = IsEvalOrArguments(name);
-        if (val) {
-          if (val == kEval) {
-            RAISE("catch placeholder \"eval\" not allowed in strict code");
-          } else {
-            assert(val == kArguments);
-            RAISE(
-                "catch placeholder \"arguments\" not allowed in strict code");
+      IS_STATEMENT(Token::TK_LPAREN) {
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(end);
+        *res = true;  // recovery
+        Statement* stmt = factory_->NewEmptyStatement(begin, end);
+        stmt->set_is_failed_node(true);
+        Next();
+        return stmt;
+      }
+      Next();
+
+      bool failed = false;
+      if (token_ != Token::TK_IDENTIFIER) {
+        // if invalid WithStatement is like,
+        // with () {  <= error occurred, but token RPAREN is found.
+        // }
+        // through this error and parse WithStatement body
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        if (token_ != Token::TK_RPAREN) {
+          Skip skip(&lexer_, structured_);
+          skip.SkipUntilSemicolonOrLineTerminator(lexer_.previous_end_position());
+          Next();
+        }
+        *res = true;  // recovery
+        failed = true;
+      } else {
+        name = ParseIdentifier(lexer_.Buffer());
+        // section 12.14.1
+        // within the strict code, Identifier must not be "eval" or "arguments"
+        if (strict_) {
+          const EvalOrArguments val = IsEvalOrArguments(name);
+          if (val) {
+            if (val == kEval) {
+              RAISE_STATEMENT("catch placeholder \"eval\" not allowed in strict code");
+            } else {
+              assert(val == kArguments);
+              RAISE_STATEMENT(
+                  "catch placeholder \"arguments\" not allowed in strict code");
+            }
+            reporter_->ReportSyntaxError(errors_.back(), begin);
+            *res = true;  // recovery
+            failed = true;
           }
         }
       }
-      EXPECT(Token::TK_RPAREN);
-      IS(Token::TK_LBRACE);
+      IS_STATEMENT(Token::TK_RPAREN) {
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        *res = true;  // recovery
+        Statement* stmt = factory_->NewEmptyStatement(begin, end);
+        stmt->set_is_failed_node(true);
+        return stmt;
+      }
+      Next();
+      IS_STATEMENT(Token::TK_LBRACE) {
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(end);
+        *res = true;  // recovery
+        Statement* stmt = factory_->NewEmptyStatement(begin, end);
+        stmt->set_is_failed_node(true);
+        Next();
+        return stmt;
+      }
       catch_block = ParseBlock(CHECK);
     }
 
@@ -1391,18 +1492,34 @@ class Parser : private iv::core::Noncopyable<> {
       // Finally
       has_catch_or_finally= true;
       Next();
-      IS(Token::TK_LBRACE);
+      IS_STATEMENT(Token::TK_LBRACE) {
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(end);
+        *res = true;  // recovery
+        Statement* stmt = factory_->NewEmptyStatement(begin, end);
+        stmt->set_is_failed_node(true);
+        Next();
+        return stmt;
+      }
       finally_block = ParseBlock(CHECK);
     }
 
     if (!has_catch_or_finally) {
-      RAISE_RECOVERVABLE("missing catch or finally after try statement");
+      RAISE_STATEMENT("missing catch or finally after try statement");
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      return stmt;
     }
 
     assert(try_block);
-    return factory_->NewTryStatement(try_block,
-                                     name, catch_block,
-                                     finally_block, begin);
+    Statement* const stmt = factory_->NewTryStatement(try_block,
+                                                      name, catch_block,
+                                                      finally_block, begin);
+    stmt->set_is_failed_node(true);
+    return stmt;
   }
 
 //  DebuggerStatement
