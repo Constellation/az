@@ -23,6 +23,7 @@
 #include <iv/none.h>
 #include "ast_fwd.h"
 #include "ast_factory.h"
+#include "token.h"
 #include "skip.h"
 namespace az {
 
@@ -33,6 +34,8 @@ using iv::core::Token;
     if (token_ != token) {\
       *res = false;\
       ReportUnexpectedToken(token);\
+      errors_.push_back(error_);\
+      error_.clear();\
       return NULL;\
     }\
   } while (0)
@@ -42,6 +45,8 @@ using iv::core::Token;
     if (token_ != token) {\
       *res = false;\
       ReportUnexpectedToken(token);\
+      errors_.push_back(error_);\
+      error_.clear();\
     }\
   } while (0);\
   if (!*res)
@@ -62,9 +67,18 @@ using iv::core::Token;
   do {\
     *res = false;\
     ReportUnexpectedToken(token);\
-      errors_.push_back(error_);\
-      error_.clear();\
+    errors_.push_back(error_);\
+    error_.clear();\
     return NULL;\
+  } while (0)
+
+
+#define UNEXPECT_STATEMENT(token)\
+  do {\
+    *res = false;\
+    ReportUnexpectedToken(token);\
+    errors_.push_back(error_);\
+    error_.clear();\
   } while (0)
 
 #define RAISE(str)\
@@ -273,7 +287,7 @@ class Parser : private iv::core::Noncopyable<> {
     {
       bool octal_escaped_directive_found = false;
       std::size_t line = 0;
-      while (token_ != end) {
+      while (token_ != end && token_ != Token::TK_EOS) {
         if (token_ != Token::TK_STRING) {
           // this is not directive
           break;
@@ -318,7 +332,7 @@ class Parser : private iv::core::Noncopyable<> {
     }
 
     // statements
-    while (token_ != end) {
+    while (token_ != end && token_ != Token::TK_EOS) {
       if (token_ == Token::TK_FUNCTION) {
         // FunctionDeclaration
         stmt = ParseFunctionDeclaration(CHECK);
@@ -445,13 +459,33 @@ class Parser : private iv::core::Noncopyable<> {
         result = ParseExpressionOrLabelledStatement(CHECK);
         break;
 
-      case Token::TK_ILLEGAL:
-        UNEXPECT(token_);
-        break;
-
       default:
         // ExpressionStatement or ILLEGAL
-        result = ParseExpressionStatement(CHECK);
+        if (IsStatementStartToken(token_)) {
+          result = ParseExpressionStatement(CHECK);
+        } else if (token_ == Token::TK_ILLEGAL) {
+          // invalid token...
+          UNEXPECT_STATEMENT(token_);
+          reporter_->ReportSyntaxError(errors_.back(), lexer_.begin_position());
+          Skip skip(&lexer_, structured_);
+          skip.SkipUntilSemicolonOrLineTerminator(lexer_.end_position());
+          *res = true;  // recovery
+          Statement* stmt = factory_->NewEmptyStatement(lexer_.begin_position(),
+                                                        lexer_.end_position());
+          stmt->set_is_failed_node(true);
+          Next();
+          result = stmt;
+        } else {
+          // not statement start token
+          UNEXPECT_STATEMENT(token_);
+          reporter_->ReportSyntaxError(errors_.back(), lexer_.begin_position());
+          *res = true;  // recovery
+          Statement* stmt = factory_->NewEmptyStatement(lexer_.begin_position(),
+                                                        lexer_.end_position());
+          stmt->set_is_failed_node(true);
+          Next();
+          result = stmt;
+        }
         break;
     }
     return result;
@@ -507,7 +541,7 @@ class Parser : private iv::core::Noncopyable<> {
     Target target(this, Target::kNamedOnlyStatement);
 
     Next();
-    while (token_ != Token::TK_RBRACE) {
+    while (token_ != Token::TK_RBRACE && token_ != Token::TK_EOS) {
       Statement* const stmt = ParseStatement(CHECK);
       body->push_back(stmt);
     }
@@ -609,25 +643,60 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseIfStatement(bool *res) {
     assert(token_ == Token::TK_IF);
     const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
     Statement* else_statement = NULL;
     Next();
 
-    EXPECT(Token::TK_LPAREN);
+    IS_STATEMENT(Token::TK_LPAREN) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
+    Next();
 
-    Expression* const expr = ParseExpression(true, CHECK);
-
-    EXPECT(Token::TK_RPAREN);
+    bool failed = false;
+    Expression* expr = ParseExpression(true, res);
+    if (!*res) {
+      // if invalid IfStatement is like,
+      // if () {  <= error occurred, but token RPAREN is found.
+      // }
+      // through this error and parse IfStatement body
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      failed = true;
+    }
+    IS_STATEMENT(Token::TK_RPAREN) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      return stmt;
+    }
+    Next();
 
     Statement* const then_statement = ParseStatement(CHECK);
     if (token_ == Token::TK_ELSE) {
       Next();
       else_statement = ParseStatement(CHECK);
     }
+    if (!expr) {
+      // expr is not valid, but, only parse Statement phase
+      // FIXME(Constellation)
+      // using true literal instead. but, we should use error expr
+      expr = factory_->NewTrueLiteral(0, 0);
+    }
     assert(expr && then_statement);
-    return factory_->NewIfStatement(expr,
-                                    then_statement,
-                                    else_statement,
-                                    begin);
+    Statement* stmt = factory_->NewIfStatement(expr,
+                                               then_statement,
+                                               else_statement,
+                                               begin);
+    stmt->set_is_failed_node(failed);
+    return stmt;
   }
 
 //  IterationStatement
