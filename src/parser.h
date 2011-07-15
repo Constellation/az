@@ -662,11 +662,16 @@ class Parser : private iv::core::Noncopyable<> {
     bool failed = false;
     Expression* expr = ParseExpression(true, res);
     if (!*res) {
-      // if invalid IfStatement is like,
-      // if () {  <= error occurred, but token RPAREN is found.
+      // if invalid WithStatement is like,
+      // with () {  <= error occurred, but token RPAREN is found.
       // }
-      // through this error and parse IfStatement body
+      // through this error and parse WithStatement body
       reporter_->ReportSyntaxError(errors_.back(), begin);
+      if (token_ != Token::TK_RPAREN) {
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(lexer_.previous_end_position());
+        Next();
+      }
       *res = true;  // recovery
       failed = true;
     }
@@ -1141,23 +1146,66 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseWithStatement(bool *res) {
     assert(token_ == Token::TK_WITH);
     const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
+    bool failed = false;
     Next();
 
     // section 12.10.1
     // when in strict mode code, WithStatement is not allowed.
     if (strict_) {
-      RAISE("with statement not allowed in strict code");
+      RAISE_STATEMENT("with statement not allowed in strict code");
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      failed = true;
     }
 
-    EXPECT(Token::TK_LPAREN);
+    IS_STATEMENT(Token::TK_LPAREN) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
+    Next();
 
-    Expression *expr = ParseExpression(true, CHECK);
+    Expression* expr = ParseExpression(true, res);
+    if (!*res) {
+      // if invalid WithStatement is like,
+      // with () {  <= error occurred, but token RPAREN is found.
+      // }
+      // through this error and parse WithStatement body
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      if (token_ != Token::TK_RPAREN) {
+        Skip skip(&lexer_, structured_);
+        skip.SkipUntilSemicolonOrLineTerminator(lexer_.previous_end_position());
+        Next();
+      }
+      *res = true;  // recovery
+      failed = true;
+    }
+    IS_STATEMENT(Token::TK_RPAREN) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      return stmt;
+    }
+    Next();
 
-    EXPECT(Token::TK_RPAREN);
-
-    Statement *stmt = ParseStatement(CHECK);
-    assert(expr && stmt);
-    return factory_->NewWithStatement(expr, stmt, begin);
+    Statement* const body = ParseStatement(CHECK);
+    if (!expr) {
+      // expr is not valid, but, only parse Statement phase
+      // FIXME(Constellation)
+      // using true literal instead. but, we should use error expr
+      expr = factory_->NewTrueLiteral(0, 0);
+    }
+    assert(expr && body);
+    Statement* const stmt = factory_->NewWithStatement(expr, body, begin);
+    stmt->set_is_failed_node(failed);
+    return stmt;
   }
 
 //  SwitchStatement
