@@ -14,13 +14,24 @@ class BasicSkip {
       structured_(structured) {
   }
 
+  void SkipUntil(std::size_t end, const iv::core::UStringPiece& str) {
+    SkipUntilImpl(end, str);
+  }
+
+  void SkipUntil(std::size_t end, const iv::core::StringPiece& str) {
+    SkipUntilImpl(end, str);
+  }
+
   void SkipUntilSemicolonOrLineTerminator(std::size_t end) {
+    SkipUntil(end, ";");
+  }
+
+ private:
+  template<typename Piece>
+  void SkipUntilImpl(std::size_t end, const Piece& str) {
     // TODO(Constellation) refactoring this method
     for (std::size_t i = end, len = source_.size(); i < len; ++i) {
-      if (source_[i] == ';') {
-        lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, false);
-        return;
-      } else if (iv::core::character::IsLineTerminator(source_[i])) {
+      if (iv::core::character::IsLineTerminator(source_[i])) {
         if (i + 1 < len && character::IsLineTerminatorCRLF(source_[i], source_[i + 1])) {
           ++i;
         }
@@ -98,13 +109,19 @@ class BasicSkip {
             }
           }
         }
+      } else if (str.find(source_[i]) != iv::core::UStringPiece::npos) {
+        // target character is found
+        lexer_->SkipTo(i + 1, structured_.GetLineAndColumn(i + 1).first, false);
+        return;
       }
     }
     // EOS found...
     lexer_->SkipTo(source_.size(), structured_.GetLineAndColumn(source_.size()).first, true);
   }
 
- private:
+
+
+
   Lexer* lexer_;
   const typename Lexer::source_type& source_;
   const StructuredSource& structured_;
