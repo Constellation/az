@@ -471,9 +471,22 @@ class Parser : private iv::core::Noncopyable<> {
 //  and this statement is very useful for not breaking FunctionDeclaration.
   Statement* ParseFunctionDeclaration(bool *res) {
     assert(token_ == Token::TK_FUNCTION);
+    const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
     FunctionLiteral* const expr = ParseFunctionLiteral(
         FunctionLiteral::DECLARATION,
-        FunctionLiteral::GENERAL, CHECK);
+        FunctionLiteral::GENERAL, res);
+    if (!*res) {
+      // TODO(Constellation) searching } is better ?
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
     // define named function as FunctionDeclaration
     scope_->AddFunctionDeclaration(expr);
     assert(expr);
@@ -1401,6 +1414,8 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseFunctionStatement(bool *res) {
     bool failed = false;
     assert(token_ == Token::TK_FUNCTION);
+    const std::size_t begin = lexer_.begin_position();
+    const std::size_t end = lexer_.end_position();
     if (strict_) {
       RAISE_STATEMENT("function statement not allowed in strict code");
       reporter_->ReportSyntaxError(errors_.back(), lexer_.begin_position());
@@ -1410,7 +1425,18 @@ class Parser : private iv::core::Noncopyable<> {
     FunctionLiteral* const expr = ParseFunctionLiteral(
         FunctionLiteral::STATEMENT,
         FunctionLiteral::GENERAL,
-        CHECK);
+        res);
+    if (!*res) {
+      // TODO(Constellation) searching } is better ?
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Skip skip(&lexer_, structured_);
+      skip.SkipUntilSemicolonOrLineTerminator(end);
+      *res = true;  // recovery
+      Statement* stmt = factory_->NewEmptyStatement(begin, end);
+      stmt->set_is_failed_node(true);
+      Next();
+      return stmt;
+    }
     // define named function as variable declaration
     assert(expr);
     assert(expr->name());
