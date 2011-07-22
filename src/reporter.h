@@ -193,7 +193,7 @@ class Reporter : public BasicReporter {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(stmt.begin_position());
     std::printf("%s %lu:%lu\n",
-                "NOT PROCEDURE: REQUIRE RETURN VALUE",
+                "NOT PROCEDURE REQUIRE RETURN VALUE",
                 static_cast<unsigned long>(pair.first),
                 static_cast<unsigned long>(pair.second));
   }
@@ -201,7 +201,7 @@ class Reporter : public BasicReporter {
   void ReportSyntaxError(const std::string& str, std::size_t begin_position) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(begin_position);
-    std::printf("%s: %s %lu:%lu\n",
+    std::printf("%s %s %lu:%lu\n",
                 "SYNTAX ERROR",
                 str.c_str(),
                 static_cast<unsigned long>(pair.first),
