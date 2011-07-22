@@ -893,22 +893,48 @@ class Parser : private iv::core::Noncopyable<> {
         ParseVariableDeclarations(decls, token_ == Token::TK_CONST, false, CHECK);
         if (token_ == Token::TK_IN) {
           assert(decls);
+          if (decls->size() != 1) {
+            // ForInStatement requests VaraibleDeclarationNoIn (not List),
+            // so check declarations' size is 1.
+            RAISE_STATEMENT("invalid for-in left-hand-side");
+            reporter_->ReportSyntaxError(errors_.back(), begin);
+            *res = true;  // recovery
+            failed = true;
+          }
           VariableStatement* const var =
               factory_->NewVariableStatement(op,
                                              decls,
                                              begin,
                                              lexer_.previous_end_position());
+          var->set_is_failed_node(failed);
           init = var;
           // for in loop
           Next();
-          const Declarations& decls = var->decls();
-          if (decls.size() != 1) {
-            // ForInStatement requests VaraibleDeclarationNoIn (not List),
-            // so check declarations' size is 1.
-            RAISE("invalid for-in left-hand-side");
+
+          Expression* enumerable = ParseExpression(true, res);
+          if (!*res) {
+            reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+            if (token_ != Token::TK_RPAREN) {
+              Skip skip(&lexer_, strict_);
+              token_ = skip.SkipUntilSemicolonOrLineTerminator();
+            }
+            *res = true;  // recovery
+            failed = true;
+            if (!enumerable) {
+              // expr is not valid, but, only parse Statement phase
+              // FIXME(Constellation)
+              // using true literal instead. but, we should use error expr
+              enumerable = factory_->NewTrueLiteral(0, 0);
+            }
           }
-          Expression* const enumerable = ParseExpression(true, CHECK);
-          EXPECT(Token::TK_RPAREN);
+
+          if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+            reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+            Statement* stmt = factory_->NewEmptyStatement(for_stmt_begin, lexer_.previous_end_position());
+            stmt->set_is_failed_node(true);
+            return stmt;
+          }
+
           Target target(this, Target::kIterationStatement);
           // ParseStatement never fail
           Statement* const body = ParseStatement(res);
@@ -916,6 +942,7 @@ class Parser : private iv::core::Noncopyable<> {
           ForInStatement* const forstmt =
               factory_->NewForInStatement(body, init, enumerable,
                                           for_stmt_begin);
+          forstmt->set_is_failed_node(failed);
           target.set_node(forstmt);
           return forstmt;
         } else {
@@ -925,7 +952,20 @@ class Parser : private iv::core::Noncopyable<> {
                                                 lexer_.end_position());
         }
       } else {
-        Expression* const init_expr = ParseExpression(false, CHECK);
+        Expression* init_expr = ParseExpression(false, res);
+        if (!*res) {
+          reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+          // TODO(Constellation) insert effective skip to this line
+          *res = true;  // recovery
+          failed = true;
+          if (!init_expr) {
+            // expr is not valid, but, only parse Statement phase
+            // FIXME(Constellation)
+            // using true literal instead. but, we should use error expr
+            init_expr = factory_->NewTrueLiteral(0, 0);
+          }
+        }
+
         if (token_ == Token::TK_IN) {
           // for in loop
           assert(init_expr);
@@ -1348,6 +1388,9 @@ class Parser : private iv::core::Noncopyable<> {
           reporter_->ReportSyntaxError(errors_.back(), begin);
           Skip skip(&lexer_, strict_);
           token_ = skip.SkipUntil(Token::TK_RBRACE);
+          if (token_ == Token::TK_RBRACE) {
+            Next();
+          }
           *res = true;  // recovery
           SwitchStatement* const stmt =
               factory_->NewSwitchStatement(expr, clauses,
@@ -1362,6 +1405,9 @@ class Parser : private iv::core::Noncopyable<> {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         Skip skip(&lexer_, strict_);
         token_ = skip.SkipUntil(Token::TK_RBRACE);
+        if (token_ == Token::TK_RBRACE) {
+          Next();
+        }
         *res = true;  // recovery
         SwitchStatement* const stmt =
             factory_->NewSwitchStatement(expr, clauses,

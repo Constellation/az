@@ -19,9 +19,11 @@ class BasicSkip {
     while (true) {
       const Token::Type token = lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
       if (token == Token::TK_EOS ||
-          token == Token::TK_SEMICOLON ||
-          token == last) {
+          token == Token::TK_SEMICOLON) {
         return lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
+      } else if (token == last) {
+        // not consume it
+        return token;
       } else {
         // see LineTerminator
         if (lexer_->has_line_terminator_before_next()) {
