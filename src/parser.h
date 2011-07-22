@@ -745,8 +745,6 @@ class Parser : private iv::core::Noncopyable<> {
       if (body->IsFailed()) {
         Skip skip(&lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
-      } else {
-        Next();
       }
       Statement* const stmt = factory_->NewEmptyStatement(begin, body->end_position());
       stmt->set_is_failed_node(true);
@@ -776,6 +774,12 @@ class Parser : private iv::core::Noncopyable<> {
       }
       *res = true;  // recovery
       failed = true;
+      if (!expr) {
+        // expr is not valid, but, only parse Statement phase
+        // FIXME(Constellation)
+        // using true literal instead. but, we should use error expr
+        expr = factory_->NewTrueLiteral(0, 0);
+      }
     }
 
     if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
@@ -792,13 +796,6 @@ class Parser : private iv::core::Noncopyable<> {
     // is syntax valid
     if (token_ == Token::TK_SEMICOLON) {
       Next();
-    }
-
-    if (!expr) {
-      // expr is not valid, but, only parse Statement phase
-      // FIXME(Constellation)
-      // using true literal instead. but, we should use error expr
-      expr = factory_->NewTrueLiteral(0, 0);
     }
 
     assert(body && expr);
@@ -1639,13 +1636,10 @@ class Parser : private iv::core::Noncopyable<> {
         // with () {  <= error occurred, but token RPAREN is found.
         // }
         // through this error and parse WithStatement body
-        reporter_->ReportSyntaxError(errors_.back(), begin);
-        if (token_ != Token::TK_RPAREN) {
-          Skip skip(&lexer_, strict_);
-          token_ = skip.SkipUntilSemicolonOrLineTerminator();
+        if (!CheckOrRecovery<Token::TK_RPAREN>(res)) {
+          *res = true;  // recovery
+          failed = true;
         }
-        *res = true;  // recovery
-        failed = true;
       } else {
         name = ParseIdentifier(lexer_.Buffer());
         // section 12.14.1
