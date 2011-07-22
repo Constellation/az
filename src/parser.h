@@ -1113,11 +1113,8 @@ class Parser : private iv::core::Noncopyable<> {
         token_ != Token::TK_SEMICOLON &&
         token_ != Token::TK_RBRACE &&
         token_ != Token::TK_EOS) {
-      IS_STATEMENT(Token::TK_IDENTIFIER) {
+      if (!CheckOrRecovery<Token::TK_IDENTIFIER>(res)) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(&lexer_, strict_);
-        token_ = skip.SkipUntilSemicolonOrLineTerminator();
-        *res = true;  // recovery
         Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
         stmt->set_is_failed_node(true);
         return stmt;
@@ -1197,11 +1194,8 @@ class Parser : private iv::core::Noncopyable<> {
         token_ != Token::TK_RBRACE &&
         token_ != Token::TK_EOS) {
       // label
-      IS_STATEMENT(Token::TK_IDENTIFIER) {
+      if (!CheckOrRecovery<Token::TK_IDENTIFIER>(res)) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(&lexer_, strict_);
-        token_ = skip.SkipUntilSemicolonOrLineTerminator();
-        *res = true;  // recovery
         Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
         stmt->set_is_failed_node(true);
         return stmt;
