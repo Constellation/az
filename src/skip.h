@@ -34,7 +34,7 @@ class BasicSkip {
 
   iv::core::Token::Type SkipUntilSemicolonOrLineTerminator() {
     using iv::core::Token;
-    return SkipUntil(Token::TK_NUM_TOKENS);  // TK_NUM_TOKENS is not match
+    return SkipUntil(Token::TK_NUM_TOKENS);  // TK_NUM_TOKENS is never match
   }
 
  private:

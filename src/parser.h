@@ -293,7 +293,7 @@ class Parser : private iv::core::Noncopyable<> {
             octal_escaped_directive_found = true;
             line = lexer_.line_number();
         }
-        stmt = ParseStatement(CHECK);
+        stmt = ParseStatement(res);
         body->push_back(stmt);
         if (stmt->AsExpressionStatement() &&
             stmt->AsExpressionStatement()->expr()->AsStringLiteral()) {
@@ -330,11 +330,11 @@ class Parser : private iv::core::Noncopyable<> {
     while (token_ != end && token_ != Token::TK_EOS) {
       if (token_ == Token::TK_FUNCTION) {
         // FunctionDeclaration
-        stmt = ParseFunctionDeclaration(CHECK);
+        stmt = ParseFunctionDeclaration(res);
         body->push_back(stmt);
       } else {
         // heuristic end of Statement
-        stmt = ParseStatement(CHECK);
+        stmt = ParseStatement(res);
         body->push_back(stmt);
       }
     }
@@ -363,7 +363,7 @@ class Parser : private iv::core::Noncopyable<> {
     switch (token_) {
       case Token::TK_LBRACE:
         // Block
-        result = ParseBlock(CHECK);
+        result = ParseBlock(res);
         break;
 
       case Token::TK_CONST:
@@ -374,7 +374,7 @@ class Parser : private iv::core::Noncopyable<> {
         }
       case Token::TK_VAR:
         // VariableStatement
-        result = ParseVariableStatement(CHECK);
+        result = ParseVariableStatement(res);
         break;
 
       case Token::TK_SEMICOLON:
@@ -384,82 +384,82 @@ class Parser : private iv::core::Noncopyable<> {
 
       case Token::TK_IF:
         // IfStatement
-        result = ParseIfStatement(CHECK);
+        result = ParseIfStatement(res);
         break;
 
       case Token::TK_DO:
         // IterationStatement
         // do while
-        result = ParseDoWhileStatement(CHECK);
+        result = ParseDoWhileStatement(res);
         break;
 
       case Token::TK_WHILE:
         // IterationStatement
         // while
-        result = ParseWhileStatement(CHECK);
+        result = ParseWhileStatement(res);
         break;
 
       case Token::TK_FOR:
         // IterationStatement
         // for
-        result = ParseForStatement(CHECK);
+        result = ParseForStatement(res);
         break;
 
       case Token::TK_CONTINUE:
         // ContinueStatement
-        result = ParseContinueStatement(CHECK);
+        result = ParseContinueStatement(res);
         break;
 
       case Token::TK_BREAK:
         // BreakStatement
-        result = ParseBreakStatement(CHECK);
+        result = ParseBreakStatement(res);
         break;
 
       case Token::TK_RETURN:
         // ReturnStatement
-        result = ParseReturnStatement(CHECK);
+        result = ParseReturnStatement(res);
         break;
 
       case Token::TK_WITH:
         // WithStatement
-        result = ParseWithStatement(CHECK);
+        result = ParseWithStatement(res);
         break;
 
       case Token::TK_SWITCH:
         // SwitchStatement
-        result = ParseSwitchStatement(CHECK);
+        result = ParseSwitchStatement(res);
         break;
 
       case Token::TK_THROW:
         // ThrowStatement
-        result = ParseThrowStatement(CHECK);
+        result = ParseThrowStatement(res);
         break;
 
       case Token::TK_TRY:
         // TryStatement
-        result = ParseTryStatement(CHECK);
+        result = ParseTryStatement(res);
         break;
 
       case Token::TK_DEBUGGER:
         // DebuggerStatement
-        result = ParseDebuggerStatement(CHECK);
+        result = ParseDebuggerStatement(res);
         break;
 
       case Token::TK_FUNCTION:
         // FunctionStatement (not in ECMA-262 5th)
         // FunctionExpression
-        result = ParseFunctionStatement(CHECK);
+        result = ParseFunctionStatement(res);
         break;
 
       case Token::TK_IDENTIFIER:
         // LabelledStatement or ExpressionStatement
-        result = ParseExpressionOrLabelledStatement(CHECK);
+        result = ParseExpressionOrLabelledStatement(res);
         break;
 
       default:
         // ExpressionStatement or ILLEGAL
         if (IsStatementStartToken(token_)) {
-          result = ParseExpressionStatement(CHECK);
+          result = ParseExpressionStatement(res);
         } else if (token_ == Token::TK_ILLEGAL) {
           // invalid token...
           UNEXPECT_STATEMENT(token_);
@@ -535,7 +535,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     Next();
     while (token_ != Token::TK_RBRACE && token_ != Token::TK_EOS) {
-      Statement* const stmt = ParseStatement(CHECK);
+      Statement* const stmt = ParseStatement(res);
       body->push_back(stmt);
     }
     const bool failed = (token_ == Token::TK_EOS);
@@ -697,10 +697,10 @@ class Parser : private iv::core::Noncopyable<> {
       return stmt;
     }
 
-    Statement* const then_statement = ParseStatement(CHECK);
+    Statement* const then_statement = ParseStatement(res);
     if (token_ == Token::TK_ELSE) {
       Next();
-      else_statement = ParseStatement(CHECK);
+      else_statement = ParseStatement(res);
     }
     if (!expr) {
       // expr is not valid, but, only parse Statement phase
@@ -735,7 +735,7 @@ class Parser : private iv::core::Noncopyable<> {
     Target target(this, Target::kIterationStatement);
     Next();
 
-    Statement* const body = ParseStatement(CHECK);
+    Statement* const body = ParseStatement(res);
 
     IS_STATEMENT(Token::TK_WHILE) {
       // while is not found
@@ -846,7 +846,7 @@ class Parser : private iv::core::Noncopyable<> {
       return stmt;
     }
 
-    Statement* const body = ParseStatement(CHECK);
+    Statement* const body = ParseStatement(res);
     if (!expr) {
       // expr is not valid, but, only parse Statement phase
       // FIXME(Constellation)
@@ -872,6 +872,7 @@ class Parser : private iv::core::Noncopyable<> {
   Statement* ParseForStatement(bool *res) {
     assert(token_ == Token::TK_FOR);
     const std::size_t for_stmt_begin = lexer_.begin_position();
+    bool failed = false;
     Next();
 
     if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
@@ -909,7 +910,8 @@ class Parser : private iv::core::Noncopyable<> {
           Expression* const enumerable = ParseExpression(true, CHECK);
           EXPECT(Token::TK_RPAREN);
           Target target(this, Target::kIterationStatement);
-          Statement* const body = ParseStatement(CHECK);
+          // ParseStatement never fail
+          Statement* const body = ParseStatement(res);
           assert(body && init && enumerable);
           ForInStatement* const forstmt =
               factory_->NewForInStatement(body, init, enumerable,
@@ -936,7 +938,8 @@ class Parser : private iv::core::Noncopyable<> {
           Expression* const enumerable = ParseExpression(true, CHECK);
           EXPECT(Token::TK_RPAREN);
           Target target(this, Target::kIterationStatement);
-          Statement* const body = ParseStatement(CHECK);
+          // ParseStatement never fail
+          Statement* const body = ParseStatement(res);
           assert(body && init && enumerable);
           ForInStatement* const forstmt =
               factory_->NewForInStatement(body, init, enumerable,
@@ -951,16 +954,23 @@ class Parser : private iv::core::Noncopyable<> {
       }
     }
 
+    // not for-in statement
     // ordinary for loop
     EXPECT(Token::TK_SEMICOLON);
 
     Expression* cond = NULL;
     if (token_ == Token::TK_SEMICOLON) {
-      // no cond expr
+      // no cond expr => for (...;;
       Next();
     } else {
       cond = ParseExpression(true, CHECK);
-      EXPECT(Token::TK_SEMICOLON);
+      if (token_ == Token::TK_SEMICOLON) {
+        Next();
+      } else {
+        // not semicolon, so skip to TK_RPAREN
+        Skip skip(&lexer_, strict_);
+        token_ = skip.SkipUntil(Token::TK_RPAREN);
+      }
     }
 
     Expression* next = NULL;
@@ -973,11 +983,12 @@ class Parser : private iv::core::Noncopyable<> {
     }
 
     Target target(this, Target::kIterationStatement);
-    Statement* const body = ParseStatement(CHECK);
+    Statement* const body = ParseStatement(res);
     assert(body);
     ForStatement* const forstmt =
         factory_->NewForStatement(body, init, cond, next, for_stmt_begin);
     target.set_node(forstmt);
+    forstmt->set_is_failed_node(failed);
     return forstmt;
   }
 
@@ -1262,7 +1273,7 @@ class Parser : private iv::core::Noncopyable<> {
       return stmt;
     }
 
-    Statement* const body = ParseStatement(CHECK);
+    Statement* const body = ParseStatement(res);
     if (!expr) {
       // expr is not valid, but, only parse Statement phase
       // FIXME(Constellation)
@@ -1413,7 +1424,7 @@ class Parser : private iv::core::Noncopyable<> {
     while (token_ != Token::TK_RBRACE &&
            token_ != Token::TK_CASE   &&
            token_ != Token::TK_DEFAULT) {
-      Statement* const stmt = ParseStatement(CHECK);
+      Statement* const stmt = ParseStatement(res);
       body->push_back(stmt);
     }
 
@@ -1555,7 +1566,7 @@ class Parser : private iv::core::Noncopyable<> {
         stmt->set_is_failed_node(true);
         return stmt;
       }
-      catch_block = ParseBlock(CHECK);
+      catch_block = ParseBlock(res);
     }
 
     if (token_ == Token::TK_FINALLY) {
@@ -1571,7 +1582,7 @@ class Parser : private iv::core::Noncopyable<> {
         stmt->set_is_failed_node(true);
         return stmt;
       }
-      finally_block = ParseBlock(CHECK);
+      finally_block = ParseBlock(res);
     }
 
     if (!has_catch_or_finally) {
@@ -1685,7 +1696,7 @@ class Parser : private iv::core::Noncopyable<> {
       }
       const LabelSwitcher label_switcher(this, labels, exist_labels);
 
-      Statement* const stmt = ParseStatement(CHECK);
+      Statement* const stmt = ParseStatement(res);
       assert(expr && stmt);
       Statement* const l = factory_->NewLabelledStatement(expr, stmt);
       l->set_is_failed_node(failed);
