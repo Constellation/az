@@ -72,7 +72,6 @@ using iv::core::Token;
     return NULL;\
   } while (0)
 
-
 #define UNEXPECT_STATEMENT(token)\
   do {\
     *res = false;\
@@ -668,7 +667,7 @@ class Parser : private iv::core::Noncopyable<> {
     Statement* else_statement = NULL;
     Next();
 
-    if (!ConsumeLParenOrRecovery(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
@@ -690,14 +689,13 @@ class Parser : private iv::core::Noncopyable<> {
       *res = true;  // recovery
       failed = true;
     }
-    IS_STATEMENT(Token::TK_RPAREN) {
+
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     Statement* const then_statement = ParseStatement(CHECK);
     if (token_ == Token::TK_ELSE) {
@@ -757,7 +755,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     Next();
 
-    if (!ConsumeLParenOrRecovery(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
@@ -779,14 +777,13 @@ class Parser : private iv::core::Noncopyable<> {
       *res = true;  // recovery
       failed = true;
     }
-    IS_STATEMENT(Token::TK_RPAREN) {
+
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     // ex:
     //   do {
@@ -819,7 +816,7 @@ class Parser : private iv::core::Noncopyable<> {
     bool failed = false;
     Next();
 
-    if (!ConsumeLParenOrRecovery(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
@@ -842,14 +839,12 @@ class Parser : private iv::core::Noncopyable<> {
     }
     Target target(this, Target::kIterationStatement);
 
-    IS_STATEMENT(Token::TK_RPAREN) {
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     Statement* const body = ParseStatement(CHECK);
     if (!expr) {
@@ -879,7 +874,7 @@ class Parser : private iv::core::Noncopyable<> {
     const std::size_t for_stmt_begin = lexer_.begin_position();
     Next();
 
-    if (!ConsumeLParenOrRecovery(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
       Statement* stmt = factory_->NewEmptyStatement(for_stmt_begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
@@ -1238,7 +1233,7 @@ class Parser : private iv::core::Noncopyable<> {
       failed = true;
     }
 
-    if (!ConsumeLParenOrRecovery(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
@@ -1259,14 +1254,13 @@ class Parser : private iv::core::Noncopyable<> {
       *res = true;  // recovery
       failed = true;
     }
-    IS_STATEMENT(Token::TK_RPAREN) {
+
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     Statement* const body = ParseStatement(CHECK);
     if (!expr) {
@@ -1293,32 +1287,93 @@ class Parser : private iv::core::Noncopyable<> {
     CaseClause* case_clause;
     Next();
 
-    EXPECT(Token::TK_LPAREN);
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      return stmt;
+    }
 
-    Expression* expr = ParseExpression(true, CHECK);
+    bool failed = false;
+    Expression* expr = ParseExpression(true, res);
+    if (!*res) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      if (token_ != Token::TK_RPAREN) {
+        Skip skip(&lexer_, strict_);
+        token_ = skip.SkipUntilSemicolonOrLineTerminator();
+      }
+      *res = true;  // recovery
+      failed = true;
+      // expr is not valid, but, only parse Statement phase
+      // FIXME(Constellation)
+      // using true literal instead. but, we should use error expr
+      expr = factory_->NewTrueLiteral(0, 0);
+    }
+
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      return stmt;
+    }
+
     CaseClauses* clauses = factory_->template NewVector<CaseClause*>();
     Target target(this, Target::kSwitchStatement);
 
-    EXPECT(Token::TK_RPAREN);
-
-    EXPECT(Token::TK_LBRACE);
+    if (!ConsumeOrRecovery<Token::TK_LBRACE>(res)) {
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      return stmt;
+    }
 
     bool default_found = false;
     while (token_ != Token::TK_RBRACE) {
       if (token_ == Token::TK_CASE ||
           token_ == Token::TK_DEFAULT) {
-        case_clause = ParseCaseClause(CHECK);
+        case_clause = ParseCaseClause(res);
+        if (!*res) {
+          // case clause recovery
+          reporter_->ReportSyntaxError(errors_.back(), begin);
+          Skip skip(&lexer_, strict_);
+          token_ = skip.SkipUntil(Token::TK_RBRACE);
+          *res = true;  // recovery
+          SwitchStatement* const stmt =
+              factory_->NewSwitchStatement(expr, clauses,
+                                           begin,
+                                           lexer_.previous_end_position());
+          stmt->set_is_failed_node(true);
+          return stmt;
+        }
       } else {
-        UNEXPECT(token_);
+        // skip until }
+        UNEXPECT_STATEMENT(token_);
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        Skip skip(&lexer_, strict_);
+        token_ = skip.SkipUntil(Token::TK_RBRACE);
+        *res = true;  // recovery
+        SwitchStatement* const stmt =
+            factory_->NewSwitchStatement(expr, clauses,
+                                         begin,
+                                         lexer_.previous_end_position());
+        stmt->set_is_failed_node(true);
+        return stmt;
       }
+      bool invalid_case_clause = false;
       if (case_clause->IsDefault()) {
         if (default_found) {
-          RAISE("duplicate default clause in switch");
+          RAISE_STATEMENT("duplicate default clause in switch");
+          reporter_->ReportSyntaxError(errors_.back(), begin);
+          *res = true;  // recovery
+          failed = true;
+          invalid_case_clause = true;
         } else {
           default_found = true;
         }
       }
-      clauses->push_back(case_clause);
+      if (!invalid_case_clause) {
+        clauses->push_back(case_clause);
+      }
     }
     Next();
     assert(expr && clauses);
@@ -1326,6 +1381,7 @@ class Parser : private iv::core::Noncopyable<> {
         factory_->NewSwitchStatement(expr, clauses,
                                      begin,
                                      lexer_.previous_end_position());
+    switch_stmt->set_is_failed_node(failed);
     target.set_node(switch_stmt);
     return switch_stmt;
   }
@@ -1428,23 +1484,21 @@ class Parser : private iv::core::Noncopyable<> {
 
     Next();
 
-    IS_STATEMENT(Token::TK_LBRACE) {
+    if (!CheckOrRecovery<Token::TK_LBRACE>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_, strict_);
-      token_ = skip.SkipUntilSemicolonOrLineTerminator();
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Block* const try_block = ParseBlock(CHECK);
+    // not consume TK_LBRACE
+    Block* const try_block = ParseBlock(res);
 
     if (token_ == Token::TK_CATCH) {
       // Catch
       has_catch_or_finally = true;
       Next();
 
-      if (!ConsumeLParenOrRecovery(res)) {
+      if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
         stmt->set_is_failed_node(true);
@@ -2910,14 +2964,23 @@ class Parser : private iv::core::Noncopyable<> {
     }
   }
 
-  bool ConsumeLParenOrRecovery(bool* res) {
-    IS_STATEMENT(iv::core::Token::TK_LPAREN) {
+  template<iv::core::Token::Type token>
+  bool ConsumeOrRecovery(bool* res) {
+    if (CheckOrRecovery<token>(res)) {
+      Next();
+      return true;
+    }
+    return false;
+  }
+
+  template<iv::core::Token::Type token>
+  bool CheckOrRecovery(bool* res) {
+    IS_STATEMENT(token) {
       Skip skip(&lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return false;
     }
-    Next();
     return true;
   }
 
