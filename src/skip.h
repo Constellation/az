@@ -17,13 +17,14 @@ class BasicSkip {
     using iv::core::Token;
     // skip until this token or semicolon or LineTerminator
     while (true) {
-      const Token::Type token = lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
-      if (token == Token::TK_EOS ||
-          token == Token::TK_SEMICOLON) {
-        return lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
-      } else if (token == last) {
+      const Token::Type token =
+          lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
+      if (token == last) {
         // not consume it
         return token;
+      } else if (token == Token::TK_EOS ||
+                 token == Token::TK_SEMICOLON) {
+        return lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
       } else {
         // see LineTerminator
         if (lexer_->has_line_terminator_before_next()) {

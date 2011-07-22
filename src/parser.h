@@ -890,7 +890,12 @@ class Parser : private iv::core::Noncopyable<> {
         const Token::Type op = token_;
         Declarations* const decls =
             factory_->template NewVector<Declaration*>();
-        ParseVariableDeclarations(decls, token_ == Token::TK_CONST, false, CHECK);
+        ParseVariableDeclarations(decls, token_ == Token::TK_CONST, false, res);
+        if (!*res) {
+          reporter_->ReportSyntaxError(errors_.back(), begin);
+          *res = true;  // recovery
+          failed = true;
+        }
         if (token_ == Token::TK_IN) {
           assert(decls);
           if (decls->size() != 1) {
@@ -1023,20 +1028,39 @@ class Parser : private iv::core::Noncopyable<> {
 
     // not for-in statement
     // ordinary for loop
-    EXPECT(Token::TK_SEMICOLON);
+    if (!ConsumeOrRecovery<Token::TK_SEMICOLON>(res)) {
+      reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+      if (token_ != Token::TK_RPAREN) {
+        Skip skip(&lexer_, strict_);
+        token_ = skip.SkipUntilSemicolonOrLineTerminator();
+      }
+      *res = true;  // recovery
+      failed = true;
+    }
 
     Expression* cond = NULL;
     if (token_ == Token::TK_SEMICOLON) {
       // no cond expr => for (...;;
       Next();
     } else {
-      cond = ParseExpression(true, CHECK);
+      cond = ParseExpression(true, res);
+      if (!*res) {
+        reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+        if (token_ != Token::TK_RPAREN) {
+          Skip skip(&lexer_, strict_);
+          token_ = skip.SkipUntil(Token::TK_RPAREN);
+        }
+        *res = true;  // recovery
+        failed = true;
+        if (!cond) {
+          // expr is not valid, but, only parse Statement phase
+          // FIXME(Constellation)
+          // using true literal instead. but, we should use error expr
+          cond = factory_->NewTrueLiteral(0, 0);
+        }
+      }
       if (token_ == Token::TK_SEMICOLON) {
         Next();
-      } else {
-        // not semicolon, so skip to TK_RPAREN
-        Skip skip(&lexer_, strict_);
-        token_ = skip.SkipUntil(Token::TK_RPAREN);
       }
     }
 
@@ -1044,9 +1068,29 @@ class Parser : private iv::core::Noncopyable<> {
     if (token_ == Token::TK_RPAREN) {
       Next();
     } else {
-      next = ParseExpression(true, CHECK);
+      next = ParseExpression(true, res);
+      if (!*res) {
+        reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+        if (token_ != Token::TK_RPAREN) {
+          Skip skip(&lexer_, strict_);
+          token_ = skip.SkipUntil(Token::TK_RPAREN);
+        }
+        *res = true;  // recovery
+        failed = true;
+        if (!next) {
+          // expr is not valid, but, only parse Statement phase
+          // FIXME(Constellation)
+          // using true literal instead. but, we should use error expr
+          next = factory_->NewTrueLiteral(0, 0);
+        }
+      }
       assert(next);
-      EXPECT(Token::TK_RPAREN);
+      if (ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+        reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+        Statement* stmt = factory_->NewEmptyStatement(for_stmt_begin, lexer_.previous_end_position());
+        stmt->set_is_failed_node(true);
+        return stmt;
+      }
     }
 
     Target target(this, Target::kIterationStatement);
