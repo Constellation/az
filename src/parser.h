@@ -971,12 +971,38 @@ class Parser : private iv::core::Noncopyable<> {
           assert(init_expr);
           init = factory_->NewExpressionStatement(init_expr,
                                                   lexer_.previous_end_position());
-          if (!init_expr->IsValidLeftHandSide()) {
-            RAISE("invalid for-in left-hand-side");
+          if (!init_expr->IsValidLeftHandSide() && !failed) {
+            RAISE_STATEMENT("invalid for-in left-hand-side");
+            reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+            *res = true;  // recovery
+            failed = true;
           }
           Next();
-          Expression* const enumerable = ParseExpression(true, CHECK);
-          EXPECT(Token::TK_RPAREN);
+
+          Expression* enumerable = ParseExpression(true, res);
+          if (!*res) {
+            reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+            if (token_ != Token::TK_RPAREN) {
+              Skip skip(&lexer_, strict_);
+              token_ = skip.SkipUntilSemicolonOrLineTerminator();
+            }
+            *res = true;  // recovery
+            failed = true;
+            if (!enumerable) {
+              // expr is not valid, but, only parse Statement phase
+              // FIXME(Constellation)
+              // using true literal instead. but, we should use error expr
+              enumerable = factory_->NewTrueLiteral(0, 0);
+            }
+          }
+
+          if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+            reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
+            Statement* stmt = factory_->NewEmptyStatement(for_stmt_begin, lexer_.previous_end_position());
+            stmt->set_is_failed_node(true);
+            return stmt;
+          }
+
           Target target(this, Target::kIterationStatement);
           // ParseStatement never fail
           Statement* const body = ParseStatement(res);
@@ -984,6 +1010,7 @@ class Parser : private iv::core::Noncopyable<> {
           ForInStatement* const forstmt =
               factory_->NewForInStatement(body, init, enumerable,
                                           for_stmt_begin);
+          forstmt->set_is_failed_node(failed);
           target.set_node(forstmt);
           return forstmt;
         } else {
