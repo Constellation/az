@@ -85,7 +85,6 @@ using iv::core::Token;
   do {\
     *res = false;\
     error_state_ |= kNotRecoverable;\
-    SetErrorHeader(lexer_.line_number());\
     error_.append(str);\
     errors_.push_back(error_);\
     error_.clear();\
@@ -98,7 +97,6 @@ using iv::core::Token;
   do {\
     *res = false;\
     error_state_ |= kNotRecoverable;\
-    SetErrorHeader(lexer_.line_number());\
     error_.append(str);\
     errors_.push_back(error_);\
     error_.clear();\
@@ -107,7 +105,6 @@ using iv::core::Token;
 #define RAISE_RECOVERVABLE(str)\
   do {\
     *res = false;\
-    SetErrorHeader(lexer_.line_number());\
     error_.append(str);\
     errors_.push_back(error_);\
     error_.clear();\
@@ -118,7 +115,6 @@ using iv::core::Token;
   do {\
     *res = false;\
     error_state_ |= kNotRecoverable;\
-    SetErrorHeader(line);\
     error_.append(str);\
     errors_.push_back(error_);\
     error_.clear();\
@@ -672,16 +668,12 @@ class Parser : private iv::core::Noncopyable<> {
     Statement* else_statement = NULL;
     Next();
 
-    IS_STATEMENT(Token::TK_LPAREN) {
+    if (!ConsumeLParenOrRecovery(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_, strict_);
-      token_ = skip.SkipUntilSemicolonOrLineTerminator();
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     bool failed = false;
     Expression* expr = ParseExpression(true, res);
@@ -765,16 +757,12 @@ class Parser : private iv::core::Noncopyable<> {
 
     Next();
 
-    IS_STATEMENT(Token::TK_LPAREN) {
+    if (!ConsumeLParenOrRecovery(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_, strict_);
-      token_ = skip.SkipUntilSemicolonOrLineTerminator();
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     bool failed = false;
     Expression* expr = ParseExpression(true, res);
@@ -831,16 +819,12 @@ class Parser : private iv::core::Noncopyable<> {
     bool failed = false;
     Next();
 
-    IS_STATEMENT(Token::TK_LPAREN) {
+    if (!ConsumeLParenOrRecovery(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_, strict_);
-      token_ = skip.SkipUntilSemicolonOrLineTerminator();
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     Expression* expr = ParseExpression(true, res);
     if (!*res) {
@@ -895,16 +879,12 @@ class Parser : private iv::core::Noncopyable<> {
     const std::size_t for_stmt_begin = lexer_.begin_position();
     Next();
 
-    IS_STATEMENT(Token::TK_LPAREN) {
+    if (!ConsumeLParenOrRecovery(res)) {
       reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
-      Skip skip(&lexer_, strict_);
-      token_ = skip.SkipUntil(Token::TK_RPAREN);
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(for_stmt_begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     Statement *init = NULL;
 
@@ -1258,16 +1238,12 @@ class Parser : private iv::core::Noncopyable<> {
       failed = true;
     }
 
-    IS_STATEMENT(Token::TK_LPAREN) {
+    if (!ConsumeLParenOrRecovery(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(&lexer_, strict_);
-      token_ = skip.SkipUntilSemicolonOrLineTerminator();
-      *res = true;  // recovery
       Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
       stmt->set_is_failed_node(true);
       return stmt;
     }
-    Next();
 
     Expression* expr = ParseExpression(true, res);
     if (!*res) {
@@ -1467,16 +1443,13 @@ class Parser : private iv::core::Noncopyable<> {
       // Catch
       has_catch_or_finally = true;
       Next();
-      IS_STATEMENT(Token::TK_LPAREN) {
+
+      if (!ConsumeLParenOrRecovery(res)) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(&lexer_, strict_);
-        token_ = skip.SkipUntilSemicolonOrLineTerminator();
-        *res = true;  // recovery
         Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
         stmt->set_is_failed_node(true);
         return stmt;
       }
-      Next();
 
       bool failed = false;
       if (token_ != Token::TK_IDENTIFIER) {
@@ -2771,21 +2744,7 @@ class Parser : private iv::core::Noncopyable<> {
     return NULL;
   }
 
-  inline void SetErrorHeader() {
-    SetErrorHeader(lexer_.line_number());
-  }
-
-  void SetErrorHeader(std::size_t line) {
-    std::array<char, 40> buf;
-    error_.append(lexer_.filename());
-    const int num = snprintf(buf.data(), buf.size(),
-                             ":%lu: SyntaxError: ",
-                             static_cast<unsigned long>(line));  // NOLINT
-    error_.append(buf.data(), num);
-  }
-
   void ReportUnexpectedToken(Token::Type expected_token) {
-    SetErrorHeader();
     switch (token_) {
       case Token::TK_STRING:
         error_.append("unexpected string");
@@ -2949,6 +2908,17 @@ class Parser : private iv::core::Noncopyable<> {
     } else {
       return kNone;
     }
+  }
+
+  bool ConsumeLParenOrRecovery(bool* res) {
+    IS_STATEMENT(iv::core::Token::TK_LPAREN) {
+      Skip skip(&lexer_, strict_);
+      token_ = skip.SkipUntilSemicolonOrLineTerminator();
+      *res = true;  // recovery
+      return false;
+    }
+    Next();
+    return true;
   }
 
   lexer_type lexer_;
