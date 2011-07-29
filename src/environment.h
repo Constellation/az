@@ -3,7 +3,8 @@
 #include <bitset>
 #include <iv/detail/memory.h>
 #include <iv/ustringpiece.h>
-#include "analyze_map.h"
+#include "ast_fwd.h"
+#include "variable_type.h"
 namespace az {
 
 class Environment : public std::enable_shared_from_this<Environment> {
