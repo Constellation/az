@@ -1034,7 +1034,7 @@ class Parser : private iv::core::Noncopyable<> {
         }
       }
       assert(next);
-      if (ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+      if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
         reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
         return ReturnFailedStatement(for_stmt_begin);
       }
