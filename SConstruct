@@ -58,7 +58,7 @@ def Build():
     env.Replace(CXX='clang++', CC='clang')
 
   if env['debug']:
-    env.Append(CCFLAGS=["-g"])
+    env.Append(CCFLAGS=["-g3"])
   else:
     env.Append(
         CCFLAGS=["-O3"],
