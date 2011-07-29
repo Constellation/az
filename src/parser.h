@@ -206,7 +206,7 @@ class Parser : private iv::core::Noncopyable<> {
     int type_;
   };
 
-  class TargetSwitcher : private Noncopyable<> {
+  class TargetSwitcher : private iv::core::Noncopyable<> {
    public:
     explicit TargetSwitcher(parser_type* parser)
       : parser_(parser),
@@ -2899,7 +2899,7 @@ class Parser : private iv::core::Noncopyable<> {
   }
 
  protected:
-  class ScopeSwitcher : private Noncopyable<> {
+  class ScopeSwitcher : private iv::core::Noncopyable<> {
    public:
     ScopeSwitcher(parser_type* parser, Scope* scope)
       : parser_(parser) {
@@ -2914,7 +2914,7 @@ class Parser : private iv::core::Noncopyable<> {
     parser_type* parser_;
   };
 
-  class LabelSwitcher : private Noncopyable<> {
+  class LabelSwitcher : private iv::core::Noncopyable<> {
    public:
     LabelSwitcher(parser_type* parser,
                   Identifiers* labels, bool exist_labels)
@@ -2932,7 +2932,7 @@ class Parser : private iv::core::Noncopyable<> {
     bool exist_labels_;
   };
 
-  class StrictSwitcher : private Noncopyable<> {
+  class StrictSwitcher : private iv::core::Noncopyable<> {
    public:
     explicit StrictSwitcher(parser_type* parser)
       : parser_(parser),
