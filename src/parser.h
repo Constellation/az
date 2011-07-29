@@ -683,10 +683,7 @@ class Parser : private iv::core::Noncopyable<> {
       *res = true;  // recovery
       failed = true;
       if (!expr) {
-        // expr is not valid, but, only parse Statement phase
-        // FIXME(Constellation)
-        // using true literal instead. but, we should use error expr
-        expr = factory_->NewTrueLiteral(0, 0);
+        expr = MakeFailedExpression();
       }
     }
 
@@ -763,10 +760,7 @@ class Parser : private iv::core::Noncopyable<> {
       *res = true;  // recovery
       failed = true;
       if (!expr) {
-        // expr is not valid, but, only parse Statement phase
-        // FIXME(Constellation)
-        // using true literal instead. but, we should use error expr
-        expr = factory_->NewTrueLiteral(0, 0);
+        expr = MakeFailedExpression();
       }
     }
 
@@ -827,10 +821,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     Statement* const body = ParseStatement(res);
     if (!expr) {
-      // expr is not valid, but, only parse Statement phase
-      // FIXME(Constellation)
-      // using true literal instead. but, we should use error expr
-      expr = factory_->NewTrueLiteral(0, 0);
+      expr = MakeFailedExpression();
     }
     assert(expr && body);
     WhileStatement* const stmt = factory_->NewWhileStatement(body,
@@ -903,10 +894,7 @@ class Parser : private iv::core::Noncopyable<> {
             *res = true;  // recovery
             failed = true;
             if (!enumerable) {
-              // expr is not valid, but, only parse Statement phase
-              // FIXME(Constellation)
-              // using true literal instead. but, we should use error expr
-              enumerable = factory_->NewTrueLiteral(0, 0);
+              enumerable = MakeFailedExpression();
             }
           }
 
@@ -939,10 +927,7 @@ class Parser : private iv::core::Noncopyable<> {
           *res = true;  // recovery
           failed = true;
           if (!init_expr) {
-            // expr is not valid, but, only parse Statement phase
-            // FIXME(Constellation)
-            // using true literal instead. but, we should use error expr
-            init_expr = factory_->NewTrueLiteral(0, 0);
+            init_expr = MakeFailedExpression();
           }
         }
 
@@ -969,10 +954,7 @@ class Parser : private iv::core::Noncopyable<> {
             *res = true;  // recovery
             failed = true;
             if (!enumerable) {
-              // expr is not valid, but, only parse Statement phase
-              // FIXME(Constellation)
-              // using true literal instead. but, we should use error expr
-              enumerable = factory_->NewTrueLiteral(0, 0);
+              enumerable = MakeFailedExpression();
             }
           }
 
@@ -1026,10 +1008,7 @@ class Parser : private iv::core::Noncopyable<> {
         *res = true;  // recovery
         failed = true;
         if (!cond) {
-          // expr is not valid, but, only parse Statement phase
-          // FIXME(Constellation)
-          // using true literal instead. but, we should use error expr
-          cond = factory_->NewTrueLiteral(0, 0);
+          cond = MakeFailedExpression();
         }
       }
       if (token_ == Token::TK_SEMICOLON) {
@@ -1051,10 +1030,7 @@ class Parser : private iv::core::Noncopyable<> {
         *res = true;  // recovery
         failed = true;
         if (!next) {
-          // expr is not valid, but, only parse Statement phase
-          // FIXME(Constellation)
-          // using true literal instead. but, we should use error expr
-          next = factory_->NewTrueLiteral(0, 0);
+          next = MakeFailedExpression();
         }
       }
       assert(next);
@@ -1323,10 +1299,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     Statement* const body = ParseStatement(res);
     if (!expr) {
-      // expr is not valid, but, only parse Statement phase
-      // FIXME(Constellation)
-      // using true literal instead. but, we should use error expr
-      expr = factory_->NewTrueLiteral(0, 0);
+      expr = MakeFailedExpression();
     }
     assert(expr && body);
     Statement* const stmt = factory_->NewWithStatement(expr, body, begin);
@@ -1361,10 +1334,7 @@ class Parser : private iv::core::Noncopyable<> {
       }
       *res = true;  // recovery
       failed = true;
-      // expr is not valid, but, only parse Statement phase
-      // FIXME(Constellation)
-      // using true literal instead. but, we should use error expr
-      expr = factory_->NewTrueLiteral(0, 0);
+      expr = MakeFailedExpression();
     }
 
     if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
@@ -3020,6 +2990,14 @@ class Parser : private iv::core::Noncopyable<> {
     Statement* stmt = factory_->NewEmptyStatement(begin, lexer_.previous_end_position());
     stmt->set_is_failed_node(true);
     return stmt;
+  }
+
+  Expression* MakeFailedExpression() {
+    // create dummy expr
+    // expr is not valid, but, only parse Statement phase
+    // FIXME(Constellation)
+    // using true literal instead. but, we should use error expr
+    return factory_->NewTrueLiteral(0, 0);
   }
 
   lexer_type lexer_;
