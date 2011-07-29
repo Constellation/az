@@ -150,7 +150,7 @@ class AType {
   }
 
   bool IsVacantType() const {
-    return set_.empty();
+    return set_.empty() || primary_.type() == TYPE_ANY;
   }
 
   const Type& primary() const {

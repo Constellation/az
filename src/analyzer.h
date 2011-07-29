@@ -1185,7 +1185,7 @@ class Analyzer
 
   void Visit(FunctionCall* call) {
     call->target()->Accept(this);
-    if (!type_.IsVacantType() && type_.IsPrimaryTyped(TYPE_FUNCTION)) {
+    if (!type_.IsVacantType() && !type_.IsPrimaryTyped(TYPE_FUNCTION)) {
       reporter_->ReportCallToNotFunction(*call, type_);
     }
     for (Expressions::const_iterator it = call->args().begin(),
@@ -1197,7 +1197,7 @@ class Analyzer
 
   void Visit(ConstructorCall* call) {
     call->target()->Accept(this);
-    if (!type_.IsVacantType() && type_.IsPrimaryTyped(TYPE_FUNCTION)) {
+    if (!type_.IsVacantType() && !type_.IsPrimaryTyped(TYPE_FUNCTION)) {
       reporter_->ReportConstructToNotFunction(*call, type_);
     }
     for (Expressions::const_iterator it = call->args().begin(),
