@@ -238,7 +238,6 @@ class Analyzer
 
   void Visit(VariableStatement* var) {
     CheckDeadStatement(var);
-    CheckAutomaticSemicolonInsertion(var);
     var->set_normal(normal_);
 
     const Declarations& decls = var->decls();
@@ -376,7 +375,6 @@ class Analyzer
 
   void Visit(ContinueStatement* stmt) {
     CheckDeadStatement(stmt);
-    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -388,7 +386,6 @@ class Analyzer
 
   void Visit(BreakStatement* stmt) {
     CheckDeadStatement(stmt);
-    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -400,7 +397,6 @@ class Analyzer
 
   void Visit(ReturnStatement* stmt) {
     CheckDeadStatement(stmt);
-    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -486,7 +482,6 @@ class Analyzer
 
   void Visit(ThrowStatement* stmt) {
     CheckDeadStatement(stmt);
-    CheckAutomaticSemicolonInsertion(stmt);
     const bool dead = IsDeadStatement();
 
     if (!dead) {
@@ -561,13 +556,11 @@ class Analyzer
 
   void Visit(DebuggerStatement* stmt) {
     CheckDeadStatement(stmt);
-    CheckAutomaticSemicolonInsertion(stmt);
     stmt->set_normal(normal_);
   }
 
   void Visit(ExpressionStatement* stmt) {
     CheckDeadStatement(stmt);
-    CheckAutomaticSemicolonInsertion(stmt);
     stmt->set_normal(normal_);
 
     stmt->expr()->Accept(this);
@@ -1264,22 +1257,6 @@ class Analyzer
     type_ = AType(TYPE_UNDEFINED);
     expr->Accept(this);
     return type_;
-  }
-
-  void CheckAutomaticSemicolonInsertion(Statement* stmt) {
-    //  VariableStatement
-    //  ContinueStatement
-    //  BreakStatement
-    //  ReturnStatement
-    //  ThrowStatement
-    //  DebuggerStatement
-    //  ExpressionStatement
-    if (!stmt->IsFailed()) {
-      if (src_[stmt->end_position() - 1] != ';') {
-        // not ends with semicolon
-        reporter_->ReportAutomaticSemicolonInsertion(*stmt);
-      }
-    }
   }
 
   const Source& src_;

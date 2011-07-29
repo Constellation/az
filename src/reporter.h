@@ -180,9 +180,9 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
-  void ReportAutomaticSemicolonInsertion(const Statement& stmt) {
+  void ReportAutomaticSemicolonInsertion(std::size_t point) {
     const std::pair<std::size_t, std::size_t> pair =
-        structured_.GetLineAndColumn(stmt.begin_position());
+        structured_.GetLineAndColumn(point);
     std::printf("%s %lu:%lu\n",
                 "AUTOMATIC SEMICOLON INSERTION",
                 static_cast<unsigned long>(pair.first),

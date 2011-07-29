@@ -2834,6 +2834,9 @@ class Parser : private iv::core::Noncopyable<> {
     if (lexer_.has_line_terminator_before_next() ||
         token_ == Token::TK_RBRACE ||
         token_ == Token::TK_EOS ) {
+      // automatic semicolon insertion : ASI
+      // report this
+      reporter_->ReportAutomaticSemicolonInsertion(lexer_.previous_end_position());
       return true;
     }
     UNEXPECT(token_);
