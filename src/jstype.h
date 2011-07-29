@@ -6,9 +6,6 @@
 namespace az {
 
 enum JSType {
-  // Any Type
-  TYPE_ANY,
-
   // Primitive JSTypes
   TYPE_STRING,
   TYPE_NUMBER,
@@ -20,9 +17,24 @@ enum JSType {
   TYPE_FUNCTION,
   TYPE_REGEXP,
   TYPE_ARRAY,
-  TYPE_OBJECT
+  TYPE_OBJECT,
   // TYPE_USER_OBJECT
+
+  TYPE_ANY
 };
+
+std::array<const char*, 11> kTypeName = { {
+  "String",
+  "Number",
+  "Boolean",
+  "Undefined",
+  "Null",
+  "Function",
+  "RegExp",
+  "Array",
+  "Object",
+  "Any",
+} };
 
 class JSObject;
 
@@ -69,19 +81,6 @@ class JSObject {
   std::unordered_map<iv::core::UString, JSType> properties_;
 };
 
-std::array<const char*, 11> kTypeName = { {
-  "Any",
-  "String",
-  "Number",
-  "Boolean",
-  "Undefined",
-  "Null",
-  "Function",
-  "RegExp",
-  "Array",
-  "Object"
-} };
-
 typedef std::unordered_set<Type> TypeSet;
 
 inline bool IsObjectType(JSType type) {
@@ -119,13 +118,17 @@ class AType {
   AType(Type type)
     : primary_(type),
       set_() {
-    set_.insert(primary_);
+    if (primary_.type() != TYPE_ANY) {
+      set_.insert(primary_);
+    }
   }
 
   AType(JSType type)
     : primary_(type),
       set_() {
-    set_.insert(primary_);
+    if (type != TYPE_ANY) {
+      set_.insert(primary_);
+    }
   }
 
   AType()
@@ -150,7 +153,7 @@ class AType {
   }
 
   bool IsVacantType() const {
-    return set_.empty() || primary_.type() == TYPE_ANY;
+    return set_.empty();
   }
 
   const Type& primary() const {
@@ -166,7 +169,7 @@ class AType {
   }
 
   static AType Merged(const AType& lhs, const AType& rhs) {
-    if (lhs.IsVacantType() && lhs.IsVacantType()) {
+    if (lhs.IsVacantType() && rhs.IsVacantType()) {
       return AType();
     }
     return AType(lhs, rhs);
@@ -176,18 +179,24 @@ class AType {
   AType(const AType& lhs, const AType& rhs)
     : primary_(),
       set_() {
-    if (!lhs.IsVacantType()) {
-      primary_ = lhs.primary();
-    } else {
-      assert(!rhs.IsVacantType());
+    if (!rhs.IsVacantType()) {
       primary_ = rhs.primary();
+    } else {
+      assert(!lhs.IsVacantType());
+      primary_ = lhs.primary();
     }
-    std::copy(lhs.set_.begin(),
-              lhs.set_.end(),
-              std::inserter(set_, set_.begin()));
-    std::copy(rhs.set_.begin(),
-              rhs.set_.end(),
-              std::inserter(set_, set_.begin()));
+    for (TypeSet::const_iterator it = lhs.set_.begin(),
+         last = lhs.set_.end(); it != last; ++it) {
+      if (it->type() != TYPE_ANY) {
+        set_.insert(*it);
+      }
+    }
+    for (TypeSet::const_iterator it = rhs.set_.begin(),
+         last = rhs.set_.end(); it != last; ++it) {
+      if (it->type() != TYPE_ANY) {
+        set_.insert(*it);
+      }
+    }
   }
   Type primary_;
   TypeSet set_;
