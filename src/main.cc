@@ -11,6 +11,7 @@
 #include "analyzer.h"
 #include "reporter.h"
 #include "parser.h"
+#include "symbol.h"
 namespace {
 
 bool ReadFile(const std::string& filename, std::vector<char>* out) {
