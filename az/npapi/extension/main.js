@@ -30,11 +30,13 @@ var onInput = _.debounce(function onInput() {
 function addLines(height, top) {
   var n = Math.ceil(height / 16);
   if (n > last) {
+    var df = doc.createDocumentFragment();
     for (var i = last; last < n; ++last) {
       var l = lineElements[last] = line.cloneNode(false);
-      l.innerHTML = last + 1;
-      lines.appendChild(l);
+      l.appendChild(doc.createTextNode(last + 1));
+      df.appendChild(l);
     }
+    lines.appendChild(df);
     last = n;
   }
   lines.scrollHeight = height;
@@ -42,7 +44,6 @@ function addLines(height, top) {
 }
 
 function onScroll(ev) {
-  console.log(ev);
   addLines(area.scrollHeight, area.scrollTop);
 }
 
