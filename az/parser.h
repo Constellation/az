@@ -567,9 +567,9 @@ class Parser : private iv::core::Noncopyable<> {
       Skip skip(&lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
-      if (decls->empty()) {
-        return ReturnFailedStatement(begin);
-      }
+    }
+    if (decls->empty()) {
+      return ReturnFailedStatement(begin);
     }
     ExpectSemicolon(res);
     if (!*res) {
@@ -863,6 +863,9 @@ class Parser : private iv::core::Noncopyable<> {
           reporter_->ReportSyntaxError(errors_.back(), begin);
           *res = true;  // recovery
           failed = true;
+        }
+        if (decls->empty()) {
+          return ReturnFailedStatement(begin);
         }
         if (token_ == Token::TK_IN) {
           assert(decls);
