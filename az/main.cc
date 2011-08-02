@@ -7,6 +7,8 @@
 #include <iv/detail/array.h>
 #include <iv/ustring.h>
 #include <iv/unicode.h>
+#include <iv/cmdline.h>
+#include <iv/debug.h>
 #include "factory.h"
 #include "analyzer.h"
 #include "reporter.h"
@@ -38,8 +40,34 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
 
 int main(int argc, char** argv) {
   typedef az::Parser<iv::core::UString, az::Reporter> Parser;
-  if (argc <= 1) {
-    std::fprintf(stderr, "%s\n", "filename requred");
+
+  iv::cmdline::Parser cmd("az");
+  cmd.Add("help",
+          "help",
+          'h', "print this message");
+  cmd.Add("version",
+          "version",
+          'v', "print the version");
+  cmd.Add("pulse",
+          "pulse",
+          0, "pulse option");
+  cmd.set_footer("[program_file] [arguments]");
+
+  const bool cmd_parse_success = cmd.Parse(argc, argv);
+  if (!cmd_parse_success) {
+    std::fprintf(stderr, "%s\n%s",
+                 cmd.error().c_str(), cmd.usage().c_str());
+    return EXIT_FAILURE;
+  }
+
+  if (cmd.Exist("help")) {
+    std::fputs(cmd.usage().c_str(), stdout);
+    return EXIT_SUCCESS;
+  }
+
+  const std::vector<std::string>& rest = cmd.rest();
+  if (rest.empty()) {
+    std::fputs(cmd.usage().c_str(), stdout);
     return EXIT_FAILURE;
   }
 
@@ -62,11 +90,7 @@ int main(int argc, char** argv) {
   az::AstFactory factory;
   Parser parser(&factory, src, &reporter, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
-  if (!global) {
-    // syntax error occurred
-    std::fprintf(stderr, "%s\n", parser.errors().back().c_str());
-  } else {
-    az::Analyze(global, src, &reporter);
-  }
+  assert(global);
+  az::Analyze(global, src, &reporter);
   return 0;
 }
