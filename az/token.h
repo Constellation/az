@@ -17,6 +17,8 @@ inline bool IsExpressionStartToken(iv::core::Token::Type token) {
       token == Token::TK_THIS ||
       token == Token::TK_FUNCTION ||
       token == Token::TK_IDENTIFIER ||
+      // new
+      token == Token::TK_NEW ||
       // unary operations
       token == Token::TK_DELETE ||
       token == Token::TK_VOID ||

@@ -461,7 +461,7 @@ class Parser : private iv::core::Noncopyable<> {
 
       default:
         // ExpressionStatement or ILLEGAL
-        if (IsStatementStartToken(token_)) {
+        if (IsExpressionStartToken(token_)) {
           result = ParseExpressionStatement(res);
         } else if (token_ == Token::TK_ILLEGAL) {
           // invalid token...
