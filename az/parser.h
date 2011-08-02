@@ -252,19 +252,19 @@ class Parser : private iv::core::Noncopyable<> {
     bool *res = &error_flag;
     const ScopeSwitcher scope_switcher(this, scope);
     Next();
-    const bool strict = ParseSourceElements(Token::TK_EOS, body, CHECK);
+    const bool strict = ParseSourceElements(Token::TK_EOS, body, res);
+    assert(error_flag);  // always true. because, end token is Token::TK_EOS
     const std::size_t end_position = lexer_.end_position();
-    return (error_flag) ?
-        factory_->NewFunctionLiteral(FunctionLiteral::GLOBAL,
-                                     NULL,
-                                     params,
-                                     body,
-                                     scope,
-                                     strict,
-                                     0,
-                                     end_position,
-                                     0,
-                                     end_position) : NULL;
+    return factory_->NewFunctionLiteral(FunctionLiteral::GLOBAL,
+                                        NULL,
+                                        params,
+                                        body,
+                                        scope,
+                                        strict,
+                                        0,
+                                        end_position,
+                                        0,
+                                        end_position);
   }
 
 // SourceElements
