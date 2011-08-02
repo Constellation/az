@@ -8,7 +8,38 @@
   background-color: transparent;
 }
 
+#text {
+ }
+
+#lines {
+  margin: 0px;
+  padding: 0px;
+  margin-right: 10px;
+  border: 1px solid black;
+  width: 50px;
+  height: 300px;
+  float: left;
+  overflow: hidden;
+}
+
+.line {
+  font-size: 10pt;
+  height: 16px;
+}
+
+.error {
+  color: white;
+  background-color: #fb707f;
+}
+
 #main {
+  margin: 0px;
+  padding: 0px;
   width: 400px;
   height: 300px;
+  background-color: transparent;
+  border: 1px solid black;
+  font-size: 10pt;
+  float: left;
+  resize: none;
 }
