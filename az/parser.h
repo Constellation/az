@@ -338,6 +338,9 @@ class Parser : private iv::core::Noncopyable<> {
         body->push_back(stmt);
       }
     }
+    if (token_ != end) {
+      UNEXPECT(token_);
+    }
     return strict_switcher.IsStrict();
   }
 
