@@ -1,0 +1,10 @@
+import sys
+import glob
+from os.path import join, dirname, abspath
+Import('context root_dir')
+
+env = context.Clone()
+env.Append(CPPPATH=join(root_dir, 'deps'))
+
+target = env.SharedLibrary('az', 'az.cc')
+Return("target")

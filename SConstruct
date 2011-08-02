@@ -11,11 +11,20 @@ def GetVariables():
 
 def Az(context):
   return context.SConscript(
-    'src/SConscript',
+    join(root_dir, 'src', 'SConscript'),
     variant_dir=join(root_dir, 'obj', 'az'),
     src=join(root_dir, 'src'),
     duplicate=False,
-    exports="context root_dir"
+    exports='context root_dir'
+  )
+
+def Plugin(context):
+  return context.SConscript(
+    join(root_dir, 'src', 'npapi', 'SConscript'),
+    variant_dir=join(root_dir, 'obj', 'npapi'),
+    src=join(root_dir, 'src', 'npapi'),
+    duplicate=False,
+    exports='context root_dir'
   )
 
 def Build():
@@ -82,6 +91,7 @@ def Build():
   Help(var.GenerateHelpText(env))
 
   env.Alias('az', Az(env))
+  env.Alias('plugin', Plugin(env))
   env.Default('az')
 
 Build()
