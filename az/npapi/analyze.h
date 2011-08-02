@@ -7,7 +7,8 @@
 #include <npapi/npfunctions.h>
 namespace az {
 
-void Analyze(const iv::core::StringPiece& piece, NPVariant* result);
+bool Analyze(NPNetscapeFuncs* np,
+             NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result);
 
 }  // namespace az
 #endif  // _AZ_NPAPI_ANALYZE_H_

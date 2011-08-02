@@ -9,16 +9,17 @@
 #include "debug.h"
 namespace az {
 
-void Analyze(const iv::core::StringPiece& piece, NPVariant* result) {
+bool Analyze(NPNetscapeFuncs* np,
+             NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result) {
   iv::core::UString src;
   src.reserve(piece.size());
   if (iv::core::unicode::UTF8ToUTF16(
           piece.begin(),
           piece.end(),
           std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
-    Log("invalid UTF-8 encoding text");
+    np->setexception(receiver, "invalid UTF-8 encoding text");
     BOOLEAN_TO_NPVARIANT(false, *result);
-    return;
+    return false;
   }
   StructuredSource structured(src);
   Reporter reporter(structured);
@@ -31,6 +32,8 @@ void Analyze(const iv::core::StringPiece& piece, NPVariant* result) {
   } else {
     az::Analyze(global, src, &reporter);
   }
+  BOOLEAN_TO_NPVARIANT(false, *result);
+  return true;
 }
 
 }  // namespace az

@@ -9,6 +9,7 @@
 #include <iv/platform.h>
 #include <iv/debug.h>
 #include "plugin.h"
+#include "analyze.h"
 #include "utils.h"
 #include "debug.h"
 namespace az {
@@ -40,12 +41,19 @@ bool NPAPI::Invoke(NPObject *obj, NPIdentifier methodName,
   NPUTF8* name = npnfuncs->utf8fromidentifier(methodName);
   const std::string target(name);
   npnfuncs->memfree(name);
-  if (target == "analyze" || target == "completion") {
+  if (target == "analyze") {
+    if (argCount == 1 && NPVARIANT_IS_STRING(*args)) {
+      const NPString str = NPVARIANT_TO_STRING(*args);
+      return Analyze(npnfuncs, obj, iv::core::StringPiece(str.UTF8Characters, str.UTF8Length), result);
+    }
+    npnfuncs->setexception(obj, "invaid analyze call");
+    return false;
+  } else if (target == "completion") {
     StringToNPVariant("TEST", result);
     // BOOLEAN_TO_NPVARIANT(false, *result);
     return true;
   } else {
-    npnfuncs->setexception(obj, "no such method.");
+    npnfuncs->setexception(obj, "no such method");
   }
   return false;
 }
