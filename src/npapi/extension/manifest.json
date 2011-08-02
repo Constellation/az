@@ -1,0 +1,9 @@
+{
+   "background_page": "background.html",
+   "description": "ECMA262 5th static analyzer demonstration",
+   "name": "Az Analyzer",
+   "plugins": [
+     {"path": "libaz.so", "public" : false}
+   ],
+   "version": "0.0.1"
+}

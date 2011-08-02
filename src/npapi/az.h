@@ -2,7 +2,14 @@
 #define _AZ_NPAPI_AZ_H_
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <iv/stringpiece.h>
 namespace az {
+
+class NPAPI;
+
+NPAPI* npapi = NULL;
+NPNetscapeFuncs* npnfuncs = NULL;
 
 class NPAPI {
  public:
@@ -32,9 +39,8 @@ class NPAPI {
   NPObject * npobject_;
 };
 
-const char * const NPAPI::kMethodPost = "post";
-const char * const NPAPI::kMethodCurrentTrack = "currentTrack";
 NPMIMEType NPAPI::kMIMETypeDescription = const_cast<NPMIMEType>("application/x-chrome-npapi-az-analyzer:.:az-analyzer@Constellation");
+
 struct NPClass NPAPI::kNpcRefObject = {
   NP_CLASS_STRUCT_VERSION,
   NULL,
@@ -48,6 +54,18 @@ struct NPClass NPAPI::kNpcRefObject = {
   NULL,
   NULL,
 };
+
+inline bool StringToNPVariant(const iv::core::StringPiece& str, NPVariant *variant) {
+  const std::size_t len = str.size();
+  NPUTF8* chars = static_cast<NPUTF8*>(npnfuncs->memalloc(len));
+  if(!chars){
+    VOID_TO_NPVARIANT(*variant);
+    return false;
+  }
+  std::copy(str.begin(), str.end(), chars);
+  STRINGN_TO_NPVARIANT(chars, len, *variant);
+  return true;
+}
 
 }  // namespace az
 #endif  // _AZ_NPAPI_AZ_H_
