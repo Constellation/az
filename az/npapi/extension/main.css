@@ -9,7 +9,7 @@
 }
 
 #text {
- }
+}
 
 #lines {
   margin: 0px;
@@ -35,11 +35,12 @@
 #main {
   margin: 0px;
   padding: 0px;
-  width: 400px;
+  width: 800px;
   height: 300px;
   background-color: transparent;
   border: 1px solid black;
   font-size: 10pt;
   float: left;
   resize: none;
+  overflow: scroll;
 }
