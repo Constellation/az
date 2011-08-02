@@ -128,6 +128,7 @@ namespace az {
   IV_AST_STRING(V)
 #undef V
 typedef iv::core::ast::AstVisitor<AstFactory>::const_type AstVisitor;
+typedef iv::core::ast::AstVisitor<AstFactory>::const_type MutableAstVisitor;
 
 }  // namespace az
 #endif  // _AZ_AST_FWD_H_

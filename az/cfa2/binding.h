@@ -1,11 +1,12 @@
 #ifndef _AZ_CFA2_BINDING_H_
 #define _AZ_CFA2_BINDING_H_
+#include <az/symbol.h>
 namespace az {
 namespace cfa2 {
 
 // target variable decls
 class Binding {
-  core::UString name_;
+  Symbol name_;
 };
 
 } }  // namespace az::cfa2

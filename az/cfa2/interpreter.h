@@ -157,11 +157,6 @@ inline void NormalizeTypes(Types* types) {
 
 class Interpreter : private iv::core::Noncopyable<Interpreter> {
 
- private:
-  // CFA2 Variable Stack
-  // TODO(Constellation) more precise variable lookup system (railgun/scope.h)
-  std::vector<Binding> inner_scope_;
-  std::vector<Binding> outer_scope_;
 };
 
 } }  // namespace az::cfa2
