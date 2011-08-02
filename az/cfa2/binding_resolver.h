@@ -10,6 +10,10 @@ namespace az {
 namespace cfa2 {
 
 void BindingResolver::Visit(Block* block) {
+  for (Statements::const_iterator it = block->body().begin();
+       last = block->body().end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
 }
 
 void BindingResolver::Visit(FunctionStatement* func) {
@@ -22,9 +26,15 @@ void BindingResolver::Visit(VariableStatement* var) {
 }
 
 void BindingResolver::Visit(EmptyStatement* stmt) {
+  // not have Identifier to value
 }
 
 void BindingResolver::Visit(IfStatement* stmt) {
+  stmt->cond()->Accept(this);
+  stmt->then_statement()->Accept(this);
+  if (iv::core::Maybe<Statement*> targeet = stmt->else_statement()) {
+    target.Address()->Accept(this);
+  }
 }
 
 void BindingResolver::Visit(DoWhileStatement* stmt) {
@@ -40,9 +50,11 @@ void BindingResolver::Visit(ForInStatement* stmt) {
 }
 
 void BindingResolver::Visit(ContinueStatement* stmt) {
+  // not have Identifier to value
 }
 
 void BindingResolver::Visit(BreakStatement* stmt) {
+  // not have Identifier to value
 }
 
 void BindingResolver::Visit(ReturnStatement* stmt) {
@@ -64,11 +76,11 @@ void BindingResolver::Visit(TryStatement* stmt) {
 }
 
 void BindingResolver::Visit(DebuggerStatement* stmt) {
+  // not have Identifier to value
 }
 
 void BindingResolver::Visit(ExpressionStatement* stmt) {
 }
-
 
 void BindingResolver::Visit(Assignment* assign) {
 }
@@ -129,7 +141,6 @@ void BindingResolver::Visit(FunctionCall* call) {
 
 void BindingResolver::Visit(ConstructorCall* call) {
 }
-
 
 void BindingResolver::Visit(Declaration* dummy) {
 }
