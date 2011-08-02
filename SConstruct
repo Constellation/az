@@ -11,18 +11,18 @@ def GetVariables():
 
 def Az(context):
   return context.SConscript(
-    join(root_dir, 'src', 'SConscript'),
+    join(root_dir, 'az', 'SConscript'),
     variant_dir=join(root_dir, 'obj', 'az'),
-    src=join(root_dir, 'src'),
+    src=join(root_dir, 'az'),
     duplicate=False,
     exports='context root_dir'
   )
 
 def Plugin(context):
   return context.SConscript(
-    join(root_dir, 'src', 'npapi', 'SConscript'),
+    join(root_dir, 'az', 'npapi', 'SConscript'),
     variant_dir=join(root_dir, 'obj', 'npapi'),
-    src=join(root_dir, 'src', 'npapi'),
+    src=join(root_dir, 'az', 'npapi'),
     duplicate=False,
     exports='context root_dir'
   )
@@ -38,7 +38,7 @@ def Build():
     BoolVariable('release', '', 0)
   )
   env = Environment(options=var)
-  env.VariantDir(join(root_dir, 'obj'), join(root_dir, 'src'), 0)
+  env.VariantDir(join(root_dir, 'obj'), join(root_dir, 'az'), 0)
 
   env.PrependENVPath('PATH', os.environ['PATH']) #especially MacPorts's /opt/local/bin
 
@@ -79,7 +79,7 @@ def Build():
       "-Wall", "-Wextra", "-Werror", '-pipe',
       "-Wno-unused-parameter", "-Wwrite-strings", "-Wreturn-type", "-Wpointer-arith",
       "-Wwrite-strings", "-Wno-long-long", "-Wno-missing-field-initializers"],
-    CPPPATH=[join(root_dir, 'iv'), join(root_dir)],
+    CPPPATH=[join(root_dir, 'iv'), root_dir],
     CPPDEFINES=[
       "_GNU_SOURCE",
       "__STDC_LIMIT_MACROS",

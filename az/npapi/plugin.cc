@@ -8,28 +8,9 @@
 #include <npapi/npfunctions.h>
 #include <iv/platform.h>
 #include <iv/debug.h>
-#include "az.h"
-namespace {
-
-#ifdef DEBUG
-inline void Log(const char *msg) {
-#if defined(OS_WIN)
-  std::FILE *out;
-  fopen_s(&out, "c:\\az.log", "abN");
-#else
-  std::FILE *out = std::fopen("/tmp/az.log", "ab");
-#endif
-  std::fprintf(out, "%s\n", msg);
-  std::fclose(out);
-}
-
-#else
-
-#define Log(msg)
-
-#endif
-
-}  // namespace anonymous
+#include "plugin.h"
+#include "utils.h"
+#include "debug.h"
 namespace az {
 
 NPAPI::NPAPI(NPP* instance)
@@ -47,7 +28,7 @@ bool NPAPI::HasMethod(NPObject *obj, NPIdentifier methodName) {
   NPUTF8* name = npnfuncs->utf8fromidentifier(methodName);
   const std::string target(name);
   npnfuncs->memfree(name);
-  if (target == "analyze") {
+  if (target == "analyze" || target == "completion") {
     return true;
   }
   return false;
@@ -59,8 +40,9 @@ bool NPAPI::Invoke(NPObject *obj, NPIdentifier methodName,
   NPUTF8* name = npnfuncs->utf8fromidentifier(methodName);
   const std::string target(name);
   npnfuncs->memfree(name);
-  if (target == "analyze") {
-    BOOLEAN_TO_NPVARIANT(false, *result);
+  if (target == "analyze" || target == "completion") {
+    StringToNPVariant("TEST", result);
+    // BOOLEAN_TO_NPVARIANT(false, *result);
     return true;
   } else {
     npnfuncs->setexception(obj, "no such method.");

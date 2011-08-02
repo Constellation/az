@@ -1,9 +1,7 @@
-#ifndef _AZ_NPAPI_AZ_H_
-#define _AZ_NPAPI_AZ_H_
+#ifndef _AZ_NPAPI_PLUGIN_H_
+#define _AZ_NPAPI_PLUGIN_H_
 #include <vector>
 #include <string>
-#include <algorithm>
-#include <iv/stringpiece.h>
 namespace az {
 
 class NPAPI;
@@ -30,7 +28,6 @@ class NPAPI {
     return *instance_;
   }
 
-  static bool StringToNPVariant(const std::string&, NPVariant*);
   static bool HasMethod(NPObject*, NPIdentifier);
   static bool Invoke(NPObject*, NPIdentifier, const NPVariant*, uint32_t, NPVariant*);
   static NPNetscapeFuncs * Npnfuncs;
@@ -55,17 +52,5 @@ struct NPClass NPAPI::kNpcRefObject = {
   NULL,
 };
 
-inline bool StringToNPVariant(const iv::core::StringPiece& str, NPVariant *variant) {
-  const std::size_t len = str.size();
-  NPUTF8* chars = static_cast<NPUTF8*>(npnfuncs->memalloc(len));
-  if(!chars){
-    VOID_TO_NPVARIANT(*variant);
-    return false;
-  }
-  std::copy(str.begin(), str.end(), chars);
-  STRINGN_TO_NPVARIANT(chars, len, *variant);
-  return true;
-}
-
 }  // namespace az
-#endif  // _AZ_NPAPI_AZ_H_
+#endif  // _AZ_NPAPI_PLUGIN_H_

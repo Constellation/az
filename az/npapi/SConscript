@@ -6,5 +6,5 @@ Import('context root_dir')
 env = context.Clone()
 env.Append(CPPPATH=join(root_dir, 'deps'))
 
-target = env.SharedLibrary('az', 'az.cc')
+target = env.SharedLibrary('az', Glob('*.cc'))
 Return("target")
