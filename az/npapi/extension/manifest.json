@@ -2,6 +2,11 @@
    "background_page": "background.html",
    "description": "ECMA262 5th static analyzer demonstration",
    "name": "Az Analyzer",
+   "app": {
+     "launch": {
+       "local_path": "main.html"
+     }
+   },
    "plugins": [
      {"path": "libaz.so", "public" : false}
    ],
