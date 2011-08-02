@@ -49,7 +49,7 @@ bool NPAPI::Invoke(NPObject *obj, NPIdentifier methodName,
     npnfuncs->setexception(obj, "invaid analyze call");
     return false;
   } else if (target == "completion") {
-    StringToNPVariant("TEST", result);
+    StringToNPVariant(npnfuncs, "TEST", result);
     // BOOLEAN_TO_NPVARIANT(false, *result);
     return true;
   } else {

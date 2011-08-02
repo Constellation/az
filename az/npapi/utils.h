@@ -8,9 +8,9 @@
 #include <iv/unicode.h>
 namespace az {
 
-inline bool StringToNPVariant(const iv::core::StringPiece& str, NPVariant* variant) {
+inline bool StringToNPVariant(NPNetscapeFuncs* np, const iv::core::StringPiece& str, NPVariant* variant) {
   const std::size_t len = str.size();
-  NPUTF8* chars = static_cast<NPUTF8*>(npnfuncs->memalloc(len));
+  NPUTF8* chars = static_cast<NPUTF8*>(np->memalloc(len));
   if(!chars){
     VOID_TO_NPVARIANT(*variant);
     return false;
@@ -20,7 +20,7 @@ inline bool StringToNPVariant(const iv::core::StringPiece& str, NPVariant* varia
   return true;
 }
 
-inline bool UStringToNPVariant(const iv::core::UStringPiece& str, NPVariant* variant) {
+inline bool UStringToNPVariant(NPNetscapeFuncs* np, const iv::core::UStringPiece& str, NPVariant* variant) {
   std::vector<char> vec;
   vec.reserve(str.size());
   if (iv::core::unicode::UTF16ToUTF8(str.begin(),
@@ -29,7 +29,7 @@ inline bool UStringToNPVariant(const iv::core::UStringPiece& str, NPVariant* var
     // invalid UTF16 sequence
     vec.clear();
   }
-  return StringToNPVariant(iv::core::StringPiece(vec.data(), vec.size()), variant);
+  return StringToNPVariant(np, iv::core::StringPiece(vec.data(), vec.size()), variant);
 }
 
 }  // namespace az

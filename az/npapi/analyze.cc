@@ -6,6 +6,8 @@
 #include <az/parser.h>
 #include <az/symbol.h>
 #include "analyze.h"
+#include "json_reporter.h"
+#include "utils.h"
 #include "debug.h"
 namespace az {
 
@@ -22,17 +24,17 @@ bool Analyze(NPNetscapeFuncs* np,
     return false;
   }
   StructuredSource structured(src);
-  Reporter reporter(structured);
+  JSONReporter reporter(structured);
   AstFactory factory;
-  Parser<iv::core::UString, Reporter> parser(&factory, src, &reporter, structured);
+  Parser<iv::core::UString, JSONReporter> parser(&factory, src, &reporter, structured);
   FunctionLiteral* const global = parser.ParseProgram();
   if (!global) {
     // syntax error occurred
     std::fprintf(stderr, "%s\n", parser.errors().back().c_str());
   } else {
-    az::Analyze(global, src, &reporter);
+    // az::Analyze(global, src, &reporter);
   }
-  BOOLEAN_TO_NPVARIANT(false, *result);
+  StringToNPVariant(np, reporter.Output(), result);
   return true;
 }
 
