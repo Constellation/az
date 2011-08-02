@@ -6,6 +6,8 @@
 namespace az {
 namespace cfa2 {
 
+class AVal;
+
 // target variable decls
 class Binding : private iv::core::Noncopyable<Binding> {
  public:

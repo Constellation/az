@@ -8,12 +8,23 @@ namespace cfa2 {
 
 class Heap : private iv::core::Noncopyable<Heap> {
  public:
+  typedef std::unordered_set<Binding*> HeapSet;
+
+  ~Heap() {
+    for (HeapSet::const_iterator it = heap_.begin(),
+         last = heap_.end(); it != last; ++it) {
+      delete *it;
+    }
+  }
+
   Binding* Instantiate(Symbol name) {
-    heap_.insert(std::shared_ptr<Binding>(new Binding(name, Binding::STACK)));
+    Binding* binding = new Binding(name, Binding::STACK);
+    heap_.insert(binding);
+    return binding;
   }
 
  private:
-  std::unordered_set<std::shared_ptr<Binding> > heap_;
+  HeapSet heap_;
 };
 
 } }  // namespace az::cfa2
