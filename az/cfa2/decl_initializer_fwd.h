@@ -1,30 +1,24 @@
-// CFA2 interpreter
-#ifndef _AZ_CFA2_INTERPRETER_FWD_H_
-#define _AZ_CFA2_INTERPRETER_FWD_H_
-#include <vector>
-#include <iv/detail/cstdint.h>
+// resolve which identifier is STACK or HEAP
+#ifndef _AZ_CFA2_DECL_INITIALIZER_FWD_H_
+#define _AZ_CFA2_DECL_INITIALIZER_FWD_H_
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
-#include <az/jstype.h>
-#include <az/cfa2/heap.h>
+#include <az/symbol.h>
 #include <az/cfa2/binding.h>
-#include <az/cfa2/completer.h>
 namespace az {
 namespace cfa2 {
 
-class Interpreter
-  : private iv::core::Noncopyable<Interpreter>,
-    public MutableAstVisitor {
+class DeclInitializer
+  : private iv::core::Noncopyable<DeclInitializer>,
+    public az::MutableAstVisitor {
  public:
   typedef std::vector<Binding*> Bindings;
 
-  explicit Interpreter(Heap* heap,
-                       Completer* completer)
-    : heap_(heap),
-      completer_(completer) {
-  }
 
-  inline void Run(FunctionLiteral* global);
+  explicit DeclInitializer(Heap* heap)
+    : heap_(heap) { }
+
+  inline void Initialize(FunctionLiteral* global);
 
  private:
   inline void Visit(Block* block);
@@ -73,8 +67,7 @@ class Interpreter
   inline void Visit(CaseClause* clause);
 
   Heap* heap_;
-  Completer* completer_;
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_INTERPRETER_FWD_H_
+#endif  // _AZ_CFA2_DECL_INITIALIZER_FWD_H_

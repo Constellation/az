@@ -18,7 +18,7 @@ struct TypedDestructor {
   result_type operator()(U* ptr) const {
     static_cast<T*>(ptr)->~T();
   }
-}
+};
 
 }  // namespace az
 #endif  // _AZ_DESTRUCTOR_H_

@@ -5,6 +5,20 @@
 #include <az/cfa2/aval_fwd.h>
 namespace az {
 namespace cfa2 {
+namespace A {
+  enum Attribute {
+    NONE = 0,
+    WRITABLE = 1,
+    ENUMERABLE = 2,
+    CONFIGURABLE = 4,
+
+    // short hand
+    N = 0,
+    W = 1,
+    E = 2,
+    C = 4
+  };
+}  // namespace A
 
 // abstract property
 class AProp {
@@ -14,6 +28,13 @@ class AProp {
       writable_(true),
       enumerable_(true),
       configurable_(true) {
+  }
+
+  explicit AProp(const AVal& val, int type)
+    : value_(val),
+      writable_(type & A::W),
+      enumerable_(type & A::E),
+      configurable_(type & A::C) {
   }
 
   const AVal& value() const {
@@ -40,13 +61,19 @@ class AObject
   typedef std::unordered_map<Symbol, AProp> Properties;
   AObject()
     : proto_(),
-      constructor_(NULL),
+      function_(NULL),
       properties_() {
   }
 
-  AObject(FunctionLiteral* constructor, const AVal& proto)
+  AObject(FunctionLiteral* function, const AVal& proto)
     : proto_(proto),
-      constructor_(constructor),
+      function_(function),
+      properties_() {
+  }
+
+  explicit AObject(const AVal& proto)
+    : proto_(proto),
+      function_(NULL),
       properties_() {
   }
 
@@ -85,7 +112,7 @@ class AObject
   }
  private:
   AVal proto_;
-  FunctionLiteral* constructor_;
+  FunctionLiteral* function_;
   Properties properties_;
 };
 

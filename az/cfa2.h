@@ -8,8 +8,9 @@
 #ifndef _AZ_CFA2_H_
 #define _AZ_CFA2_H_
 #include <az/cfa2/heap.h>
-#include <az/cfa2/binding_resolver.h>
 #include <az/cfa2/aval.h>
+#include <az/cfa2/binding_resolver.h>
+#include <az/cfa2/decl_initializer.h>
 #include <az/cfa2/interpreter.h>
 #include <az/cfa2/completer.h>
 namespace az {
@@ -24,6 +25,10 @@ inline void Complete(FunctionLiteral* global,
     // resolve binding type
     BindingResolver resolver(&heap);
     resolver.Resolve(global);
+  }
+  {
+    DeclInitializer decl(&heap);
+    decl.Initialize(global);
   }
   {
     // execute abstract interpreter
