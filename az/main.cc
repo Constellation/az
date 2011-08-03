@@ -94,7 +94,8 @@ int main(int argc, char** argv) {
   assert(global);
   if (cmd.Exist("pulse")) {
     // pulse mode
-    az::cfa2::Complete(global, src, &reporter);
+    az::cfa2::Completer completer;
+    az::cfa2::Complete(global, src, &reporter, &completer);
   } else {
     // normal analysis
     az::Analyze(global, src, &reporter);

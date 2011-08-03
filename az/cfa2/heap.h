@@ -1,8 +1,10 @@
 #ifndef _AZ_CFA2_HEAP_H_
 #define _AZ_CFA2_HEAP_H_
+#include <algorithm>
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/cfa2/binding.h>
+#include <az/deleter.h>
 namespace az {
 namespace cfa2 {
 
@@ -15,12 +17,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
   }
 
   ~Heap() {
-    for (HeapSet::const_iterator it = heap_.begin(),
-         last = heap_.end(); it != last; ++it) {
-      delete *it;
-    }
+    std::for_each(heap_.begin(), heap_.end(), Deleter());
   }
 
+  // create new binding object
   Binding* Instantiate(Symbol name) {
     Binding* binding = new Binding(name, Binding::STACK);
     heap_.insert(binding);

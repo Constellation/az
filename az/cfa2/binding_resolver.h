@@ -11,6 +11,8 @@
 namespace az {
 namespace cfa2 {
 
+// Statements
+
 void BindingResolver::Resolve(FunctionLiteral* global) {
   Visit(global);
 }
@@ -138,6 +140,8 @@ void BindingResolver::Visit(DebuggerStatement* stmt) {
 void BindingResolver::Visit(ExpressionStatement* stmt) {
   stmt->expr()->Accept(this);
 }
+
+// Expressions
 
 void BindingResolver::Visit(Assignment* assign) {
   assign->left()->Accept(this);
@@ -344,6 +348,8 @@ void BindingResolver::Visit(ConstructorCall* call) {
     (*it)->Accept(this);
   }
 }
+
+// Others
 
 void BindingResolver::Visit(Declaration* dummy) {
 }

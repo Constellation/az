@@ -2,34 +2,40 @@
 #ifndef _AZ_CFA2_FACTORY_H_
 #define _AZ_CFA2_FACTORY_H_
 #include <algorithm>
+#include <new>
 #include <iv/noncopyable.h>
-#include <az/deleter.h>
+#include <iv/alloc.h>
+#include <az/destructor.h>
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aobject.h>
 namespace az {
 namespace cfa2 {
 
 class Factory : private iv::core::Noncopyable<Factory> {
+ public:
   Factory()
-    : created_() {
+    : space_(),
+      created_() {
   }
 
   AObject* New() {
-    AObject* obj = new AObject();
+    AObject* obj = new (&space_) AObject();
     created_.push_back(obj);
     return obj;
   }
 
   AObject* New(FunctionLiteral* constructor, AVal proto) {
-    AObject* obj = new AObject(constructor, proto);
+    AObject* obj = new (&space_) AObject(constructor, proto);
     created_.push_back(obj);
     return obj;
   }
 
   ~Factory() {
-    std::for_each(created_.begin(), created_.end(), Deleter());
+    // call destructors
+    std::for_each(created_.begin(), created_.end(), TypedDestructor<AObject>());
   }
 
+  iv::core::Space<1> space_;
   std::vector<AObject*> created_;
 };
 
