@@ -38,20 +38,6 @@ class Factory : private iv::core::Noncopyable<Factory> {
     return obj;
   }
 
-  template<typename T0>
-  AVal* NewAVal(const T0& a0) {
-    AVal* aval = new (space_.New(sizeof(AVal))) AVal(a0);
-    created_values_.push_back(aval);
-    return aval;
-  }
-
-  template<typename T0, typename T1>
-  AVal* NewAVal(const T0& a0, const T1& a1) {
-    AVal* aval = new (space_.New(sizeof(AVal))) AVal(a0, a1);
-    created_values_.push_back(aval);
-    return aval;
-  }
-
   ~Factory() {
     // call destructors
     std::for_each(created_objects_.begin(),
