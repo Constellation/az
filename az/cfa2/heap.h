@@ -9,6 +9,10 @@ namespace cfa2 {
 class Heap : private iv::core::Noncopyable<Heap> {
  public:
   typedef std::unordered_set<Binding*> HeapSet;
+  Heap()
+    : heap_(),
+      declared_heap_bindings_() {
+  }
 
   ~Heap() {
     for (HeapSet::const_iterator it = heap_.begin(),
@@ -23,8 +27,13 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return binding;
   }
 
+  void RecordDeclaredHeapBinding(Binding* binding) {
+    declared_heap_bindings_.insert(binding);
+  }
+
  private:
   HeapSet heap_;
+  HeapSet declared_heap_bindings_;
 };
 
 } }  // namespace az::cfa2

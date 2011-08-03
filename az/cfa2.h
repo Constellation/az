@@ -11,6 +11,9 @@ namespace cfa2 {
 
 template<typename Source, typename Reporter>
 inline void Complete(FunctionLiteral* global, const Source& src, Reporter* reporter) {
+  Heap heap;
+  BindingResolver resolver(&heap);
+  resolver.Resolve(global);
 }
 
 } }  // namespace az::cfa2

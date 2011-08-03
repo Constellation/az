@@ -15,9 +15,12 @@ class BindingResolver
   typedef std::vector<Binding*> Bindings;
 
 
-  BindingResolver(Heap* heap) : heap_(heap), inner_scope_(NULL), outer_scope_() { }
+  explicit BindingResolver(Heap* heap)
+    : heap_(heap), inner_scope_(NULL), outer_scope_() { }
 
+  inline void Resolve(FunctionLiteral* global);
 
+ private:
   inline void Visit(Block* block);
   inline void Visit(FunctionStatement* func);
   inline void Visit(FunctionDeclaration* func);
@@ -63,8 +66,6 @@ class BindingResolver
   inline void Visit(Declaration* dummy);
   inline void Visit(CaseClause* dummy);
 
-
- private:
   Heap* heap_;
   // CFA2 Variable Stacks
   Bindings* inner_scope_;
