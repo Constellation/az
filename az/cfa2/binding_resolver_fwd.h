@@ -64,7 +64,7 @@ class BindingResolver
   inline void Visit(ConstructorCall* call);
 
   inline void Visit(Declaration* dummy);
-  inline void Visit(CaseClause* dummy);
+  inline void Visit(CaseClause* clause);
 
   Heap* heap_;
   // CFA2 Variable Stacks

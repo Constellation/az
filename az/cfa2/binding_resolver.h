@@ -110,14 +110,7 @@ void BindingResolver::Visit(SwitchStatement* stmt) {
   const CaseClauses& clauses = stmt->clauses();
   for (CaseClauses::const_iterator it = clauses.begin(),
        last = clauses.end(); it != last; ++it) {
-    CaseClause* const clause = *it;
-    if (const iv::core::Maybe<Expression> expr = clause->expr()) {
-      expr.Address()->Accept(this);
-    }
-    for (Statements::const_iterator it = clause->body().begin(),
-         last = clause->body().end(); it != last; ++it) {
-      (*it)->Accept(this);
-    }
+    (*it)->Accept(this);
   }
 }
 
@@ -355,7 +348,14 @@ void BindingResolver::Visit(ConstructorCall* call) {
 void BindingResolver::Visit(Declaration* dummy) {
 }
 
-void BindingResolver::Visit(CaseClause* dummy) {
+void BindingResolver::Visit(CaseClause* clause) {
+  if (const iv::core::Maybe<Expression> expr = clause->expr()) {
+    expr.Address()->Accept(this);
+  }
+  for (Statements::const_iterator it = clause->body().begin(),
+       last = clause->body().end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
 }
 
 } }  // namespace az::cfa2
