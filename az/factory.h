@@ -8,7 +8,7 @@
 #include <iv/utils.h>
 #include <iv/maybe.h>
 #include <iv/noncopyable.h>
-#include "ast_fwd.h"
+#include <az/ast_fwd.h>
 namespace az {
 
 class AstFactory

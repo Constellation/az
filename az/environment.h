@@ -3,8 +3,9 @@
 #include <bitset>
 #include <iv/detail/memory.h>
 #include <iv/ustringpiece.h>
-#include "ast_fwd.h"
-#include "variable_type.h"
+#include <az/symbol.h>
+#include <az/ast_fwd.h>
+#include <az/variable_type.h>
 namespace az {
 
 class Environment : public std::enable_shared_from_this<Environment> {
@@ -63,16 +64,16 @@ class Environment : public std::enable_shared_from_this<Environment> {
   }
 
   // returns this variable name is duplicate
-  bool Instantiate(const iv::core::UStringPiece& piece) {
+  bool Instantiate(Symbol sym) {
     const std::pair<VariableMap::iterator, bool> v =
-        variables_.insert(VariableMap::value_type(piece, VariableMap::mapped_type()));
+        variables_.insert(VariableMap::value_type(sym, VariableMap::mapped_type()));
     return !v.second;
   }
 
-  std::shared_ptr<Environment> Lookup(const iv::core::UStringPiece& piece) {
+  std::shared_ptr<Environment> Lookup(Symbol sym) {
     std::shared_ptr<Environment> env = shared_from_this();
     while (env) {
-      if (env->IsTrapped(piece)) {
+      if (env->IsTrapped(sym)) {
         return env;
       }
       env = env->GetUpperEnvironment().lock();
@@ -80,12 +81,12 @@ class Environment : public std::enable_shared_from_this<Environment> {
     return env;
   }
 
-  Var& Get(const iv::core::UStringPiece& piece) {
-    return variables_[piece];
+  Var& Get(Symbol sym) {
+    return variables_[sym];
   }
 
-  TrapStatus IsTrapped(const iv::core::UStringPiece& piece) const {
-    if (variables_.find(piece) != variables_.end()) {
+  TrapStatus IsTrapped(Symbol sym) const {
+    if (variables_.find(sym) != variables_.end()) {
       // variable is found
       return VARIABLE_FOUND;
     } else {

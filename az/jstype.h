@@ -78,7 +78,7 @@ class Type {
 
 class JSObject {
  private:
-  std::unordered_map<iv::core::UString, JSType> properties_;
+  std::unordered_map<Symbol, JSType> properties_;
 };
 
 typedef std::unordered_set<Type> TypeSet;

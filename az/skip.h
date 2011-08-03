@@ -1,7 +1,7 @@
 #ifndef _AZ_SKIP_H_
 #define _AZ_SKIP_H_
 #include <iv/keyword.h>
-#include "character.h"
+#include <az/character.h>
 namespace az {
 
 // Skip class skips heuristic skip sources

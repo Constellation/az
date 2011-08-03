@@ -9,11 +9,12 @@
 #include <iv/unicode.h>
 #include <iv/cmdline.h>
 #include <iv/debug.h>
-#include "factory.h"
-#include "analyzer.h"
-#include "reporter.h"
-#include "parser.h"
-#include "symbol.h"
+#include <az/factory.h>
+#include <az/analyzer.h>
+#include <az/reporter.h>
+#include <az/parser.h>
+#include <az/symbol.h>
+#include <az/cfa2/heap.h>
 namespace {
 
 bool ReadFile(const std::string& filename, std::vector<char>* out) {

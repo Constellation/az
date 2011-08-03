@@ -4,8 +4,9 @@
 #include <iv/detail/unordered_set.h>
 #include <iv/detail/memory.h>
 #include <iv/ustring.h>
-#include "jstype.h"
-#include "ast_fwd.h"
+#include <az/symbol.h>
+#include <az/jstype.h>
+#include <az/ast_fwd.h>
 namespace az {
 
 typedef std::unordered_set<const AstNode*> DeclaredSet;
@@ -52,7 +53,7 @@ class Var {
   bool is_referenced_;
 };
 
-typedef std::unordered_map<iv::core::UString, Var> VariableMap;
+typedef std::unordered_map<Symbol, Var> VariableMap;
 
 }  // namespace az
 #endif  // _AZ_VARIABLE_TYPE_H_

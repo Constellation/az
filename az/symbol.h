@@ -8,6 +8,7 @@
 #include <iv/detail/functional.h>
 #include <iv/detail/array.h>
 #include <iv/platform.h>
+#include <iv/byteorder.h>
 #include <iv/conversions.h>
 #include <iv/ustring.h>
 #include <iv/singleton.h>
@@ -269,6 +270,10 @@ class SymbolTable : public iv::core::Singleton<SymbolTable> {
   iv::core::thread::Mutex sync_;
   Set set_;
 };
+
+inline Symbol Intern(const iv::core::UStringPiece& piece) {
+  return SymbolTable::Instance()->Intern(piece);
+}
 
 }  // namespace az
 #endif  // _AZ_SYMBOL_H_

@@ -1,7 +1,7 @@
 #ifndef _AZ_REPORTER_H_
 #define _AZ_REPORTER_H_
-#include "basic_reporter.h"
-#include "structured_source.h"
+#include <az/basic_reporter.h>
+#include <az/structured_source.h>
 namespace az {
 
 class Reporter : public BasicReporter {

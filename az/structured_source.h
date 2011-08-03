@@ -10,7 +10,7 @@
 #include <iv/detail/tuple.h>
 #include <iv/ustringpiece.h>
 #include <iv/character.h>
-#include "character.h"
+#include <az/character.h>
 namespace az {
 
 class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
