@@ -201,7 +201,6 @@ void BindingResolver::Visit(Identifier* ident) {
       // find binding in inner scope
       ident->set_binding_type(Binding::STACK);
       ident->set_refer(*it);
-      std::cout << "STACK" << std::endl;
       return;
     }
   }
@@ -217,14 +216,12 @@ void BindingResolver::Visit(Identifier* ident) {
       ident->set_refer(*it);
       // record that this heap variable is declared
       heap_->RecordDeclaredHeapBinding(*it);
-      std::cout << "HEAP" << std::endl;
       return;
     }
   }
   // global variables that is not declared
   // remeber this identifier will be treated as GLOBAL.ident access
   ident->set_binding_type(Binding::GLOBAL);
-  std::cout << "GLOBAL" << std::endl;
 }
 
 void BindingResolver::Visit(ThisLiteral* literal) {
