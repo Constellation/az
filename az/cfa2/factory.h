@@ -16,8 +16,7 @@ class Factory : private iv::core::Noncopyable<Factory> {
  public:
   Factory()
     : space_(),
-      created_objects_(),
-      created_values_() {
+      created_objects_() {
   }
 
   AObject* NewAObject() {
@@ -42,13 +41,10 @@ class Factory : private iv::core::Noncopyable<Factory> {
     // call destructors
     std::for_each(created_objects_.begin(),
                   created_objects_.end(), TypedDestructor<AObject>());
-    std::for_each(created_values_.begin(),
-                  created_values_.end(), TypedDestructor<AVal>());
   }
 
   iv::core::Space<1> space_;
   std::deque<AObject*> created_objects_;
-  std::deque<AVal*> created_values_;
 };
 
 } }  // namespace az::cfa2
