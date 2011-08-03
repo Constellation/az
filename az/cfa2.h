@@ -4,9 +4,14 @@
 // and highly inspired from doctorjs src code
 #ifndef _AZ_CFA2_H_
 #define _AZ_CFA2_H_
+#include <az/cfa2/heap.h>
+#include <az/cfa2/binding_resolver.h>
 namespace az {
+namespace cfa2 {
 
+template<typename Source, typename Reporter>
+inline void Complete(FunctionLiteral* global, const Source& src, Reporter* reporter) {
+}
 
-
-}  // namespace az
+} }  // namespace az::cfa2
 #endif  // _AZ_CFA2_H_

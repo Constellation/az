@@ -10,5 +10,9 @@ class AVal;
 class AProp;
 
 class Interpreter;
+
+class Binding;
+class BindingResolver;
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_FWD_H_

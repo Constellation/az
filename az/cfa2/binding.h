@@ -13,13 +13,34 @@ class Binding : private iv::core::Noncopyable<Binding> {
  public:
   enum Type {
     STACK = 0,
-    HEAP
+    HEAP,
+    GLOBAL
   };
 
   explicit Binding(Symbol name, Type type)
     : name_(name),
       type_(type),
       value_() {
+  }
+
+  Symbol name() const {
+    return name_;
+  }
+
+  Type type() const {
+    return type_;
+  }
+
+  std::shared_ptr<AVal> value() const {
+    return value_;
+  }
+
+  void ToHeap() {
+    type_ = HEAP;
+  }
+
+  void ToStack() {
+    type_ = STACK;
   }
 
  private:

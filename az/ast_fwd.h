@@ -1,6 +1,8 @@
 #ifndef _AZ_AST_FWD_H_
 #define _AZ_AST_FWD_H_
 #include <iv/ast.h>
+#include <az/cfa2/fwd.h>
+#include <az/cfa2/binding.h>
 namespace az {
 
 class AstFactory;
@@ -36,11 +38,30 @@ class IdentifierBase<az::AstFactory>
   void set_type(core::Token::Type type) {
     type_ = type;
   }
+
   core::Token::Type type() const {
     return type_;
   }
+
+  void set_refer(az::cfa2::Binding* binding) {
+    refer_ = binding;
+  }
+
+  az::cfa2::Binding* refer() const {
+    return refer_;
+  }
+
+  void set_binding_type(az::cfa2::Binding::Type type) {
+    binding_type_ = type;
+  }
+
+  az::cfa2::Binding::Type binding_type() const {
+    return binding_type_;
+  }
  private:
   core::Token::Type type_;
+  az::cfa2::Binding* refer_;
+  az::cfa2::Binding::Type binding_type_;
 };
 
 template<>

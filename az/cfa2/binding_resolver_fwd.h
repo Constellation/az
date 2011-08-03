@@ -9,9 +9,15 @@ namespace az {
 namespace cfa2 {
 
 class BindingResolver
-  : private iv::core::Noncopyable<Interpreter>,
+  : private iv::core::Noncopyable<BindingResolver>,
     public az::MutableAstVisitor {
  public:
+  typedef std::vector<Binding*> Bindings;
+
+
+  BindingResolver(Heap* heap) : heap_(heap), inner_scope_(NULL), outer_scope_() { }
+
+
   inline void Visit(Block* block);
   inline void Visit(FunctionStatement* func);
   inline void Visit(FunctionDeclaration* func);
@@ -59,9 +65,10 @@ class BindingResolver
 
 
  private:
-  // CFA2 Variable Stack
-  std::vector<Binding> inner_scope_;
-  std::vector<Binding> outer_scope_;
+  Heap* heap_;
+  // CFA2 Variable Stacks
+  Bindings* inner_scope_;
+  Bindings outer_scope_;
 };
 
 } }  // namespace az::cfa2

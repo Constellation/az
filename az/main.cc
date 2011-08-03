@@ -14,7 +14,7 @@
 #include <az/reporter.h>
 #include <az/parser.h>
 #include <az/symbol.h>
-#include <az/cfa2/heap.h>
+#include <az/cfa2.h>
 namespace {
 
 bool ReadFile(const std::string& filename, std::vector<char>* out) {
@@ -92,6 +92,12 @@ int main(int argc, char** argv) {
   Parser parser(&factory, src, &reporter, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
-  az::Analyze(global, src, &reporter);
+  if (cmd.Exist("pulse")) {
+    // pulse mode
+    az::cfa2::Complete(global, src, &reporter);
+  } else {
+    // normal analysis
+    az::Analyze(global, src, &reporter);
+  }
   return 0;
 }
