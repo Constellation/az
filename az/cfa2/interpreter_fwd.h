@@ -73,7 +73,8 @@ class Interpreter
   inline void Visit(Declaration* dummy);
   inline void Visit(CaseClause* clause);
 
-  inline Answer EvaluateFunction(AObject* function,
+  inline Answer EvaluateFunction(FunctionLiteral* literal,
+                                 AObject* function,
                                  const AVal& this_binding,
                                  const std::vector<AVal>& args,
                                  bool IsConstructorCalled);

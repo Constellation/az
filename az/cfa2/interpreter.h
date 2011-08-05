@@ -12,8 +12,6 @@ class Work { };
 void Interpreter::Run(FunctionLiteral* global) {
   Frame frame;
   frame_ = &frame;  // set current frame
-  std::cout << "INTERPRETER START" << std::endl;
-
   {
     // initialize heap
     //
@@ -56,7 +54,8 @@ void Interpreter::Run(FunctionLiteral* global) {
     if (!it->second->IsExists()) {
       // not summarized yet
       const std::vector<AVal> vec(it->first->params().size(), AVal(AVAL_NOBASE));
-      EvaluateFunction(it->second->target(),
+      EvaluateFunction(it->first,
+                       it->second->target(),
                        AVal(heap_->MakeObject()),
                        vec,
                        false);
@@ -121,7 +120,8 @@ void Interpreter::Visit(TryStatement* stmt) {
 }
 
 void Interpreter::Visit(DebuggerStatement* stmt) {
-} 
+}
+
 void Interpreter::Visit(ExpressionStatement* stmt) {
 }
 
@@ -196,7 +196,8 @@ void Interpreter::Visit(CaseClause* clause) {
 }
 
 
-Answer Interpreter::EvaluateFunction(AObject* function,
+Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
+                                     AObject* function,
                                      const AVal& this_binding,
                                      const std::vector<AVal>& args,
                                      bool IsConstructorCalled) {
@@ -219,7 +220,6 @@ Answer Interpreter::EvaluateFunction(AObject* function,
   frame_ = &frame;
 
   frame_->SetThis(this_binding);
-  FunctionLiteral* literal = function->function();
   const FunctionLiteral::DeclType type = literal->type();
   if (type == FunctionLiteral::STATEMENT ||
       (type == FunctionLiteral::EXPRESSION && literal->name())) {
@@ -267,6 +267,8 @@ Answer Interpreter::EvaluateFunction(AObject* function,
     frame_->Set(heap_, ident->refer(), AVal(heap_->GetDeclObject(*it)));
   }
 
+  // then, interpret
+  Visit(literal);
 
   frame_ = previous;
 
