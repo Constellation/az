@@ -11,6 +11,10 @@ void HeapInitializer::Initialize(FunctionLiteral* global) {
 // Statements
 
 void HeapInitializer::Visit(Block* block) {
+  for (Statements::const_iterator it = block->body().begin(),
+       last = block->body().end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
 }
 
 void HeapInitializer::Visit(FunctionStatement* func) {
@@ -22,54 +26,112 @@ void HeapInitializer::Visit(FunctionDeclaration* func) {
 }
 
 void HeapInitializer::Visit(VariableStatement* var) {
+  for (Declarations::const_iterator it = var->decls().begin(),
+       last = var->decls().end(); it != last; ++it) {
+    if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
+      expr.Address()->Accept(this);
+    }
+  }
 }
 
 void HeapInitializer::Visit(EmptyStatement* stmt) {
+  // nothing
 }
 
 void HeapInitializer::Visit(IfStatement* stmt) {
+  stmt->cond()->Accept(this);
+  stmt->then_statement()->Accept(this);
+  if (const iv::core::Maybe<Statement> target = stmt->else_statement()) {
+    target.Address()->Accept(this);
+  }
 }
 
 void HeapInitializer::Visit(DoWhileStatement* stmt) {
+  stmt->body()->Accept(this);
+  stmt->cond()->Accept(this);
 }
 
 void HeapInitializer::Visit(WhileStatement* stmt) {
+  stmt->cond()->Accept(this);
+  stmt->body()->Accept(this);
 }
 
 void HeapInitializer::Visit(ForStatement* stmt) {
+  if (const iv::core::Maybe<Statement> init = stmt->init()) {
+    init.Address()->Accept(this);
+  }
+  if (const iv::core::Maybe<Expression> cond = stmt->cond()) {
+    cond.Address()->Accept(this);
+  }
+  stmt->body()->Accept(this);
+  if (const iv::core::Maybe<Expression> next = stmt->next()) {
+    next.Address()->Accept(this);
+  }
 }
 
 void HeapInitializer::Visit(ForInStatement* stmt) {
+  stmt->each()->Accept(this);
+  stmt->enumerable()->Accept(this);
+  stmt->body()->Accept(this);
 }
 
 void HeapInitializer::Visit(ContinueStatement* stmt) {
+  // nothing
 }
 
 void HeapInitializer::Visit(BreakStatement* stmt) {
+  // nothing
 }
 
 void HeapInitializer::Visit(ReturnStatement* stmt) {
+  if (const iv::core::Maybe<Expression> expr = stmt->expr()) {
+    expr.Address()->Accept(this);
+  }
 }
 
 void HeapInitializer::Visit(WithStatement* stmt) {
+  // this is ambiguous, but use this
+  stmt->context()->Accept(this);
+  stmt->body()->Accept(this);
 }
 
 void HeapInitializer::Visit(LabelledStatement* stmt) {
+  stmt->body()->Accept(this);
 }
 
 void HeapInitializer::Visit(SwitchStatement* stmt) {
+  stmt->expr()->Accept(this);
+  typedef SwitchStatement::CaseClauses CaseClauses;
+  const CaseClauses& clauses = stmt->clauses();
+  for (CaseClauses::const_iterator it = clauses.begin(),
+       last = clauses.end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
 }
 
 void HeapInitializer::Visit(ThrowStatement* stmt) {
+  stmt->expr()->Accept(this);
 }
 
 void HeapInitializer::Visit(TryStatement* stmt) {
+  stmt->body()->Accept(this);
+  if (const iv::core::Maybe<Block> block = stmt->catch_block()) {
+    const Symbol name = Intern(stmt->catch_name().Address()->value());
+    inner_scope_->push_back(heap_->Instantiate(name));
+    block.Address()->Accept(this);
+    inner_scope_->pop_back();
+  }
+  if (const iv::core::Maybe<Block> block = stmt->finally_block()) {
+    block.Address()->Accept(this);
+  }
 }
 
 void HeapInitializer::Visit(DebuggerStatement* stmt) {
+  // nothing
 }
 
 void HeapInitializer::Visit(ExpressionStatement* stmt) {
+  stmt->expr()->Accept(this);
 }
 
 // Expressions
