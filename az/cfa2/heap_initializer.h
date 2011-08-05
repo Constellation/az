@@ -6,6 +6,25 @@ namespace az {
 namespace cfa2 {
 
 void HeapInitializer::Initialize(FunctionLiteral* global) {
+  const Scope& scope = global->scope();
+  for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
+       last = scope.function_declarations().end(); it != last; ++it) {
+    Visit(*it);
+  }
+
+  for (Scope::Variables::const_iterator it = scope.variables().begin(),
+       last = scope.variables().end(); it != last; ++it) {
+    const Scope::Variable& var = *it;
+    Binding* binding = var.first->refer();
+    assert(binding);
+    if (binding->type() == Binding::HEAP) {
+      binding->set_value(AVal(AVAL_NOBASE));
+    }
+  }
+  for (Statements::const_iterator it = global->body().begin(),
+       last = global->body().end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
 }
 
 // Statements
@@ -116,10 +135,7 @@ void HeapInitializer::Visit(ThrowStatement* stmt) {
 void HeapInitializer::Visit(TryStatement* stmt) {
   stmt->body()->Accept(this);
   if (const iv::core::Maybe<Block> block = stmt->catch_block()) {
-    const Symbol name = Intern(stmt->catch_name().Address()->value());
-    inner_scope_->push_back(heap_->Instantiate(name));
     block.Address()->Accept(this);
-    inner_scope_->pop_back();
   }
   if (const iv::core::Maybe<Block> block = stmt->finally_block()) {
     block.Address()->Accept(this);
@@ -228,7 +244,7 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
       Intern("prototype"),
       AProp(AVal(AVAL_NOBASE), A::W | A::C));
 
-  if (iv::core::Maybe<Identifier> ident = literal->name()) {
+  if (const iv::core::Maybe<Identifier> ident = literal->name()) {
     // function literal name has always binding
     Binding* binding = ident.Address()->refer();
     assert(binding);
