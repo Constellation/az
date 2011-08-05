@@ -76,6 +76,7 @@ class Interpreter
   Heap* heap_;
   Completer* completer_;
   Answer answer_;  // result tuple
+  Frame* frame_;
 };
 
 } }  // namespace az::cfa2

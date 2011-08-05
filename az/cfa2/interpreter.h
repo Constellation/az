@@ -2,6 +2,7 @@
 #define _AZ_CFA2_INTERPRETER_H_
 #include <iv/debug.h>
 #include <az/cfa2/interpreter_fwd.h>
+#include <az/cfa2/heap_initializer.h>
 #include <az/cfa2/frame.h>
 namespace az {
 namespace cfa2 {
@@ -10,9 +11,18 @@ class Work { };
 
 void Interpreter::Run(FunctionLiteral* global) {
   Frame frame;
+  frame_ = &frame;  // set current frame
   std::cout << "INTERPRETER START" << std::endl;
 
-  // decl initializer
+  {
+    // initialize heap
+    //
+    // initialize summaries and heap static objects declaration
+    // static objects are bound to heap by AstNode address and
+    // summaries are bound to heap by FunctionLiteral address
+    HeapInitializer initializer(heap_);
+    initializer.Initialize(global);
+  }
 
   frame.SetThis(heap_->GetGlobal());
   const Scope& scope = global->scope();
@@ -39,6 +49,8 @@ void Interpreter::Run(FunctionLiteral* global) {
   }
 
   // summary update phase
+  //
+  // enumerate summaries and if this function is not summaried, so make this
 }
 
 // Statements
@@ -98,8 +110,7 @@ void Interpreter::Visit(TryStatement* stmt) {
 }
 
 void Interpreter::Visit(DebuggerStatement* stmt) {
-}
-
+} 
 void Interpreter::Visit(ExpressionStatement* stmt) {
 }
 

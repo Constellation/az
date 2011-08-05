@@ -5,7 +5,10 @@
 namespace az {
 namespace cfa2 {
 
-typedef std::tuple<AVal, Frame*, bool, AVal> Answer;
+// AVal: normal value
+// bool: exception is occurred
+// AVal: exception value
+typedef std::tuple<AVal, bool, AVal> Answer;
 
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_ANSWER_H_
