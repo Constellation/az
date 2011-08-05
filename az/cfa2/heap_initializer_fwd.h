@@ -1,6 +1,5 @@
-// resolve which identifier is STACK or HEAP
-#ifndef _AZ_CFA2_DECL_INITIALIZER_FWD_H_
-#define _AZ_CFA2_DECL_INITIALIZER_FWD_H_
+#ifndef _AZ_CFA2_HEAP_INITIALIZER_FWD_H_
+#define _AZ_CFA2_HEAP_INITIALIZER_FWD_H_
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
 #include <az/symbol.h>
@@ -8,14 +7,11 @@
 namespace az {
 namespace cfa2 {
 
-class DeclInitializer
-  : private iv::core::Noncopyable<DeclInitializer>,
+class HeapInitializer
+  : private iv::core::Noncopyable<HeapInitializer>,
     public az::MutableAstVisitor {
  public:
-  typedef std::vector<Binding*> Bindings;
-
-
-  explicit DeclInitializer(Heap* heap)
+  explicit HeapInitializer(Heap* heap)
     : heap_(heap) { }
 
   inline void Initialize(FunctionLiteral* global);
@@ -70,4 +66,4 @@ class DeclInitializer
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_DECL_INITIALIZER_FWD_H_
+#endif  // _AZ_CFA2_HEAP_INITIALIZER_FWD_H_
