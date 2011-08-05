@@ -5,6 +5,9 @@
 #include <az/cfa2/aval_fwd.h>
 namespace az {
 namespace cfa2 {
+
+typedef AVal (*Builtin)(const AVal& this_binding, const std::vector<AVal>& args);
+
 namespace A {
   enum Attribute {
     NONE = 0,
@@ -62,18 +65,28 @@ class AObject
   AObject()
     : proto_(),
       function_(NULL),
+      builtin_(NULL),
       properties_() {
   }
 
   AObject(FunctionLiteral* function, const AVal& proto)
     : proto_(proto),
       function_(function),
+      builtin_(NULL),
+      properties_() {
+  }
+
+  AObject(Builtin builtin, const AVal& proto)
+    : proto_(proto),
+      function_(NULL),
+      builtin_(builtin),
       properties_() {
   }
 
   explicit AObject(const AVal& proto)
     : proto_(proto),
       function_(NULL),
+      builtin_(NULL),
       properties_() {
   }
 
@@ -113,6 +126,7 @@ class AObject
  private:
   AVal proto_;
   FunctionLiteral* function_;
+  Builtin builtin_;
   Properties properties_;
 };
 

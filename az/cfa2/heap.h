@@ -4,13 +4,15 @@
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/deleter.h>
+#include <az/cfa2/builtins.h>
 #include <az/cfa2/binding.h>
-#include <az/cfa2/factory.h>
+#include <az/cfa2/aobject_factory.h>
 namespace az {
 namespace cfa2 {
 
 class Heap : private iv::core::Noncopyable<Heap> {
  public:
+  friend class Frame;
   typedef std::unordered_set<Binding*> HeapSet;
   Heap()
     : heap_(),
@@ -41,12 +43,59 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
     AObject* function_prototype_prototype = factory_.NewAObject(object_prototype_);
 
-    object_prototype->AddProperty(
+    object_proto->AddProperty(
         Intern("prototype"),
         AProp(AVal(function_prototype_prototype), A::W));
     function_prototype_prototype->AddProperty(
         Intern("constructor"),
-        AProp(object_prototype_, A::W));
+        AProp(object_prototype_, A::W | A::C));
+
+    // Object
+    AObject* o = factory_.NewAObject(
+        OBJECT_CONSTRUCTOR,
+        object_prototype_);
+    AVal oav(o);
+    global->AddProperty(
+        Intern("Object"),
+        AProp(oav, A::W | A::C));
+    o->AddProperty(
+        Intern("prototype"),
+        AProp(object_prototype_, A::N));
+    object_prototype->AddProperty(
+        Intern("constructor"),
+        AProp(oav, A::W | A::C));
+
+    // Function
+    AObject* f = factory_.NewAObject(object_prototype_);
+    AVal fav(f);
+    global->AddProperty(
+        Intern("Function"),
+        AProp(fav, A::W | A::C));
+    f->AddProperty(
+        Intern("prototype"),
+        AProp(object_prototype_, A::N));
+    object_proto->AddProperty(
+        Intern("constructor"),
+        AProp(object_prototype_, A::N));
+
+    // builtin methods
+
+    // Array
+    AObject* ap = factory_.NewAObject(object_prototype_);
+    AVal apav(ap);
+    AObject* a = factory_.NewAObject(
+        ARRAY_CONSTRUCTOR,
+        object_prototype_);
+    AVal aav(a);
+    global->AddProperty(
+        Intern("Array"),
+        AProp(aav, A::W | A::C));
+    a->AddProperty(
+        Intern("prototype"),
+        AProp(apav, A::N));
+    ap->AddProperty(
+        Intern("constructor"),
+        AProp(aav, A::W | A::C));
   }
 
   ~Heap() {
@@ -60,8 +109,13 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return binding;
   }
 
-  Factory* GetFactory() {
+  AObjectFactory* GetFactory() {
     return &factory_;
+  }
+
+  AVal MakeObject() {
+    AObject* obj = factory_.NewAObject(object_prototype_);
+    return AVal(obj);
   }
 
   void RecordDeclaredHeapBinding(Binding* binding) {
@@ -72,11 +126,25 @@ class Heap : private iv::core::Noncopyable<Heap> {
     decls_[node] = AVal(obj);
   }
 
+  uint64_t timestamp() const {
+    return timestamp_;
+  }
+
+  const std::unordered_map<Binding*, std::pair<AVal, uint64_t> >& GetModified() const {
+    return modified_;
+  }
+
+  AVal GetGlobal() const {
+    return global_;
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
   std::unordered_map<AstNode*, AVal> decls_;
-  Factory factory_;
+  std::unordered_map<Binding*, std::pair<AVal, uint64_t> > modified_;  // record binding modified time
+  std::unordered_map<Binding*, AVal> binding_heap_;
+  AObjectFactory factory_;
   uint64_t timestamp_;
 
   AVal global_;

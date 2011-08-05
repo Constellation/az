@@ -9,6 +9,7 @@
 #include <az/cfa2/heap.h>
 #include <az/cfa2/binding.h>
 #include <az/cfa2/completer.h>
+#include <az/cfa2/answer.h>
 namespace az {
 namespace cfa2 {
 
@@ -74,6 +75,7 @@ class Interpreter
 
   Heap* heap_;
   Completer* completer_;
+  Answer answer_;  // result tuple
 };
 
 } }  // namespace az::cfa2

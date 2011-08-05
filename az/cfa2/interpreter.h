@@ -1,10 +1,44 @@
 #ifndef _AZ_CFA2_INTERPRETER_H_
 #define _AZ_CFA2_INTERPRETER_H_
+#include <iv/debug.h>
 #include <az/cfa2/interpreter_fwd.h>
+#include <az/cfa2/frame.h>
 namespace az {
 namespace cfa2 {
 
+class Work { };
+
 void Interpreter::Run(FunctionLiteral* global) {
+  Frame frame;
+  std::cout << "INTERPRETER START" << std::endl;
+
+  // decl initializer
+
+  frame.SetThis(heap_->GetGlobal());
+  const Scope& scope = global->scope();
+  for (Scope::Variables::const_iterator it = scope.variables().begin(),
+       last = scope.variables().end(); it != last; ++it) {
+    const Scope::Variable& var = *it;
+    Identifier* ident = var.first;
+    assert(ident->refer());
+    frame.Set(heap_, ident->refer(), AVal(AVAL_NOBASE));
+  }
+
+  for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
+       last = scope.function_declarations().end(); it != last; ++it) {
+    const Symbol fn = Intern((*it)->name().Address()->value());
+    Identifier* ident = (*it)->name().Address();
+    assert(ident->refer());
+    frame.Set(heap_, ident->refer(), AVal(AVAL_NOBASE));
+  }
+
+  // interpret global function
+  for (Statements::const_iterator it = global->body().begin(),
+       last = global->body().end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
+
+  // summary update phase
 }
 
 // Statements

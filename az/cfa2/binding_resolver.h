@@ -289,8 +289,10 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   for (Scope::Variables::const_iterator it = scope.variables().begin(),
        last = scope.variables().end(); it != last; ++it) {
     const Scope::Variable& var = *it;
-    const Symbol dn = Intern(var.first->value());
+    Identifier* ident = var.first;
+    const Symbol dn = Intern(ident->value());
     Binding* binding = heap_->Instantiate(dn);
+    ident->set_refer(binding);  // set refer binding to identifier
     inner_scope.push_back(binding);
     if (type == FunctionLiteral::GLOBAL) {
       heap_->RecordDeclaredHeapBinding(binding);
@@ -298,8 +300,11 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   }
   for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
        last = scope.function_declarations().end(); it != last; ++it) {
-    const Symbol fn = Intern((*it)->name().Address()->value());
-    inner_scope.push_back(heap_->Instantiate(fn));
+    Identifier* ident = (*it)->name().Address();
+    const Symbol fn = Intern(ident->value());
+    Binding* binding = heap_->Instantiate(fn);
+    ident->set_refer(binding);  // set refer binding to identifier
+    inner_scope.push_back(binding);
   }
 
   // realization

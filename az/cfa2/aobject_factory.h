@@ -1,6 +1,6 @@
 // AObject factory
-#ifndef _AZ_CFA2_FACTORY_H_
-#define _AZ_CFA2_FACTORY_H_
+#ifndef _AZ_CFA2_AOBJECT_FACTORY_H_
+#define _AZ_CFA2_AOBJECT_FACTORY_H_
 #include <algorithm>
 #include <new>
 #include <deque>
@@ -12,9 +12,9 @@
 namespace az {
 namespace cfa2 {
 
-class Factory : private iv::core::Noncopyable<Factory> {
+class AObjectFactory : private iv::core::Noncopyable<AObjectFactory> {
  public:
-  Factory()
+  AObjectFactory()
     : space_(),
       created_objects_() {
   }
@@ -31,13 +31,19 @@ class Factory : private iv::core::Noncopyable<Factory> {
     return obj;
   }
 
+  AObject* NewAObject(Builtin func, AVal proto) {
+    AObject* obj = new (&space_) AObject(func, proto);
+    created_objects_.push_back(obj);
+    return obj;
+  }
+
   AObject* NewAObject(AVal proto) {
     AObject* obj = new (&space_) AObject(proto);
     created_objects_.push_back(obj);
     return obj;
   }
 
-  ~Factory() {
+  ~AObjectFactory() {
     // call destructors
     std::for_each(created_objects_.begin(),
                   created_objects_.end(), TypedDestructor<AObject>());
@@ -48,4 +54,4 @@ class Factory : private iv::core::Noncopyable<Factory> {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_FACTORY_H_
+#endif  // _AZ_CFA2_AOBJECT_FACTORY_H_
