@@ -20,7 +20,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
   Heap()
     : heap_(),
       declared_heap_bindings_(),
-      timestamp_(1) {
+      timestamp_(1),
+      call_count_(0) {
     // initialize builtin objects
 
     // Global
@@ -148,6 +149,9 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return array_function_called_value_;
   }
 
+  void InitPending(AObject* func) {
+  }
+
   void InitSummary(FunctionLiteral* literal, AObject* func) {
     summaries_.insert(
         std::make_pair(
@@ -155,7 +159,29 @@ class Heap : private iv::core::Noncopyable<Heap> {
             std::shared_ptr<Summary>(new Summary(literal, func))));
   }
 
-  void InitPending(AObject* func) {
+  bool FindSummary(AObject* func,
+                   const AVal& this_binding,
+                   const std::vector<AVal>& args, Answer* result) const {
+    Summaries::const_iterator s = summaries_.find(func->function());
+    assert(s != summaries_.end());
+    if (s->second->timestamp() < timestamp_) {
+      // out of date summary
+      return false;
+    }
+    for (Summary::Entries::const_iterator it = s->second->candidates().begin(),
+         last = s->second->candidates().end(); it != last; ++it) {
+      const Summary::Entry& entry = **it;
+      if (std::get<0>(entry) == this_binding) {
+        if (args.size() == std::get<1>(entry).size()) {
+          if (std::equal(args.begin(), args.end(), std::get<1>(entry).begin())) {
+            // fit summary found
+            *result = std::get<2>(entry);
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   const Summaries& summaries() const {
@@ -166,6 +192,14 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return summaries_;
   }
 
+  void CountUpCall() {
+    ++call_count_;
+  }
+
+  void CountUpDepth() {
+    ++depth_;
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
@@ -174,6 +208,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
   Summaries summaries_;
   AObjectFactory factory_;
   uint64_t timestamp_;
+  uint64_t call_count_;
+  uint64_t depth_;
 
   AVal global_;
   AVal object_prototype_;

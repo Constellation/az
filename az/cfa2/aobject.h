@@ -4,13 +4,14 @@
 #include <iv/space.h>
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aval_fwd.h>
+#include <az/cfa2/answer.h>
 namespace az {
 namespace cfa2 {
 
-typedef AVal (*Builtin)(Heap* heap,
-                        const AVal& this_binding,
-                        const std::vector<AVal>* args,
-                        bool IsConstructorCalled);
+typedef Answer (*Builtin)(Heap* heap,
+                          const AVal& this_binding,
+                          const std::vector<AVal>& args,
+                          bool IsConstructorCalled);
 
 namespace A {
   enum Attribute {
@@ -94,6 +95,14 @@ class AObject
       properties_() {
   }
 
+  Builtin builtin() const {
+    return builtin_;
+  }
+
+  FunctionLiteral* function() const {
+    return function_;
+  }
+
   void AddProperty(Symbol name, const AProp& prop) {
     properties_.insert(std::make_pair(name, prop));
   }
@@ -127,6 +136,7 @@ class AObject
       return AVal();
     }
   }
+
  private:
   AVal proto_;
   FunctionLiteral* function_;

@@ -205,16 +205,18 @@ void HeapInitializer::Visit(FalseLiteral* lit) {
 }
 
 void HeapInitializer::Visit(RegExpLiteral* literal) {
+  std::vector<AVal> args;
   AObject* regexp = heap_->GetFactory()->NewAObject();
   heap_->DeclObject(literal, regexp);
-  REGEXP_CONSTRUCTOR(heap_, AVal(regexp), NULL, false);
+  REGEXP_CONSTRUCTOR(heap_, AVal(regexp), args, false);
 }
 
 void HeapInitializer::Visit(ArrayLiteral* literal) {
   // store AObject address to heap
+  std::vector<AVal> args;
   AObject* ary = heap_->GetFactory()->NewAObject();
   heap_->DeclObject(literal, ary);
-  ARRAY_CONSTRUCTOR(heap_, AVal(ary), NULL, true);
+  ARRAY_CONSTRUCTOR(heap_, AVal(ary), args, true);
 
   // visit each elements
   for (MaybeExpressions::const_iterator it = literal->items().begin(),

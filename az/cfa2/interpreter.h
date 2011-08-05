@@ -56,9 +56,9 @@ void Interpreter::Run(FunctionLiteral* global) {
     if (!it->second->IsExists()) {
       // not summarized yet
       const std::vector<AVal> vec(it->first->params().size(), AVal(AVAL_NOBASE));
-      EvaluateFunction(it->first,
+      EvaluateFunction(it->second->target(),
                        AVal(heap_->MakeObject()),
-                       &vec,
+                       vec,
                        false);
     }
   }
@@ -196,10 +196,22 @@ void Interpreter::Visit(CaseClause* clause) {
 }
 
 
-void Interpreter::EvaluateFunction(FunctionLiteral* function,
-                                   const AVal& this_binding,
-                                   const std::vector<AVal>* args,
-                                   bool IsConstructorCalled) {
+Answer Interpreter::EvaluateFunction(AObject* function,
+                                     const AVal& this_binding,
+                                     const std::vector<AVal>& args,
+                                     bool IsConstructorCalled) {
+  if (function->builtin()) {
+    return function->builtin()(heap_, this_binding, args, IsConstructorCalled);
+  }
+
+  heap_->CountUpCall();
+  Answer result;
+  if (heap_->FindSummary(function, this_binding, args, &result)) {
+    // summary found. so, use this result
+    return result;
+  }
+  heap_->CountUpDepth();
+  return result;
 }
 
 } }  // namespace az::cfa2

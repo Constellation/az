@@ -16,5 +16,7 @@ class BindingResolver;
 
 class Heap;
 
+class Frame;
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_FWD_H_
