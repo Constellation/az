@@ -1356,7 +1356,7 @@ class Parser : private iv::core::Noncopyable<> {
     }
 
     bool default_found = false;
-    while (token_ != Token::TK_RBRACE) {
+    while (token_ != Token::TK_RBRACE && token_ != Token::TK_EOS) {
       if (token_ == Token::TK_CASE ||
           token_ == Token::TK_DEFAULT) {
         case_clause = ParseCaseClause(res);
@@ -1409,6 +1409,18 @@ class Parser : private iv::core::Noncopyable<> {
         clauses->push_back(case_clause);
       }
     }
+    if (token_ == Token::TK_EOS) {
+      failed = true;
+      UNEXPECT_STATEMENT(token_);
+      reporter_->ReportSyntaxError(errors_.back(), begin);
+      *res = true;  // recovery
+      SwitchStatement* const stmt =
+          factory_->NewSwitchStatement(expr, clauses,
+                                       begin,
+                                       lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      return stmt;
+    }
     Next();
     assert(expr && clauses);
     SwitchStatement* const switch_stmt =
@@ -1446,15 +1458,21 @@ class Parser : private iv::core::Noncopyable<> {
 
     while (token_ != Token::TK_RBRACE &&
            token_ != Token::TK_CASE   &&
-           token_ != Token::TK_DEFAULT) {
+           token_ != Token::TK_DEFAULT &&
+           token_ != Token::TK_EOS) {
       Statement* const stmt = ParseStatement(res);
       body->push_back(stmt);
     }
+    const bool failed = token_ == Token::TK_EOS;
 
     assert(body);
-    return factory_->NewCaseClause(expr == NULL,
-                                   expr, body,
-                                   begin, lexer_.previous_end_position());
+    CaseClause* clause = factory_->NewCaseClause(expr == NULL,
+                                                 expr, body,
+                                                 begin, lexer_.previous_end_position());
+    if (failed) {
+      UNEXPECT_STATEMENT(Token::TK_EOS);
+    }
+    return clause;
   }
 
 //  ThrowStatement
