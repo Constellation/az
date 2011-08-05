@@ -51,6 +51,17 @@ void Interpreter::Run(FunctionLiteral* global) {
   // summary update phase
   //
   // enumerate summaries and if this function is not summaried, so make this
+  for (Summaries::const_iterator it = heap_->summaries().begin(),
+       last = heap_->summaries().end(); it != last; ++it) {
+    if (!it->second->IsExists()) {
+      // not summarized yet
+      const std::vector<AVal> vec(it->first->params().size(), AVal(AVAL_NOBASE));
+      EvaluateFunction(it->first,
+                       AVal(heap_->MakeObject()),
+                       &vec,
+                       false);
+    }
+  }
 }
 
 // Statements
@@ -182,6 +193,13 @@ void Interpreter::Visit(Declaration* dummy) {
 }
 
 void Interpreter::Visit(CaseClause* clause) {
+}
+
+
+void Interpreter::EvaluateFunction(FunctionLiteral* function,
+                                   const AVal& this_binding,
+                                   const std::vector<AVal>* args,
+                                   bool IsConstructorCalled) {
 }
 
 } }  // namespace az::cfa2

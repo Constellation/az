@@ -1,12 +1,15 @@
 #ifndef _AZ_CFA2_HEAP_H_
 #define _AZ_CFA2_HEAP_H_
 #include <algorithm>
+#include <utility>
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/deleter.h>
 #include <az/cfa2/builtins_fwd.h>
 #include <az/cfa2/binding.h>
 #include <az/cfa2/aobject_factory.h>
+#include <az/cfa2/summary.h>
+#include <az/cfa2/timestamp.h>
 namespace az {
 namespace cfa2 {
 
@@ -17,7 +20,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   Heap()
     : heap_(),
       declared_heap_bindings_(),
-      timestamp_(0) {
+      timestamp_(1) {
     // initialize builtin objects
 
     // Global
@@ -146,9 +149,21 @@ class Heap : private iv::core::Noncopyable<Heap> {
   }
 
   void InitSummary(FunctionLiteral* literal, AObject* func) {
+    summaries_.insert(
+        std::make_pair(
+            literal,
+            std::shared_ptr<Summary>(new Summary(literal, func))));
   }
 
   void InitPending(AObject* func) {
+  }
+
+  const Summaries& summaries() const {
+    return summaries_;
+  }
+
+  Summaries& summaries() {
+    return summaries_;
   }
 
  private:
@@ -156,6 +171,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   HeapSet declared_heap_bindings_;
   std::unordered_map<AstNode*, AVal> decls_;
   std::unordered_map<Binding*, AVal> binding_heap_;
+  Summaries summaries_;
   AObjectFactory factory_;
   uint64_t timestamp_;
 

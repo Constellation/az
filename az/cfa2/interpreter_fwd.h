@@ -73,6 +73,10 @@ class Interpreter
   inline void Visit(Declaration* dummy);
   inline void Visit(CaseClause* clause);
 
+  inline void EvaluateFunction(FunctionLiteral* function,
+                               const AVal& this_binding,
+                               const std::vector<AVal>* args,
+                               bool IsConstructorCalled);
   Heap* heap_;
   Completer* completer_;
   Answer answer_;  // result tuple
