@@ -134,7 +134,21 @@ class Heap : private iv::core::Noncopyable<Heap> {
   }
 
   void DeclObject(AstNode* node, AObject* obj) {
-    decls_[node] = AVal(obj);
+    decls_[node] = obj;
+  }
+
+  AObject* GetDeclObject(AstNode* node) const {
+    return decls_.find(node)->second;
+  }
+
+  void UpdateHeap(Binding* binding, const AVal& val) {
+    AVal old(binding->value());
+    if (!(val < old)) {
+      old.Join(val);
+      binding->set_value(old);
+      // heap update, so count up timestamp
+      binding->set_timestamp(++timestamp_);
+    }
   }
 
   uint64_t timestamp() const {
@@ -203,7 +217,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
-  std::unordered_map<AstNode*, AVal> decls_;
+  std::unordered_map<AstNode*, AObject*> decls_;
   std::unordered_map<Binding*, AVal> binding_heap_;
   Summaries summaries_;
   AObjectFactory factory_;

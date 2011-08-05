@@ -35,6 +35,10 @@ class Binding : private iv::core::Noncopyable<Binding> {
     return timestamp_;
   }
 
+  void set_timestamp(uint64_t timestamp) {
+    timestamp_ = timestamp;
+  }
+
   AVal value() const {
     return value_;
   }

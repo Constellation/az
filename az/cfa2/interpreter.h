@@ -39,7 +39,7 @@ void Interpreter::Run(FunctionLiteral* global) {
     const Symbol fn = Intern((*it)->name().Address()->value());
     Identifier* ident = (*it)->name().Address();
     assert(ident->refer());
-    frame.Set(heap_, ident->refer(), AVal(AVAL_NOBASE));
+    frame.Set(heap_, ident->refer(), AVal(heap_->GetDeclObject(*it)));
   }
 
   // interpret global function
@@ -211,6 +211,65 @@ Answer Interpreter::EvaluateFunction(AObject* function,
     return result;
   }
   heap_->CountUpDepth();
+
+  // interpret function
+  //
+  Frame* previous = frame_;
+  Frame frame;
+  frame_ = &frame;
+
+  frame_->SetThis(this_binding);
+  FunctionLiteral* literal = function->function();
+  const FunctionLiteral::DeclType type = literal->type();
+  if (type == FunctionLiteral::STATEMENT ||
+      (type == FunctionLiteral::EXPRESSION && literal->name())) {
+    // in scope, so set to the frame
+    Identifier* name = literal->name().Address();
+    frame_->Set(heap_, name->refer(), AVal(heap_->GetDeclObject(literal)));
+  }
+
+  // parameter binding initialization
+  std::size_t index = 0;
+  const std::size_t args_size = args.size();
+  for (Identifiers::const_iterator it = literal->params().begin(),
+       last = literal->params().end(); it != last; ++it, ++index) {
+    Binding* binding = (*it)->refer();
+    assert(binding);
+    const AVal target(args_size > index ? args[index] : AVal(AVAL_UNDEFINED));
+    if (binding->type() == Binding::HEAP) {
+      heap_->UpdateHeap(binding, target);
+    }
+    frame_->Set(heap_, binding, target);
+  }
+
+  if (index < args_size) {
+    AVal result(AVAL_NOBASE);
+    for (;index < args_size; ++index) {
+      result.Join(args[index]);
+    }
+    frame_->SetRest(result);
+  }
+
+  const Scope& scope = literal->scope();
+  for (Scope::Variables::const_iterator it = scope.variables().begin(),
+       last = scope.variables().end(); it != last; ++it) {
+    const Scope::Variable& var = *it;
+    Identifier* ident = var.first;
+    assert(ident->refer());
+    frame_->Set(heap_, ident->refer(), AVal(AVAL_NOBASE));
+  }
+
+  for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
+       last = scope.function_declarations().end(); it != last; ++it) {
+    const Symbol fn = Intern((*it)->name().Address()->value());
+    Identifier* ident = (*it)->name().Address();
+    assert(ident->refer());
+    frame_->Set(heap_, ident->refer(), AVal(heap_->GetDeclObject(*it)));
+  }
+
+
+  frame_ = previous;
+
   return result;
 }
 

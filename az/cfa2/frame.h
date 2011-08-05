@@ -10,12 +10,16 @@ class Frame {
  public:
   typedef std::unordered_map<Binding*, std::pair<AVal, uint64_t> > Table;
 
-  void Set(Heap* heap, Binding* binding, AVal val) {
+  void Set(Heap* heap, Binding* binding, const AVal& val) {
     table_[binding] = std::make_pair(val, heap->timestamp());
   }
 
-  void SetThis(AVal binding) {
+  void SetThis(const AVal& binding) {
     this_binding_ = binding;
+  }
+
+  void SetRest(const AVal& rest) {
+    rest_ = rest;
   }
 
   // check heap and update and return
@@ -32,6 +36,7 @@ class Frame {
  private:
   Table table_;
   AVal this_binding_;
+  AVal rest_;
 };
 
 
