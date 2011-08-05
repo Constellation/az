@@ -25,7 +25,7 @@ var onInput = _.debounce(function onInput() {
       lineElements[i].classList.remove("error");
     }
   }
-}, 600);
+}, 0);
 
 function addLines(height, top) {
   var n = Math.ceil(height / 16);
