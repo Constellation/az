@@ -15,7 +15,7 @@
   margin: 0px;
   padding: 0px;
   margin-right: 10px;
-  border: 1px solid black;
+  border: 1px solid gray;
   width: 50px;
   height: 300px;
   float: left;
@@ -33,14 +33,46 @@
 }
 
 #main {
-  margin: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-bottom: 20px;
   padding: 0px;
   width: 800px;
   height: 300px;
   background-color: transparent;
-  border: 1px solid black;
+  border: 1px solid gray;
   font-size: 10pt;
   float: left;
   resize: none;
   overflow: scroll;
+}
+
+#logs_list {
+  margin-left: 0px;
+  margin-right: 0px;
+  padding: 10px;
+  width: 842px;
+  height: 300px;
+  border: 1px solid gray;
+  overflow-y: scroll;
+  border: solid 1px silver;
+  list-style: none none inside;
+}
+
+#logs_list > li {
+  margin: 0px
+  padding: 0px;
+  border-bottom: 1px solid gray;
+}
+
+#logs_list > li {
+  padding: 0px 5px;
+  cursor: pointer;
+  background-color: #ffffff;
+}
+#logs_list > li.selected {
+  background-color: #ccf0ff;
+}
+#logs_list > li:hover {
+  background-color: #ffe4e1;
 }
