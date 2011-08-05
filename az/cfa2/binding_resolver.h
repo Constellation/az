@@ -123,8 +123,11 @@ void BindingResolver::Visit(ThrowStatement* stmt) {
 void BindingResolver::Visit(TryStatement* stmt) {
   stmt->body()->Accept(this);
   if (const iv::core::Maybe<Block> block = stmt->catch_block()) {
-    const Symbol name = Intern(stmt->catch_name().Address()->value());
-    inner_scope_->push_back(heap_->Instantiate(name));
+    Identifier* ident = stmt->catch_name().Address();
+    const Symbol name = Intern(ident->value());
+    Binding* binding = heap_->Instantiate(name);
+    ident->set_refer(binding);
+    inner_scope_->push_back(binding);
     block.Address()->Accept(this);
     inner_scope_->pop_back();
   }
