@@ -14,9 +14,11 @@ void HeapInitializer::Visit(Block* block) {
 }
 
 void HeapInitializer::Visit(FunctionStatement* func) {
+  Visit(func->function());
 }
 
 void HeapInitializer::Visit(FunctionDeclaration* func) {
+  Visit(func->function());
 }
 
 void HeapInitializer::Visit(VariableStatement* var) {
@@ -186,7 +188,12 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
 
   // insert current function summary
   heap_->InitSummary(literal, obj);
+  heap_->InitPending(obj);
 
+  for (Statements::const_iterator it = literal->body().begin(),
+       last = literal->body().end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
 }
 
 void HeapInitializer::Visit(IdentifierAccess* prop) {

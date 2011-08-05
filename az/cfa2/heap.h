@@ -148,6 +148,9 @@ class Heap : private iv::core::Noncopyable<Heap> {
   void InitSummary(FunctionLiteral* literal, AObject* func) {
   }
 
+  void InitPending(AObject* func) {
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
