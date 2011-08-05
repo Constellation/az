@@ -73,27 +73,39 @@ void HeapInitializer::Visit(ExpressionStatement* stmt) {
 // Expressions
 
 void HeapInitializer::Visit(Assignment* assign) {
+  assign->left()->Accept(this);
+  assign->right()->Accept(this);
 }
 
 void HeapInitializer::Visit(BinaryOperation* binary) {
+  binary->left()->Accept(this);
+  binary->right()->Accept(this);
 }
 
 void HeapInitializer::Visit(ConditionalExpression* cond) {
+  cond->cond()->Accept(this);
+  cond->left()->Accept(this);
+  cond->right()->Accept(this);
 }
 
 void HeapInitializer::Visit(UnaryOperation* unary) {
+  unary->expr()->Accept(this);
 }
 
 void HeapInitializer::Visit(PostfixExpression* postfix) {
+  postfix->expr()->Accept(this);
 }
 
 void HeapInitializer::Visit(StringLiteral* literal) {
+  // nothing
 }
 
 void HeapInitializer::Visit(NumberLiteral* literal) {
+  // nothing
 }
 
 void HeapInitializer::Visit(Identifier* literal) {
+  // nothing
 }
 
 void HeapInitializer::Visit(ThisLiteral* literal) {
@@ -113,21 +125,79 @@ void HeapInitializer::Visit(FalseLiteral* lit) {
 }
 
 void HeapInitializer::Visit(RegExpLiteral* literal) {
+  AObject* regexp = heap_->GetFactory()->NewAObject();
+  heap_->DeclObject(literal, regexp);
+  REGEXP_CONSTRUCTOR(heap_, AVal(regexp), NULL, false);
 }
 
 void HeapInitializer::Visit(ArrayLiteral* literal) {
+  // store AObject address to heap
+  AObject* ary = heap_->GetFactory()->NewAObject();
+  heap_->DeclObject(literal, ary);
+  ARRAY_CONSTRUCTOR(heap_, AVal(ary), NULL, true);
+
+  // visit each elements
+  for (MaybeExpressions::const_iterator it = literal->items().begin(),
+       last = literal->items().end(); it != last; ++it) {
+    if (const iv::core::Maybe<Expression> expr = *it) {
+      expr.Address()->Accept(this);
+    }
+  }
 }
 
 void HeapInitializer::Visit(ObjectLiteral* literal) {
+  AObject* obj = heap_->MakeObject();
+  heap_->DeclObject(literal, obj);
+  for (ObjectLiteral::Properties::const_iterator it = literal->properties().begin(),
+       last = literal->properties().end(); it != last; ++it) {
+    const ObjectLiteral::Property& prop = *it;
+    if (std::get<0>(prop) == ObjectLiteral::DATA) {
+      std::get<2>(prop)->Accept(this);
+    }
+  }
 }
 
 void HeapInitializer::Visit(FunctionLiteral* literal) {
+  AObject* obj = heap_->MakeFunction(literal);
+  heap_->DeclObject(literal, obj);
+  obj->AddProperty(
+      Intern("prototype"),
+      AProp(AVal(AVAL_NOBASE), A::W | A::C));
+
+  if (iv::core::Maybe<Identifier> ident = literal->name()) {
+    // function literal name has always binding
+    Binding* binding = ident.Address()->refer();
+    assert(binding);
+    if (binding->type() == Binding::HEAP) {
+      // this is heap variable, so initialize it (not stack)
+      binding->set_value(AVal(obj));
+    }
+  }
+
+  // parameter binding initialization
+  for (Identifiers::const_iterator it = literal->params().begin(),
+       last = literal->params().end(); it != last; ++it) {
+    Binding* binding = (*it)->refer();
+    assert(binding);
+    if (binding->type() == Binding::HEAP) {
+      binding->set_value(AVal(AVAL_NOBASE));
+    }
+  }
+
+  // insert current function summary
+  heap_->InitSummary(literal, obj);
+
 }
 
 void HeapInitializer::Visit(IdentifierAccess* prop) {
+  // TODO(Constellation) handling arguments
+  prop->target()->Accept(this);
 }
 
 void HeapInitializer::Visit(IndexAccess* prop) {
+  // TODO(Constellation) handling arguments
+  prop->target()->Accept(this);
+  prop->key()->Accept(this);
 }
 
 void HeapInitializer::Visit(FunctionCall* call) {

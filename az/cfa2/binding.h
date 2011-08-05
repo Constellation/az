@@ -3,10 +3,9 @@
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/symbol.h>
+#include <az/cfa2/aval_fwd.h>
 namespace az {
 namespace cfa2 {
-
-class AVal;
 
 // target variable decls
 class Binding : private iv::core::Noncopyable<Binding> {
@@ -20,7 +19,8 @@ class Binding : private iv::core::Noncopyable<Binding> {
   explicit Binding(Symbol name, Type type)
     : name_(name),
       type_(type),
-      value_() {
+      timestamp_(0),
+      value_(AVAL_NOBASE) {
   }
 
   Symbol name() const {
@@ -31,8 +31,16 @@ class Binding : private iv::core::Noncopyable<Binding> {
     return type_;
   }
 
-  std::shared_ptr<AVal> value() const {
+  uint64_t timestamp() const {
+    return timestamp_;
+  }
+
+  AVal value() const {
     return value_;
+  }
+
+  void set_value(const AVal& val) {
+    value_ = val;
   }
 
   void ToHeap() {
@@ -46,7 +54,8 @@ class Binding : private iv::core::Noncopyable<Binding> {
  private:
   Symbol name_;
   Type type_;
-  std::shared_ptr<AVal> value_;
+  uint64_t timestamp_;
+  AVal value_;
 };
 
 } }  // namespace az::cfa2

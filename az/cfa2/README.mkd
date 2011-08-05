@@ -1,0 +1,10 @@
+# Az/CFA2
+
+az/cfa2 is highly inspired from Doctor.JS
+
+CFA2 original report is
+  http://www.ccs.neu.edu/home/dimvar/papers/cfa2-NU-CCIS-10-01.pdf
+and highly inspired from doctorjs src code
+  http://doctorjs.org/
+
+

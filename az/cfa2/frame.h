@@ -21,10 +21,9 @@ class Frame {
   // check heap and update and return
   AVal Get(Heap* heap, Binding* binding) {
     std::pair<AVal, uint64_t> pair = table_[binding];
-    const std::pair<AVal, uint64_t> mod = heap->modified_[binding];
-    if (pair.second < mod.second) {
-      pair.first.Join(mod.first);
-      pair.second = mod.second;
+    if (pair.second < binding->timestamp()) {
+      pair.first.Join(binding->value());
+      pair.second = binding->timestamp();
       table_[binding] = pair;
     }
     return pair.first;

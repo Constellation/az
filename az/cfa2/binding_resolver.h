@@ -279,19 +279,23 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   const FunctionLiteral::DeclType type = literal->type();
   for (Identifiers::const_iterator it = literal->params().begin(),
        last = literal->params().end(); it != last; ++it) {
-    inner_scope.push_back(heap_->Instantiate(Intern((*it)->value())));
+    Identifier* ident = *it;
+    Binding* binding = heap_->Instantiate(Intern(ident->value()));
+    ident->set_refer(binding);
+    inner_scope.push_back(binding);
   }
   if (type == FunctionLiteral::STATEMENT ||
       (type == FunctionLiteral::EXPRESSION && literal->name())) {
-    const Symbol name = Intern(literal->name().Address()->value());
-    inner_scope.push_back(heap_->Instantiate(name));
+    Identifier* ident = literal->name().Address();
+    Binding* binding = heap_->Instantiate(Intern(ident->value()));
+    ident->set_refer(binding);
+    inner_scope.push_back(binding);
   }
   for (Scope::Variables::const_iterator it = scope.variables().begin(),
        last = scope.variables().end(); it != last; ++it) {
     const Scope::Variable& var = *it;
     Identifier* ident = var.first;
-    const Symbol dn = Intern(ident->value());
-    Binding* binding = heap_->Instantiate(dn);
+    Binding* binding = heap_->Instantiate(Intern(ident->value()));
     ident->set_refer(binding);  // set refer binding to identifier
     inner_scope.push_back(binding);
     if (type == FunctionLiteral::GLOBAL) {
@@ -301,8 +305,7 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
        last = scope.function_declarations().end(); it != last; ++it) {
     Identifier* ident = (*it)->name().Address();
-    const Symbol fn = Intern(ident->value());
-    Binding* binding = heap_->Instantiate(fn);
+    Binding* binding = heap_->Instantiate(Intern(ident->value()));
     ident->set_refer(binding);  // set refer binding to identifier
     inner_scope.push_back(binding);
   }
@@ -320,7 +323,6 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   }
 
   // fix up
-
 
   // shrink outer scope to previous size (remove added inner scope bindings)
   outer_scope_.resize(previous_size);

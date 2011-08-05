@@ -2,11 +2,15 @@
 #define _AZ_CFA2_AOBJECT_H_
 #include <iv/noncopyable.h>
 #include <iv/space.h>
+#include <az/cfa2/fwd.h>
 #include <az/cfa2/aval_fwd.h>
 namespace az {
 namespace cfa2 {
 
-typedef AVal (*Builtin)(const AVal& this_binding, const std::vector<AVal>& args);
+typedef AVal (*Builtin)(Heap* heap,
+                        const AVal& this_binding,
+                        const std::vector<AVal>* args,
+                        bool IsConstructorCalled);
 
 namespace A {
   enum Attribute {

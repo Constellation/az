@@ -5,15 +5,38 @@
 namespace az {
 namespace cfa2 {
 
-
-AVal OBJECT_CONSTRUCTOR(const AVal& this_binding,
-                        const std::vector<AVal>& args) {
+inline AVal OBJECT_CONSTRUCTOR(Heap* heap,
+                               const AVal& this_binding,
+                               const std::vector<AVal>* args,
+                               bool IsConstructorCalled) {
   return AVal();
 }
 
+inline AVal ARRAY_CONSTRUCTOR(Heap* heap,
+                             const AVal& this_binding,
+                             const std::vector<AVal>* args,
+                             bool IsConstructorCalled) {
+  std::size_t len = 0;
+  if (args) {
+    len = args->size();
+  }
+  if (IsConstructorCalled) {
+    // called by new Array() form
+    // TODO(Constellation) implement it
+    return AVal();
+  } else {
+    // called by Array() form
+    // TODO(Constellation) implement it
+    AVal val = heap->GetArrayFunctionCalledValue();
+    // mutate and return this
+    return val;
+  }
+}
 
-AVal ARRAY_CONSTRUCTOR(const AVal& this_binding,
-                       const std::vector<AVal>& args) {
+inline AVal REGEXP_CONSTRUCTOR(Heap* heap,
+                               const AVal& this_binding,
+                               const std::vector<AVal>* args,
+                               bool IsConstructorCalled) {
   return AVal();
 }
 

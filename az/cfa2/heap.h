@@ -4,7 +4,7 @@
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/deleter.h>
-#include <az/cfa2/builtins.h>
+#include <az/cfa2/builtins_fwd.h>
 #include <az/cfa2/binding.h>
 #include <az/cfa2/aobject_factory.h>
 namespace az {
@@ -83,6 +83,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
     // Array
     AObject* ap = factory_.NewAObject(object_prototype_);
     AVal apav(ap);
+
+    AObject* anonew = factory_.NewAObject(apav);
+    array_function_called_value_ = AVal(anonew);
+
     AObject* a = factory_.NewAObject(
         ARRAY_CONSTRUCTOR,
         object_prototype_);
@@ -113,9 +117,12 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return &factory_;
   }
 
-  AVal MakeObject() {
-    AObject* obj = factory_.NewAObject(object_prototype_);
-    return AVal(obj);
+  AObject* MakeObject() {
+    return factory_.NewAObject(object_prototype_);
+  }
+
+  AObject* MakeFunction(FunctionLiteral* function) {
+    return factory_.NewAObject(function, function_prototype_);
   }
 
   void RecordDeclaredHeapBinding(Binding* binding) {
@@ -130,19 +137,21 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return timestamp_;
   }
 
-  const std::unordered_map<Binding*, std::pair<AVal, uint64_t> >& GetModified() const {
-    return modified_;
-  }
-
   AVal GetGlobal() const {
     return global_;
+  }
+
+  AVal GetArrayFunctionCalledValue() const {
+    return array_function_called_value_;
+  }
+
+  void InitSummary(FunctionLiteral* literal, AObject* func) {
   }
 
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
   std::unordered_map<AstNode*, AVal> decls_;
-  std::unordered_map<Binding*, std::pair<AVal, uint64_t> > modified_;  // record binding modified time
   std::unordered_map<Binding*, AVal> binding_heap_;
   AObjectFactory factory_;
   uint64_t timestamp_;
@@ -150,6 +159,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   AVal global_;
   AVal object_prototype_;
   AVal function_prototype_;
+  AVal array_function_called_value_;
 };
 
 } }  // namespace az::cfa2
