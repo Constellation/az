@@ -112,9 +112,11 @@ void Interpreter::Visit(IfStatement* stmt) {
 }
 
 void Interpreter::Visit(DoWhileStatement* stmt) {
+  stmt->cond()->Accept(this);
 }
 
 void Interpreter::Visit(WhileStatement* stmt) {
+  stmt->cond()->Accept(this);
 }
 
 void Interpreter::Visit(ForStatement* stmt) {
@@ -124,9 +126,11 @@ void Interpreter::Visit(ForInStatement* stmt) {
 }
 
 void Interpreter::Visit(ContinueStatement* stmt) {
+  // do nothing
 }
 
 void Interpreter::Visit(BreakStatement* stmt) {
+  // do nothing
 }
 
 void Interpreter::Visit(ReturnStatement* stmt) {
@@ -146,6 +150,7 @@ void Interpreter::Visit(LabelledStatement* stmt) {
 }
 
 void Interpreter::Visit(SwitchStatement* stmt) {
+  stmt->expr()->Accept(this);
 }
 
 void Interpreter::Visit(CaseClause* clause) {
@@ -246,6 +251,7 @@ void Interpreter::Visit(BinaryOperation* binary) {
     case Token::TK_NE:  // !=
     case Token::TK_EQ_STRICT:  // ===
     case Token::TK_NE_STRICT: {  // !==
+      // returns bool
       binary->left()->Accept(this);
       const Answer la = answer_;
       binary->right()->Accept(this);
@@ -470,6 +476,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
     if (!task) {
       continue;  // next statement
     }
+    // patching phase
     if (task->AsReturnStatement()) {
       task->Accept(this);
       result.Join(std::get<0>(answer_));
