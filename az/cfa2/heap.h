@@ -198,6 +198,20 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return false;
   }
 
+  void AddSummary(AObject* func,
+                  const AVal& this_binding,
+                  const std::vector<AVal>& args, const Answer& result) {
+    Summaries::iterator s = summaries_.find(func->function());
+    assert(s != summaries_.end());
+    if (s->second->timestamp() == timestamp_) {
+      s->second->AddCandidate(this_binding, args, result);
+    } else if (s->second->timestamp() < timestamp_) {
+      // old, so clear candidates
+      s->second->UpdateCandidates(timestamp_, this_binding, args, result);
+    }
+    s->second->UpdateType(this_binding, args, result);
+  }
+
   const Summaries& summaries() const {
     return summaries_;
   }

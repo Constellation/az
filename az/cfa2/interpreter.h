@@ -181,6 +181,7 @@ void Interpreter::Visit(FunctionLiteral* literal) {
   AVal error(AVAL_NOBASE);
   bool error_found;
   std::deque<Statement*> tasks;
+  tasks.push_back(literal->normal());
   while (true) {
     if (tasks.empty()) {
       // all task is done!
@@ -188,10 +189,12 @@ void Interpreter::Visit(FunctionLiteral* literal) {
     }
     Statement* const task = tasks.back();
     tasks.pop_back();
-    task->Accept(this);
-    if (task->normal()) {  // normal flow is not NULL
-      tasks.push_back(task->normal());
+    if (!task) {
+      continue;  // next statement
     }
+    std::cout << "STMT" << std::endl;
+    task->Accept(this);
+    tasks.push_back(task->normal());
     // check answer value and determine evaluate raised path or not
     if (std::get<1>(answer_)) {
       error_found = true;
@@ -217,6 +220,7 @@ void Interpreter::Visit(FunctionLiteral* literal) {
       }
     }
   }
+  answer_ = Answer(result, error_found, error);
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
@@ -313,6 +317,7 @@ Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
 
   // then, interpret
   Visit(literal);
+  heap_->AddSummary(function, this_binding, args, answer_);
 
   frame_ = previous;
 

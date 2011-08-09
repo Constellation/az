@@ -27,7 +27,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
   }
 
   bool IsExists() const {
-    return timestamp_ == kInvalidTimestamp;
+    return timestamp_ != kInvalidTimestamp;
   }
 
   uint64_t timestamp() const {
@@ -42,11 +42,47 @@ class Summary : private iv::core::Noncopyable<Summary> {
     return candidates_;
   }
 
+  void AddCandidate(const AVal& this_binding,
+                    const std::vector<AVal>& args, const Answer& result) {
+    candidates_.push_back(
+        std::shared_ptr<Entry>(new Entry(this_binding, args, result)));
+  }
+
+  void UpdateCandidates(uint64_t timestamp,
+                        const AVal& this_binding,
+                        const std::vector<AVal>& args, const Answer& result) {
+    timestamp_ = timestamp;
+    candidates_.clear();
+    AddCandidate(this_binding, args, result);
+  }
+
+  void UpdateType(const AVal& this_binding,
+                  const std::vector<AVal>& args, const Answer& result) {
+    std::get<0>(type_).Join(this_binding);
+    std::vector<AVal>& param = std::get<1>(type_);
+    std::vector<AVal>::const_iterator args_it = args.begin();
+    const std::vector<AVal>::const_iterator args_last = args.end();
+    for (std::vector<AVal>::iterator it = param.begin(),
+         last = param.end(); it != last; ++it) {
+      if (args_it != args_last) {
+        it->Join(*args_it);
+        ++args_it;
+      } else {
+        it->Join(AVAL_UNDEFINED);
+      }
+    }
+    std::get<0>(std::get<2>(type_)).Join(std::get<0>(result));  // return val
+    if (std::get<1>(result)) {  // error found
+      std::get<2>(std::get<2>(type_)).Join(std::get<2>(result));  // error val
+    }
+  }
+
  private:
   FunctionLiteral* function_;
   AObject* object_;
   Entries candidates_;
   AVal value_;
+  Entry type_;
   uint64_t timestamp_;
 };
 
