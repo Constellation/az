@@ -2,6 +2,7 @@
 #ifndef _AZ_CFA2_INTERPRETER_FWD_H_
 #define _AZ_CFA2_INTERPRETER_FWD_H_
 #include <vector>
+#include <deque>
 #include <iv/detail/cstdint.h>
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
@@ -17,6 +18,7 @@ class Interpreter
   : private iv::core::Noncopyable<Interpreter>,
     public MutableAstVisitor {
  public:
+  typedef std::deque<Statement*> Tasks;
   typedef std::vector<Binding*> Bindings;
 
   explicit Interpreter(Heap* heap,
@@ -82,6 +84,7 @@ class Interpreter
   Completer* completer_;
   Answer answer_;  // result tuple
   Frame* frame_;
+  Tasks* tasks_;
 };
 
 } }  // namespace az::cfa2

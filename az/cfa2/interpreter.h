@@ -79,6 +79,8 @@ void Interpreter::Visit(EmptyStatement* stmt) {
 }
 
 void Interpreter::Visit(IfStatement* stmt) {
+  // else, then statement is evaluate by main loop
+  stmt->cond()->Accept(this);
 }
 
 void Interpreter::Visit(DoWhileStatement* stmt) {
@@ -149,6 +151,7 @@ void Interpreter::Visit(PostfixExpression* postfix) {
 }
 
 void Interpreter::Visit(StringLiteral* literal) {
+  answer_ = Answer(AVal(literal->value()), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(NumberLiteral* literal) {
@@ -162,12 +165,15 @@ void Interpreter::Visit(ThisLiteral* literal) {
 }
 
 void Interpreter::Visit(NullLiteral* lit) {
+  answer_ = Answer(AVal(AVAL_NULL), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(TrueLiteral* lit) {
+  answer_ = Answer(AVal(AVAL_BOOL), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(FalseLiteral* lit) {
+  answer_ = Answer(AVal(AVAL_BOOL), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(RegExpLiteral* literal) {
@@ -186,25 +192,28 @@ void Interpreter::Visit(FunctionLiteral* literal) {
   AVal result(AVAL_NOBASE);
   AVal error(AVAL_NOBASE);
   bool error_found;
-  std::deque<Statement*> tasks;
-  tasks.push_back(literal->normal());
+  Tasks tasks;
+  Tasks* previous_tasks = tasks_;
+  tasks_ = &tasks;  // set
+
+  tasks_->push_back(literal->normal());
   while (true) {
-    if (tasks.empty()) {
+    if (tasks_->empty()) {
       // all task is done!
       break;
     }
-    Statement* const task = tasks.back();
-    tasks.pop_back();
+    Statement* const task = tasks_->back();
+    tasks_->pop_back();
     if (!task) {
       continue;  // next statement
     }
-    task->Accept(this);
     if (task->AsReturnStatement()) {
-      AVal r = std::get<0>(answer_);
+      task->Accept(this);
       result.Join(std::get<0>(answer_));
     } else {
+      task->Accept(this);
     }
-    tasks.push_back(task->normal());
+    tasks_->push_back(task->normal());
     // check answer value and determine evaluate raised path or not
     if (std::get<1>(answer_)) {
       error_found = true;
@@ -225,13 +234,14 @@ void Interpreter::Visit(FunctionLiteral* literal) {
             frame_->Set(heap_, binding, std::get<2>(answer_));
           }
         }
-        tasks.push_back(task->raised());
+        tasks_->push_back(task->raised());
       } else {
         error.Join(std::get<2>(answer_));
       }
     }
   }
   answer_ = Answer(result, error_found, error);
+  tasks_ = previous_tasks;
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
