@@ -1,5 +1,6 @@
 #ifndef _AZ_CFA2_HEAP_INITIALIZER_H_
 #define _AZ_CFA2_HEAP_INITIALIZER_H_
+#include <algorithm>
 #include <az/cfa2/heap_initializer_fwd.h>
 #include <az/cfa2/builtins.h>
 namespace az {

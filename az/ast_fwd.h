@@ -132,9 +132,46 @@ template<>
 class FunctionLiteralBase<az::AstFactory>
   : public Inherit<az::AstFactory, kFunctionLiteral> {
  public:
+  typedef Statement<az::AstFactory> StatementType;
+
+  StatementType* normal() const {
+    return normal_;
+  }
+
+  void set_normal(StatementType* normal) {
+    normal_ = normal;
+  }
+
+  StatementType* raised() const {
+    return raised_;
+  }
+
+  void set_raised(StatementType* raised) {
+    raised_ = raised;
+  }
+
  private:
+  StatementType* normal_;
+  StatementType* raised_;
 };
 
+template<>
+class BreakableStatementBase<az::AstFactory>
+  : public Inherit<az::AstFactory, kBreakableStatement> {
+ public:
+  typedef Statement<az::AstFactory> StatementType;
+
+  StatementType* jump_to() const {
+    return jump_to_;
+  }
+
+  void set_jump_to(StatementType* jump_to) {
+    jump_to_ = jump_to;
+  }
+
+ private:
+  StatementType* jump_to_;
+};
 
 } } }  // namespace iv::core::ast
 namespace az {

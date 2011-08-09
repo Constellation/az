@@ -16,7 +16,12 @@ class BindingResolver
 
 
   explicit BindingResolver(Heap* heap)
-    : heap_(heap), inner_scope_(NULL), outer_scope_() { }
+    : heap_(heap),
+      inner_scope_(NULL),
+      outer_scope_(),
+      normal_(NULL),
+      raised_(NULL) {
+  }
 
   inline void Resolve(FunctionLiteral* global);
 
@@ -66,10 +71,15 @@ class BindingResolver
   inline void Visit(Declaration* dummy);
   inline void Visit(CaseClause* clause);
 
+  inline void MarkStatements(const Statements& body);
+
+
   Heap* heap_;
   // CFA2 Variable Stacks
   Bindings* inner_scope_;
   Bindings outer_scope_;
+  Statement* normal_;
+  Statement* raised_;
 };
 
 } }  // namespace az::cfa2

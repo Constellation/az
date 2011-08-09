@@ -33,6 +33,10 @@ class Frame {
     return pair.first;
   }
 
+  bool IsDefined(Heap* heap, Binding* binding) const {
+    return table_.find(binding) != table_.end();
+  }
+
  private:
   Table table_;
   AVal this_binding_;

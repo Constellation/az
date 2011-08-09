@@ -1,5 +1,6 @@
 #ifndef _AZ_CFA2_INTERPRETER_H_
 #define _AZ_CFA2_INTERPRETER_H_
+#include <deque>
 #include <iv/debug.h>
 #include <az/cfa2/interpreter_fwd.h>
 #include <az/cfa2/heap_initializer.h>
@@ -173,6 +174,49 @@ void Interpreter::Visit(ObjectLiteral* literal) {
 }
 
 void Interpreter::Visit(FunctionLiteral* literal) {
+  // interpret function
+  // BindingResolver already marks normal / raised continuation
+  // so this function use this and walking flow and evaluate this.
+  AVal result(AVAL_NOBASE);
+  AVal error(AVAL_NOBASE);
+  bool error_found;
+  std::deque<Statement*> tasks;
+  while (true) {
+    if (tasks.empty()) {
+      // all task is done!
+      break;
+    }
+    Statement* const task = tasks.back();
+    tasks.pop_back();
+    task->Accept(this);
+    if (task->normal()) {  // normal flow is not NULL
+      tasks.push_back(task->normal());
+    }
+    // check answer value and determine evaluate raised path or not
+    if (std::get<1>(answer_)) {
+      error_found = true;
+      // raised path is catch / finally / NULL
+      // if catch   ... TryStatement,
+      //    finally ... Block
+      if (task->raised()) {  // if raised path is found
+        if (TryStatement* raised = task->AsTryStatement()) {
+          assert(raised->catch_name() && raised->catch_block());
+          Binding* binding = raised->catch_name().Address()->refer();
+          if (frame_->IsDefined(heap_, binding)) {
+            frame_->Set(
+                heap_,
+                binding,
+                std::get<2>(answer_) | frame_->Get(heap_, binding));
+          } else {
+            frame_->Set(heap_, binding, std::get<2>(answer_));
+          }
+        }
+        tasks.push_back(task->raised());
+      } else {
+        error.Join(std::get<2>(answer_));
+      }
+    }
+  }
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {

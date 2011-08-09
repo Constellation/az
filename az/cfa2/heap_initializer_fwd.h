@@ -12,7 +12,8 @@ class HeapInitializer
     public az::MutableAstVisitor {
  public:
   explicit HeapInitializer(Heap* heap)
-    : heap_(heap) { }
+    : heap_(heap) {
+  }
 
   inline void Initialize(FunctionLiteral* global);
 
@@ -61,6 +62,7 @@ class HeapInitializer
 
   inline void Visit(Declaration* dummy);
   inline void Visit(CaseClause* clause);
+
 
   Heap* heap_;
 };
