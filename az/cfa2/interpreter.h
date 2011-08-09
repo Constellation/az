@@ -203,6 +203,7 @@ void Interpreter::Visit(FunctionLiteral* literal) {
       //    finally ... Block
       if (task->raised()) {  // if raised path is found
         if (TryStatement* raised = task->AsTryStatement()) {
+          error_found = false;
           assert(raised->catch_name() && raised->catch_block());
           Binding* binding = raised->catch_name().Address()->refer();
           if (frame_->IsDefined(heap_, binding)) {
