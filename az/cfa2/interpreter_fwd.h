@@ -19,6 +19,7 @@ class Interpreter
     public MutableAstVisitor {
  public:
   typedef std::deque<Statement*> Tasks;
+  typedef std::deque<std::pair<Statement*, Answer> > Errors;
   typedef std::vector<Binding*> Bindings;
 
   explicit Interpreter(Heap* heap,
@@ -85,6 +86,7 @@ class Interpreter
   Answer answer_;  // result tuple
   Frame* frame_;
   Tasks* tasks_;
+  Errors* errors_;
 };
 
 } }  // namespace az::cfa2

@@ -133,6 +133,11 @@ class Heap : private iv::core::Noncopyable<Heap> {
     declared_heap_bindings_.insert(binding);
   }
 
+  // global
+  bool IsDeclaredHeapBinding(Binding* binding) const {
+    return declared_heap_bindings_.find(binding) != declared_heap_bindings_.end();
+  }
+
   void DeclObject(AstNode* node, AObject* obj) {
     decls_[node] = obj;
   }

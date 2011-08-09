@@ -129,6 +129,16 @@ void HeapInitializer::Visit(SwitchStatement* stmt) {
   }
 }
 
+void HeapInitializer::Visit(CaseClause* clause) {
+  if (const iv::core::Maybe<Expression> expr = clause->expr()) {
+    expr.Address()->Accept(this);
+  }
+  for (Statements::const_iterator it = clause->body().begin(),
+       last = clause->body().end(); it != last; ++it) {
+    (*it)->Accept(this);
+  }
+}
+
 void HeapInitializer::Visit(ThrowStatement* stmt) {
   stmt->expr()->Accept(this);
 }
@@ -308,9 +318,6 @@ void HeapInitializer::Visit(ConstructorCall* call) {
 // Others
 
 void HeapInitializer::Visit(Declaration* dummy) {
-}
-
-void HeapInitializer::Visit(CaseClause* clause) {
 }
 
 } }  // namespace az::cfa2

@@ -73,6 +73,31 @@ void Interpreter::Visit(FunctionDeclaration* func) {
 }
 
 void Interpreter::Visit(VariableStatement* var) {
+  for (Declarations::const_iterator it = var->decls().begin(),
+       last = var->decls().end(); it != last; ++it) {
+    Binding* binding = (*it)->name()->refer();
+    if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
+      expr.Address()->Accept(this);
+    }
+    if (std::get<1>(answer_)) {
+      // add raised path to error queue
+      errors_->push_back(std::make_pair(var->raised(), answer_));
+      // surpress error
+      std::get<1>(answer_) = false;
+    }
+    if (binding->type() == Binding::HEAP) {
+      heap_->UpdateHeap(binding, AVal(AVAL_NUMBER));
+    } else if (binding->type() == Binding::STACK) {
+      const AVal val(frame_->Get(heap_, binding) | std::get<0>(answer_));
+      frame_->Set(heap_, binding, val);
+      if (heap_->IsDeclaredHeapBinding(binding)) {
+        heap_->UpdateHeap(binding, val);
+      }
+    } else {
+      // binding type is stack?
+      // TODO(Constellation) fix it when global
+    }
+  }
 }
 
 void Interpreter::Visit(EmptyStatement* stmt) {
@@ -110,15 +135,20 @@ void Interpreter::Visit(ReturnStatement* stmt) {
 }
 
 void Interpreter::Visit(WithStatement* stmt) {
+  stmt->context()->Accept(this);
 }
 
 void Interpreter::Visit(LabelledStatement* stmt) {
+  // do nothing
 }
 
 void Interpreter::Visit(SwitchStatement* stmt) {
 }
 
 void Interpreter::Visit(CaseClause* clause) {
+  if (const iv::core::Maybe<Expression> expr = clause->expr()) {
+    expr.Address()->Accept(this);
+  }
 }
 
 void Interpreter::Visit(ThrowStatement* stmt) {
@@ -158,7 +188,25 @@ void Interpreter::Visit(NumberLiteral* literal) {
   answer_ = Answer(AVal(AVAL_NUMBER), false, AVal(AVAL_NOBASE));
 }
 
-void Interpreter::Visit(Identifier* literal) {
+void Interpreter::Visit(Identifier* ident) {
+  // lookup!
+  Binding* binding = ident->refer();
+  if (binding) {
+    if (ident->refer()->type() == Binding::HEAP) {
+      // this is heap variable, so lookup from heap
+      answer_ = Answer(
+          binding->value(),
+          false, AVal(AVAL_NOBASE));
+    } else {
+      // this is stack variable, so lookup from frame
+      answer_ = Answer(
+          frame_->Get(heap_, binding),
+          false, AVal(AVAL_NOBASE));
+    }
+  } else {
+    // not found => global lookup
+    // TODO(Constellation) implement it
+  }
 }
 
 void Interpreter::Visit(ThisLiteral* literal) {
@@ -195,6 +243,10 @@ void Interpreter::Visit(FunctionLiteral* literal) {
   Tasks tasks;
   Tasks* previous_tasks = tasks_;
   tasks_ = &tasks;  // set
+
+  Errors errors;
+  Errors* previous_errors = errors_;
+  errors_ = &errors;  // set
 
   tasks_->push_back(literal->normal());
   while (true) {
@@ -239,9 +291,37 @@ void Interpreter::Visit(FunctionLiteral* literal) {
         error.Join(std::get<2>(answer_));
       }
     }
+
+
+    // treat errors
+    // TODO(Constellation) clean up code
+    for (Errors::const_iterator it = errors_->begin(),
+         last = errors_->end(); it != last; ++it) {
+      error_found = true;
+      if (it->first) {
+        if (TryStatement* raised = task->AsTryStatement()) {
+          error_found = false;
+          assert(raised->catch_name() && raised->catch_block());
+          Binding* binding = raised->catch_name().Address()->refer();
+          if (frame_->IsDefined(heap_, binding)) {
+            frame_->Set(
+                heap_,
+                binding,
+                std::get<2>(answer_) | frame_->Get(heap_, binding));
+          } else {
+            frame_->Set(heap_, binding, std::get<2>(answer_));
+          }
+        }
+        tasks_->push_back(task->raised());
+      } else {
+        error.Join(std::get<2>(it->second));
+      }
+    }
+    errors_->clear();
   }
   answer_ = Answer(result, error_found, error);
   tasks_ = previous_tasks;
+  errors_ = previous_errors;
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
