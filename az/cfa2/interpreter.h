@@ -42,10 +42,7 @@ void Interpreter::Run(FunctionLiteral* global) {
   }
 
   // interpret global function
-  for (Statements::const_iterator it = global->body().begin(),
-       last = global->body().end(); it != last; ++it) {
-    (*it)->Accept(this);
-  }
+  Visit(global);
 
   // summary update phase
   //

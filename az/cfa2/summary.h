@@ -23,7 +23,15 @@ class Summary : private iv::core::Noncopyable<Summary> {
       object_(obj),
       candidates_(),
       value_(AVAL_NOBASE),
+      type_(),
       timestamp_(kInvalidTimestamp) {
+    std::get<0>(type_) = AVal(AVAL_NOBASE);
+    std::vector<AVal>& vec = std::get<1>(type_);
+    for (Identifiers::const_iterator it = function->params().begin(),
+         last = function->params().end(); it != last; ++it) {
+      vec.push_back(AVal(AVAL_NOBASE));
+    }
+    std::get<2>(type_) = std::make_tuple(AVal(AVAL_NOBASE), false, AVal(AVAL_NOBASE));
   }
 
   bool IsExists() const {
