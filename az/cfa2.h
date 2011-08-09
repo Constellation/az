@@ -60,9 +60,11 @@ namespace cfa2 {
 
 template<typename Source, typename Reporter, typename Completer>
 inline void Complete(FunctionLiteral* global,
-                     const Source& src, Reporter* reporter, Completer* completer) {
+                     const Source& src,
+                     AstFactory* factory,
+                     Reporter* reporter, Completer* completer) {
   // initialize heap
-  Heap heap;
+  Heap heap(factory);
   {
     // resolve binding type
     BindingResolver resolver(&heap);
@@ -73,6 +75,7 @@ inline void Complete(FunctionLiteral* global,
     Interpreter interp(&heap, completer);
     interp.Run(global);
   }
+  heap.ShowSummaries();  // for debug...
 }
 
 } }  // namespace az::cfa2

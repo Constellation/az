@@ -17,9 +17,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
  public:
   friend class Frame;
   typedef std::unordered_set<Binding*> HeapSet;
-  Heap()
+  Heap(AstFactory* ast_factory)
     : heap_(),
       declared_heap_bindings_(),
+      ast_factory_(ast_factory),
       timestamp_(1),
       call_count_(0) {
     // initialize builtin objects
@@ -131,6 +132,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
   void RecordDeclaredHeapBinding(Binding* binding) {
     declared_heap_bindings_.insert(binding);
+  }
+
+  ExpressionStatement* NewWrappedStatement(Expression* expr) {
+    return ast_factory_->NewExpressionStatement(expr, expr->end_position());
   }
 
   // global
@@ -261,6 +266,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   std::unordered_map<Binding*, AVal> binding_heap_;
   Summaries summaries_;
   AObjectFactory factory_;
+  AstFactory* ast_factory_;
   uint64_t timestamp_;
   uint64_t call_count_;
   uint64_t depth_;

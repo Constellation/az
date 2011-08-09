@@ -94,8 +94,12 @@ void BindingResolver::Visit(DoWhileStatement* stmt) {
   stmt->set_normal(stmt->body());
   stmt->set_raised(raised_);
   stmt->set_jump_to(normal_);
+  Statement* previous_normal = normal_;
+  ExpressionStatement* cond = heap_->NewWrappedStatement(stmt->cond());
+  normal_ = cond;
   stmt->body()->Accept(this);
-  stmt->cond()->Accept(this);
+  normal_ = previous_normal;
+  Visit(cond);
 }
 
 void BindingResolver::Visit(WhileStatement* stmt) {
@@ -108,18 +112,52 @@ void BindingResolver::Visit(WhileStatement* stmt) {
 
 void BindingResolver::Visit(ForStatement* stmt) {
   stmt->set_raised(raised_);
-  stmt->set_normal(stmt->body());
   stmt->set_jump_to(normal_);
+
+  Statement* previous_normal = normal_;
+  normal_ = stmt->body();
+  if (const iv::core::Maybe<Statement> init = stmt->init()) {
+    normal_ = init.Address();
+  }
+  stmt->set_normal(normal_);
+
+  ExpressionStatement* cond = NULL;
+  normal_ = stmt->body();
+  if (const iv::core::Maybe<Expression> conde = stmt->cond()) {
+    cond = heap_->NewWrappedStatement(conde.Address());
+    normal_ = cond;
+  }
+
+  // now, normal is cond / body
   if (const iv::core::Maybe<Statement> init = stmt->init()) {
     init.Address()->Accept(this);
   }
-  if (const iv::core::Maybe<Expression> cond = stmt->cond()) {
-    cond.Address()->Accept(this);
+
+  normal_ = stmt->body();
+
+  // now, normal is body
+  if (cond) {
+    Visit(cond);
   }
+
+  normal_ = previous_normal;
+  ExpressionStatement* next = NULL;
+  if (const iv::core::Maybe<Expression> nexte = stmt->next()) {
+    next = heap_->NewWrappedStatement(nexte.Address());
+    normal_ = next;
+  }
+
+  // now, normal is next / previous_normal
   stmt->body()->Accept(this);
-  if (const iv::core::Maybe<Expression> next = stmt->next()) {
-    next.Address()->Accept(this);
+
+  normal_ = previous_normal;
+
+  if (next) {
+    Visit(next);
   }
+
+  stmt->set_cond_statement(cond);
+  stmt->set_next_statement(next);
 }
 
 void BindingResolver::Visit(ForInStatement* stmt) {

@@ -146,6 +146,49 @@ class BreakableStatementBase<az::AstFactory>
   StatementType* jump_to_;
 };
 
+
+template<>
+class DoWhileStatementBase<az::AstFactory>
+  : public Inherit<az::AstFactory, kDoWhileStatement> {
+ public:
+  typedef ExpressionStatement<az::AstFactory>* ExpressionStatementType;
+  void set_cond_statement(ExpressionStatementType cond) {
+    cond_statement_ = cond;
+  }
+
+  ExpressionStatementType cond_statement() const {
+    return cond_statement_;
+  }
+ private:
+  ExpressionStatementType cond_statement_;
+};
+
+
+template<>
+class ForStatementBase<az::AstFactory>
+  : public Inherit<az::AstFactory, kDoWhileStatement> {
+ public:
+  typedef ExpressionStatement<az::AstFactory>* ExpressionStatementType;
+  void set_cond_statement(ExpressionStatementType cond) {
+    cond_statement_ = cond;
+  }
+
+  ExpressionStatementType cond_statement() const {
+    return cond_statement_;
+  }
+
+  void set_next_statement(ExpressionStatementType next) {
+    next_statement_ = next;
+  }
+
+  ExpressionStatementType next_statement() const {
+    return next_statement_;
+  }
+ private:
+  ExpressionStatementType cond_statement_;
+  ExpressionStatementType next_statement_;
+};
+
 } } }  // namespace iv::core::ast
 namespace az {
 

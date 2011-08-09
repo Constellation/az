@@ -112,7 +112,8 @@ void Interpreter::Visit(IfStatement* stmt) {
 }
 
 void Interpreter::Visit(DoWhileStatement* stmt) {
-  stmt->cond()->Accept(this);
+  // because cond expr is wrapped and chain to stmt->normal(),
+  // so, do nothing
 }
 
 void Interpreter::Visit(WhileStatement* stmt) {
@@ -120,9 +121,15 @@ void Interpreter::Visit(WhileStatement* stmt) {
 }
 
 void Interpreter::Visit(ForStatement* stmt) {
+  // because init, cond, next expr is wrapped and chain to stmt->normal(),
+  // so, do nothing
 }
 
 void Interpreter::Visit(ForInStatement* stmt) {
+  if (stmt->each()->AsVariableStatement()) {
+    Visit(stmt->each()->AsVariableStatement());
+  }
+  stmt->enumerable()->Accept(this);
 }
 
 void Interpreter::Visit(ContinueStatement* stmt) {
