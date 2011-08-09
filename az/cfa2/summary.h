@@ -14,7 +14,75 @@ namespace cfa2 {
 class Summary : private iv::core::Noncopyable<Summary> {
  public:
   // this_binding, arguments and answer tuple
-  typedef std::tuple<AVal, std::vector<AVal>, Answer> Entry;
+  class Entry {
+   public:
+    Entry(const AVal& this_binding,
+          const std::vector<AVal>& args,
+          const Answer& result)
+      : this_binding_(this_binding),
+        args_(args),
+        result_(result) {
+    }
+
+    explicit Entry(const FunctionLiteral* function)
+      : this_binding_(AVAL_NOBASE),
+        args_(function->params().size(), AVal(AVAL_NOBASE)),
+        result_(std::make_tuple(AVal(AVAL_NOBASE), false, AVal(AVAL_NOBASE))) {
+    }
+
+    const AVal& this_binding() const {
+      return this_binding_;
+    }
+
+    void MergeThisBinding(const AVal& this_binding) {
+      this_binding_.Join(this_binding);
+    }
+
+    const std::vector<AVal> args() const {
+      return args_;
+    }
+
+    void MergeArgs(const std::vector<AVal>& args) {
+      std::vector<AVal>::const_iterator args_it = args.begin();
+      const std::vector<AVal>::const_iterator args_last = args.end();
+      for (std::vector<AVal>::iterator it = args_.begin(),
+           last = args_.end(); it != last; ++it) {
+        if (args_it != args_last) {
+          it->Join(*args_it);
+          ++args_it;
+        } else {
+          it->Join(AVAL_UNDEFINED);
+        }
+      }
+    }
+
+    const Answer& result() const {
+      return result_;
+    }
+
+    // TODO(Constellation) implement more efficiency Answer
+    void MergeResult(const Answer& result) {
+      // return val
+      std::get<0>(result_) = std::get<0>(result_) | std::get<0>(result);
+      if (std::get<1>(result)) {  // error found
+        // error val
+        std::get<2>(result_) = std::get<2>(result_) | std::get<0>(result);
+      }
+    }
+
+    void Merge(const AVal& this_binding,
+               const std::vector<AVal>& args, const Answer& result) {
+      MergeThisBinding(this_binding);
+      MergeArgs(args);
+      MergeResult(result);
+    }
+
+   private:
+    AVal this_binding_;
+    std::vector<AVal> args_;
+    Answer result_;
+  };
+
   typedef std::vector<std::shared_ptr<Entry> > Entries;
 
   Summary(FunctionLiteral* function,
@@ -23,15 +91,8 @@ class Summary : private iv::core::Noncopyable<Summary> {
       object_(obj),
       candidates_(),
       value_(AVAL_NOBASE),
-      type_(),
+      type_(function),
       timestamp_(kInvalidTimestamp) {
-    std::get<0>(type_) = AVal(AVAL_NOBASE);
-    std::vector<AVal>& vec = std::get<1>(type_);
-    for (Identifiers::const_iterator it = function->params().begin(),
-         last = function->params().end(); it != last; ++it) {
-      vec.push_back(AVal(AVAL_NOBASE));
-    }
-    std::get<2>(type_) = std::make_tuple(AVal(AVAL_NOBASE), false, AVal(AVAL_NOBASE));
   }
 
   bool IsExists() const {
@@ -66,23 +127,14 @@ class Summary : private iv::core::Noncopyable<Summary> {
 
   void UpdateType(const AVal& this_binding,
                   const std::vector<AVal>& args, const Answer& result) {
-    std::get<0>(type_).Join(this_binding);
-    std::vector<AVal>& param = std::get<1>(type_);
-    std::vector<AVal>::const_iterator args_it = args.begin();
-    const std::vector<AVal>::const_iterator args_last = args.end();
-    for (std::vector<AVal>::iterator it = param.begin(),
-         last = param.end(); it != last; ++it) {
-      if (args_it != args_last) {
-        it->Join(*args_it);
-        ++args_it;
-      } else {
-        it->Join(AVAL_UNDEFINED);
-      }
-    }
-    std::get<0>(std::get<2>(type_)).Join(std::get<0>(result));  // return val
-    if (std::get<1>(result)) {  // error found
-      std::get<2>(std::get<2>(type_)).Join(std::get<2>(result));  // error val
-    }
+    type_.Merge(this_binding, args, result);
+  }
+
+  iv::core::UString ToTypeString() const {
+    assert(IsExists());
+    iv::core::UString result;
+    result.append(std::get<0>(type_.result()).ToTypeString());
+    return result;
   }
 
  private:

@@ -137,6 +137,10 @@ class AObject
     }
   }
 
+  iv::core::UString ToTypeString() const {
+    return iv::core::UString();
+  }
+
  private:
   AVal proto_;
   FunctionLiteral* function_;

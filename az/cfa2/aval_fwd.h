@@ -173,6 +173,13 @@ class AVal {
     return !(lhs == rhs);
   }
 
+  struct Pair {
+    int type;
+    const char* str;
+  };
+
+  inline iv::core::UString ToTypeString() const;
+
  private:
   int base_;
   iv::core::UString str_;

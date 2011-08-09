@@ -185,11 +185,11 @@ class Heap : private iv::core::Noncopyable<Heap> {
     for (Summary::Entries::const_iterator it = s->second->candidates().begin(),
          last = s->second->candidates().end(); it != last; ++it) {
       const Summary::Entry& entry = **it;
-      if (std::get<0>(entry) == this_binding) {
-        if (args.size() == std::get<1>(entry).size()) {
-          if (std::equal(args.begin(), args.end(), std::get<1>(entry).begin())) {
+      if (entry.this_binding() == this_binding) {
+        if (args.size() == entry.args().size()) {
+          if (std::equal(args.begin(), args.end(), entry.args().begin())) {
             // fit summary found
-            *result = std::get<2>(entry);
+            *result = entry.result();
             return true;
           }
         }
@@ -210,6 +210,27 @@ class Heap : private iv::core::Noncopyable<Heap> {
       s->second->UpdateCandidates(timestamp_, this_binding, args, result);
     }
     s->second->UpdateType(this_binding, args, result);
+  }
+
+  void ShowSummaries() const {
+    std::vector<uint16_t> res;
+    for (Summaries::const_iterator it = summaries().begin(),
+         last = summaries().end(); it != last; ++it) {
+      if (const iv::core::Maybe<Identifier> ident = it->first->name()) {
+        res.insert(res.end(),
+                   ident.Address()->value().begin(),
+                   ident.Address()->value().end());
+        res.push_back(' ');
+      } else {
+        static const std::string prefix("<anonymous> ");
+        res.insert(res.end(), prefix.begin(), prefix.end());
+      }
+      const iv::core::UString str(it->second->ToTypeString());
+      res.insert(res.end(), str.begin(), str.end());
+      res.push_back('\n');
+      iv::core::unicode::FPutsUTF16(stdout, res.begin(), res.end());
+      res.clear();
+    }
   }
 
   const Summaries& summaries() const {

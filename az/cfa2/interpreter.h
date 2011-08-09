@@ -100,6 +100,11 @@ void Interpreter::Visit(BreakStatement* stmt) {
 }
 
 void Interpreter::Visit(ReturnStatement* stmt) {
+  if (const iv::core::Maybe<Expression> expr = stmt->expr()) {
+    expr.Address()->Accept(this);
+  } else {
+    answer_ = Answer(AVal(AVAL_UNDEFINED), false, AVal(AVAL_NOBASE));
+  }
 }
 
 void Interpreter::Visit(WithStatement* stmt) {
@@ -109,6 +114,9 @@ void Interpreter::Visit(LabelledStatement* stmt) {
 }
 
 void Interpreter::Visit(SwitchStatement* stmt) {
+}
+
+void Interpreter::Visit(CaseClause* clause) {
 }
 
 void Interpreter::Visit(ThrowStatement* stmt) {
@@ -144,6 +152,7 @@ void Interpreter::Visit(StringLiteral* literal) {
 }
 
 void Interpreter::Visit(NumberLiteral* literal) {
+  answer_ = Answer(AVal(AVAL_NUMBER), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(Identifier* literal) {
@@ -189,8 +198,12 @@ void Interpreter::Visit(FunctionLiteral* literal) {
     if (!task) {
       continue;  // next statement
     }
-    std::cout << "STMT" << std::endl;
     task->Accept(this);
+    if (task->AsReturnStatement()) {
+      AVal r = std::get<0>(answer_);
+      result.Join(std::get<0>(answer_));
+    } else {
+    }
     tasks.push_back(task->normal());
     // check answer value and determine evaluate raised path or not
     if (std::get<1>(answer_)) {
@@ -237,10 +250,6 @@ void Interpreter::Visit(ConstructorCall* call) {
 
 void Interpreter::Visit(Declaration* dummy) {
 }
-
-void Interpreter::Visit(CaseClause* clause) {
-}
-
 
 Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
                                      AObject* function,
@@ -315,6 +324,7 @@ Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
 
   // then, interpret
   Visit(literal);
+
   heap_->AddSummary(function, this_binding, args, answer_);
 
   frame_ = previous;
