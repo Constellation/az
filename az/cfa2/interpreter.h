@@ -155,15 +155,26 @@ void Interpreter::Visit(CaseClause* clause) {
 }
 
 void Interpreter::Visit(ThrowStatement* stmt) {
+  stmt->expr()->Accept(this);
+  AVal err(std::get<0>(answer_));  // normal result thrown
+  // and if expr throw error, merge this
+  if (std::get<1>(answer_)) {
+    err.Join(std::get<2>(answer_));
+  }
+  answer_ = Answer(AVal(AVAL_NOBASE), true, err);
 }
 
+
 void Interpreter::Visit(TryStatement* stmt) {
+  // do nothing
 }
 
 void Interpreter::Visit(DebuggerStatement* stmt) {
+  // do nothing
 }
 
 void Interpreter::Visit(ExpressionStatement* stmt) {
+  stmt->expr()->Accept(this);
 }
 
 // Expressions
@@ -473,7 +484,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
       // if catch   ... TryStatement,
       //    finally ... Block
       if (task->raised()) {  // if raised path is found
-        if (TryStatement* raised = task->AsTryStatement()) {
+        if (TryStatement* raised = task->raised()->AsTryStatement()) {
           error_found = false;
           assert(raised->catch_name() && raised->catch_block());
           Binding* binding = raised->catch_name().Address()->refer();
@@ -485,8 +496,10 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
           } else {
             frame_->Set(heap_, binding, std::get<2>(answer_));
           }
+          tasks_->push_back(raised->catch_block().Address());
+        } else {
+          tasks_->push_back(task->raised());
         }
-        tasks_->push_back(task->raised());
       } else {
         error.Join(std::get<2>(answer_));
       }
