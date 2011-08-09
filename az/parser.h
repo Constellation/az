@@ -1103,13 +1103,10 @@ class Parser : private iv::core::Noncopyable<> {
           Skip skip(&lexer_, strict_);
           token_ = skip.SkipUntilSemicolonOrLineTerminator();
           *res = true;  // recovery
-          Statement* stmt = factory_->NewContinueStatement(label, target, begin, lexer_.previous_end_position());
-          stmt->set_is_failed_node(true);
-          return stmt;
-        } else {
-          // ExpectSemicolon not failed
-          return ReturnFailedStatement(begin);
+//          Statement* stmt = factory_->NewContinueStatement(label, target, begin, lexer_.previous_end_position());
+//          stmt->set_is_failed_node(true);
         }
+        return ReturnFailedStatement(begin);
       }
     }
     ExpectSemicolon(res);
@@ -1118,7 +1115,9 @@ class Parser : private iv::core::Noncopyable<> {
       Skip skip(&lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
-      return ReturnFailedStatement(begin);
+      Statement* stmt = factory_->NewContinueStatement(label, target, begin, lexer_.previous_end_position());
+      stmt->set_is_failed_node(true);
+      return stmt;
     }
     // ExpectSemicolon not failed
     Statement* stmt = factory_->NewContinueStatement(label, target, begin,
@@ -1186,11 +1185,8 @@ class Parser : private iv::core::Noncopyable<> {
           Skip skip(&lexer_, strict_);
           token_ = skip.SkipUntilSemicolonOrLineTerminator();
           *res = true;  // recovery
-          return ReturnFailedStatement(begin);
-        } else {
-          // ExpectSemicolon not failed
-          return ReturnFailedStatement(begin);
         }
+        return ReturnFailedStatement(begin);
       }
     }
     ExpectSemicolon(res);
