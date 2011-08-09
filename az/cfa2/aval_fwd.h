@@ -173,6 +173,20 @@ class AVal {
     return !(lhs == rhs);
   }
 
+  friend AVal operator+(const AVal& lhs, const AVal& rhs) {
+    // lhs or rhs has object
+    if (!lhs.objects_.empty() || !rhs.objects_.empty()) {
+      return AVal(AVAL_NUMBER | AVAL_STRING);
+    }
+    int base = (lhs.base_ | rhs.base_) & AVAL_STRING;
+    // not string primitive base is found?
+    const int kNotString = AVAL_BOOL | AVAL_NUMBER | AVAL_UNDEFINED | AVAL_NULL;
+    if ((lhs.base_ & kNotString) && (rhs.base_ & kNotString)) {
+      base |= AVAL_NUMBER;
+    }
+    return AVal(base);
+  }
+
   struct Pair {
     int type;
     const char* str;

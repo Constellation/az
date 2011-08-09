@@ -76,6 +76,7 @@ class Interpreter
   inline void Visit(Declaration* dummy);
   inline void Visit(CaseClause* clause);
 
+  inline void Interpret(FunctionLiteral* literal);
   inline Answer EvaluateFunction(FunctionLiteral* literal,
                                  AObject* function,
                                  const AVal& this_binding,

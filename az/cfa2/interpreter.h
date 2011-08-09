@@ -41,8 +41,8 @@ void Interpreter::Run(FunctionLiteral* global) {
     frame.Set(heap_, ident->refer(), AVal(heap_->GetDeclObject(*it)));
   }
 
-  // interpret global function
-  Visit(global);
+  // then interpret global function
+  Interpret(global);
 
   // summary update phase
   //
@@ -64,12 +64,14 @@ void Interpreter::Run(FunctionLiteral* global) {
 // Statements
 
 void Interpreter::Visit(Block* block) {
+  // do nothing
 }
 
 void Interpreter::Visit(FunctionStatement* func) {
 }
 
 void Interpreter::Visit(FunctionDeclaration* func) {
+  // do nothing
 }
 
 void Interpreter::Visit(VariableStatement* var) {
@@ -101,6 +103,7 @@ void Interpreter::Visit(VariableStatement* var) {
 }
 
 void Interpreter::Visit(EmptyStatement* stmt) {
+  // do nothing
 }
 
 void Interpreter::Visit(IfStatement* stmt) {
@@ -169,15 +172,207 @@ void Interpreter::Visit(Assignment* assign) {
 }
 
 void Interpreter::Visit(BinaryOperation* binary) {
+  using iv::core::Token;
+  const Token::Type token = binary->op();
+  switch (token) {
+    case Token::TK_LOGICAL_AND:  // &&
+    case Token::TK_LOGICAL_OR:  // ||
+    case Token::TK_MUL:  // *
+    case Token::TK_DIV:  // /
+    case Token::TK_MOD:  // %
+    case Token::TK_SUB:  // -
+    case Token::TK_SHL:  // <<
+    case Token::TK_SAR:  // >>
+    case Token::TK_SHR:  // >>>
+    case Token::TK_BIT_AND:  // &
+    case Token::TK_BIT_XOR:  // ^
+    case Token::TK_BIT_OR: {  // |
+      // returns number
+      binary->left()->Accept(this);
+      const Answer la = answer_;
+      binary->right()->Accept(this);
+      AVal err(AVAL_NOBASE);
+      bool error_found = false;
+      if (std::get<1>(la)) {
+        error_found = true;
+        err.Join(std::get<2>(la));
+      }
+      if (std::get<1>(answer_)) {
+        error_found = true;
+        err.Join(std::get<2>(answer_));
+      }
+      answer_ = Answer(AVal(AVAL_NUMBER), error_found, err);
+      break;
+    }
+
+    case Token::TK_ADD: {  // +
+      // add STRING + STRING is STRING
+      binary->left()->Accept(this);
+      const Answer la = answer_;
+      binary->right()->Accept(this);
+      const AVal res(std::get<0>(answer_) + std::get<0>(la));
+      AVal err(AVAL_NOBASE);
+      bool error_found = false;
+      if (std::get<1>(la)) {
+        error_found = true;
+        err.Join(std::get<2>(la));
+      }
+      if (std::get<1>(answer_)) {
+        error_found = true;
+        err.Join(std::get<2>(answer_));
+      }
+      answer_ = Answer(res, error_found, err);
+      break;
+    }
+
+    case Token::TK_LT:  // <
+    case Token::TK_GT:  // >
+    case Token::TK_LTE:  // <=
+    case Token::TK_GTE:  // >=
+    case Token::TK_INSTANCEOF:  // instanceof
+    case Token::TK_IN:  // in
+    case Token::TK_EQ:  // ==
+    case Token::TK_NE:  // !=
+    case Token::TK_EQ_STRICT:  // ===
+    case Token::TK_NE_STRICT: {  // !==
+      binary->left()->Accept(this);
+      const Answer la = answer_;
+      binary->right()->Accept(this);
+      AVal err(AVAL_NOBASE);
+      bool error_found = false;
+      if (std::get<1>(la)) {
+        error_found = true;
+        err.Join(std::get<2>(la));
+      }
+      if (std::get<1>(answer_)) {
+        error_found = true;
+        err.Join(std::get<2>(answer_));
+      }
+      answer_ = Answer(AVal(AVAL_BOOL), error_found, err);
+      break;
+    }
+
+    case Token::TK_COMMA: {  // ,
+      binary->left()->Accept(this);
+      const Answer la = answer_;
+      binary->right()->Accept(this);
+      AVal err(AVAL_NOBASE);
+      bool error_found = false;
+      if (std::get<1>(la)) {
+        error_found = true;
+        err.Join(std::get<2>(la));
+      }
+      if (std::get<1>(answer_)) {
+        error_found = true;
+        err.Join(std::get<2>(answer_));
+      }
+      answer_ = Answer(std::get<0>(answer_), error_found, err);
+      break;
+    }
+
+    default: {
+      UNREACHABLE();
+      break;
+    }
+  }
 }
 
 void Interpreter::Visit(ConditionalExpression* cond) {
+  cond->cond()->Accept(this);
+  Answer ca = answer_;  // cond answer
+  cond->left()->Accept(this);
+  Answer la = answer_;  // left answer
+  cond->right()->Accept(this);
+  Answer ra = answer_;  // right answer
+  // aggregate error and result values
+  AVal err(AVAL_NOBASE);
+  bool error_found = false;
+  if (std::get<1>(ca)) {
+    error_found = true;
+    err.Join(std::get<2>(ca));
+  }
+  if (std::get<1>(la)) {
+    error_found = true;
+    err.Join(std::get<2>(la));
+  }
+  if (std::get<1>(ra)) {
+    error_found = true;
+    err.Join(std::get<2>(ra));
+  }
+  answer_ = Answer(
+      std::get<0>(la) | std::get<0>(ra),
+      error_found,
+      err);
 }
 
 void Interpreter::Visit(UnaryOperation* unary) {
+  // from iv / lv5 teleporter
+  using iv::core::Token;
+  switch (unary->op()) {
+    case Token::TK_DELETE: {
+      // if no error occurred, this always returns BOOL / UNDEFINED
+      unary->expr()->Accept(this);
+      answer_ = Answer(
+          AVal(AVAL_BOOL) | AVal(AVAL_UNDEFINED),
+          std::get<1>(answer_),
+          std::get<2>(answer_));
+      return;
+    }
+
+    case Token::TK_VOID: {
+      // if no error occurred, this always returns UNDEFINED
+      unary->expr()->Accept(this);
+      answer_ = Answer(
+          AVal(AVAL_UNDEFINED),
+          std::get<1>(answer_),
+          std::get<2>(answer_));
+      return;
+    }
+
+    case Token::TK_TYPEOF: {
+      // if no error occurred, this always returns STRING
+      unary->expr()->Accept(this);
+      answer_ = Answer(
+          AVal(AVAL_STRING),
+          std::get<1>(answer_),
+          std::get<2>(answer_));
+      return;
+    }
+
+    case Token::TK_INC:
+    case Token::TK_DEC:
+    case Token::TK_ADD:
+    case Token::TK_SUB:
+    case Token::TK_BIT_NOT: {
+      // if no error occurred, this always returns NUMBER
+      unary->expr()->Accept(this);
+      answer_ = Answer(
+          AVal(AVAL_NUMBER),
+          std::get<1>(answer_),
+          std::get<2>(answer_));
+      return;
+    }
+
+    case Token::TK_NOT: {
+      unary->expr()->Accept(this);
+      answer_ = Answer(
+          AVal(AVAL_BOOL),
+          std::get<1>(answer_),
+          std::get<2>(answer_));
+      return;
+    }
+
+    default:
+      UNREACHABLE();
+  }
 }
 
 void Interpreter::Visit(PostfixExpression* postfix) {
+  postfix->expr()->Accept(this);
+  answer_ = Answer(
+      AVal(AVAL_NUMBER),
+      std::get<1>(answer_),
+      std::get<2>(answer_));
 }
 
 void Interpreter::Visit(StringLiteral* literal) {
@@ -210,6 +405,7 @@ void Interpreter::Visit(Identifier* ident) {
 }
 
 void Interpreter::Visit(ThisLiteral* literal) {
+  answer_ = Answer(frame_->GetThis(), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(NullLiteral* lit) {
@@ -225,6 +421,7 @@ void Interpreter::Visit(FalseLiteral* lit) {
 }
 
 void Interpreter::Visit(RegExpLiteral* literal) {
+  answer_ = Answer(AVal(heap_->GetDeclObject(literal)), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(ArrayLiteral* literal) {
@@ -234,6 +431,9 @@ void Interpreter::Visit(ObjectLiteral* literal) {
 }
 
 void Interpreter::Visit(FunctionLiteral* literal) {
+}
+
+void Interpreter::Interpret(FunctionLiteral* literal) {
   // interpret function
   // BindingResolver already marks normal / raised continuation
   // so this function use this and walking flow and evaluate this.
@@ -413,7 +613,7 @@ Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
   }
 
   // then, interpret
-  Visit(literal);
+  Interpret(literal);
 
   heap_->AddSummary(function, this_binding, args, answer_);
 

@@ -18,6 +18,10 @@ class Frame {
     this_binding_ = binding;
   }
 
+  const AVal& GetThis() const {
+    return this_binding_;
+  }
+
   void SetRest(const AVal& rest) {
     rest_ = rest;
   }
