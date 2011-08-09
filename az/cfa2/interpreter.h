@@ -449,12 +449,50 @@ void Interpreter::Visit(RegExpLiteral* literal) {
 }
 
 void Interpreter::Visit(ArrayLiteral* literal) {
+  // visit each elements
+  AObject* ary = heap_->GetDeclObject(literal);
+  AVal err(AVAL_NOBASE);
+  bool error_found = false;
+  uint32_t index = 0;
+  for (MaybeExpressions::const_iterator it = literal->items().begin(),
+       last = literal->items().end(); it != last; ++it, ++index) {
+    if (const iv::core::Maybe<Expression> expr = *it) {
+      expr.Address()->Accept(this);
+      ary->UpdateProperty(heap_, Intern(index), std::get<0>(answer_));
+      if (std::get<1>(answer_)) {
+        // error found
+        error_found = true;
+        err.Join(std::get<2>(answer_));
+      }
+    }
+  }
+  answer_ = Answer(AVal(ary), error_found, err);
 }
 
 void Interpreter::Visit(ObjectLiteral* literal) {
+  // visit each elements
+  AObject* obj = heap_->GetDeclObject(literal);
+  AVal err(AVAL_NOBASE);
+  bool error_found = false;
+  for (ObjectLiteral::Properties::const_iterator it = literal->properties().begin(),
+       last = literal->properties().end(); it != last; ++it) {
+    const ObjectLiteral::Property& prop = *it;
+    if (std::get<0>(prop) == ObjectLiteral::DATA) {
+      std::get<2>(prop)->Accept(this);
+      Identifier* ident = std::get<1>(prop);
+      obj->UpdateProperty(heap_, Intern(ident->value()), std::get<0>(answer_));
+      if (std::get<1>(answer_)) {
+        // error found
+        error_found = true;
+        err.Join(std::get<2>(answer_));
+      }
+    }
+  }
+  answer_ = Answer(AVal(obj), error_found, err);
 }
 
 void Interpreter::Visit(FunctionLiteral* literal) {
+  answer_ = Answer(AVal(heap_->GetDeclObject(literal)), false, AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Interpret(FunctionLiteral* literal) {

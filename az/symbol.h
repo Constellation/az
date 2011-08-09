@@ -279,5 +279,9 @@ inline Symbol Intern(const iv::core::StringPiece& piece) {
   return SymbolTable::Instance()->Intern(piece);
 }
 
+inline Symbol Intern(uint32_t index) {
+  return SymbolTable::Instance()->Intern(index);
+}
+
 }  // namespace az
 #endif  // _AZ_SYMBOL_H_

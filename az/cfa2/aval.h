@@ -6,10 +6,10 @@ namespace az {
 namespace cfa2 {
 
 
-void AVal::UpdateProperty(Symbol name, const AVal& val) {
+void AVal::UpdateProperty(Heap* heap, Symbol name, const AVal& val) {
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
-    (*it)->UpdateProperty(name, val);
+    (*it)->UpdateProperty(heap, name, val);
   }
 }
 

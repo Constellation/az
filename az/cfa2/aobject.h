@@ -107,7 +107,7 @@ class AObject
     properties_.insert(std::make_pair(name, prop));
   }
 
-  void UpdateProperty(Symbol name, AVal val) {
+  void UpdateProperty(Heap* heap, Symbol name, AVal val) {
     const Properties::iterator it = properties_.find(name);
     if (it != properties_.end()) {
       it->second.Merge(val);

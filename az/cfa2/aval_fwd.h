@@ -90,7 +90,7 @@ class AVal {
     return objects_;
   }
 
-  inline void UpdateProperty(Symbol name, const AVal& val);
+  inline void UpdateProperty(Heap* heap, Symbol name, const AVal& val);
 
   inline AVal GetProperty(Symbol name);
 
