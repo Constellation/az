@@ -483,6 +483,8 @@ class Analyzer
     }
   }
 
+  void Visit(CaseClause* clause) { }
+
   void Visit(ThrowStatement* stmt) {
     CheckDeadStatement(stmt);
     const bool dead = IsDeadStatement();
@@ -1231,8 +1233,6 @@ class Analyzer
       }
     }
   }
-
-  void Visit(CaseClause* dummy) { }
 
   std::shared_ptr<ExecutionContext> context() const {
     return context_;

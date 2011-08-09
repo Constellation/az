@@ -177,13 +177,44 @@ void BindingResolver::Visit(LabelledStatement* stmt) {
 }
 
 void BindingResolver::Visit(SwitchStatement* stmt) {
-  stmt->expr()->Accept(this);
   typedef SwitchStatement::CaseClauses CaseClauses;
   const CaseClauses& clauses = stmt->clauses();
+  stmt->set_raised(raised_);
+  stmt->set_jump_to(normal_);
+  if (clauses.empty()) {
+    stmt->set_normal(normal_);
+  } else {
+    stmt->set_normal(clauses.front());
+  }
+  Statement* normal = normal_;
+  stmt->expr()->Accept(this);
+
   for (CaseClauses::const_iterator it = clauses.begin(),
        last = clauses.end(); it != last; ++it) {
-    (*it)->Accept(this);
+    CaseClauses::const_iterator next = it;
+    std::advance(next, 1);
+    if (next != last) {
+      normal_ = *next;
+    } else {
+      normal_ = normal;
+    }
+    Visit(*it);
   }
+}
+
+void BindingResolver::Visit(CaseClause* clause) {
+  clause->set_raised(raised_);
+  if (clause->body().empty()) {
+    // no Statement, so next is normal
+    clause->set_normal(normal_);
+  } else {
+    // first Statement
+    clause->set_normal(clause->body().front());
+  }
+  if (const iv::core::Maybe<Expression> expr = clause->expr()) {
+    expr.Address()->Accept(this);
+  }
+  MarkStatements(clause->body());
 }
 
 void BindingResolver::Visit(ThrowStatement* stmt) {
@@ -469,16 +500,6 @@ void BindingResolver::Visit(ConstructorCall* call) {
 // Others
 
 void BindingResolver::Visit(Declaration* dummy) {
-}
-
-void BindingResolver::Visit(CaseClause* clause) {
-  if (const iv::core::Maybe<Expression> expr = clause->expr()) {
-    expr.Address()->Accept(this);
-  }
-  for (Statements::const_iterator it = clause->body().begin(),
-       last = clause->body().end(); it != last; ++it) {
-    (*it)->Accept(this);
-  }
 }
 
 } }  // namespace az::cfa2
