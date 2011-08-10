@@ -83,6 +83,8 @@ class Interpreter
                                  const AVal& this_binding,
                                  const std::vector<AVal>& args,
                                  bool IsConstructorCalled);
+
+  inline Result Assign(Assignment* assign, Result res, AVal old);
   Heap* heap_;
   Completer* completer_;
   Result result_;  // result value

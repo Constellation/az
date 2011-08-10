@@ -53,6 +53,10 @@ class Result {
   void Merge(const Result& rhs) {
     // return val
     result_.Join(rhs.result_);
+    MergeException(rhs);
+  }
+
+  void MergeException(const Result& rhs) {
     if (rhs.HasException()) {  // error found
       // error val
       exception_.Join(rhs.exception_);

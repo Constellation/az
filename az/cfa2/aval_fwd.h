@@ -91,9 +91,9 @@ class AVal {
     return objects_;
   }
 
-  inline void UpdateProperty(Heap* heap, Symbol name, const AVal& val);
+  inline void UpdateProperty(Heap* heap, Symbol name, const AVal& val) const;
 
-  inline AVal GetProperty(Symbol name);
+  inline AVal GetProperty(Symbol name) const;
 
   // join rhs aval to this
   void Join(const AVal& rhs) {

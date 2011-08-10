@@ -193,6 +193,20 @@ void Interpreter::Visit(ExpressionStatement* stmt) {
 // Expressions
 
 void Interpreter::Visit(Assignment* assign) {
+  using iv::core::Token;
+  const Token::Type op = assign->op();
+  if (op == Token::TK_ASSIGN_ADD) {
+    // +=
+    // + operator is sepcialized for STRING + STRING
+    assign->left()->Accept(this);
+    const Result lhs = result_;
+    assign->right()->Accept(this);
+    result_ = Assign(assign, lhs, result_.result());
+  } else {
+    // others
+    assign->right()->Accept(this);
+    result_ = Assign(assign, result_, AVal(AVAL_NOBASE));
+  }
 }
 
 void Interpreter::Visit(BinaryOperation* binary) {
@@ -661,6 +675,71 @@ Result Interpreter::EvaluateFunction(FunctionLiteral* literal,
 
   frame_ = previous;
 
+  return res;
+}
+
+Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
+  // LHS is following pattern
+  //   + Call
+  //     - FunctionCall
+  //     - ConstructorCall
+  //   + PropertyAccess
+  //     - IndexAccess
+  //     - IdentifierAccess
+  //   + Identifier
+  Expression* lhs = assign->left();
+  assert(lhs->IsValidLeftHandSide());
+  if (Identifier* ident = lhs->AsIdentifier()) {
+    // Identifier
+    Binding* binding = ident->refer();
+    if (binding->type() == Binding::HEAP) {
+      // heap
+      heap_->UpdateHeap(binding, res.result());
+    } else if (binding->type() == Binding::STACK) {
+      // stack
+      const AVal val(frame_->Get(heap_, binding) | res.result());
+      frame_->Set(heap_, binding, val);
+      if (heap_->IsDeclaredHeapBinding(binding)) {
+        heap_->UpdateHeap(binding, val);
+      }
+    } else {
+      // global
+      // TODO(Constellation) implement it
+    }
+    return res;
+  } else if (lhs->AsCall()) {
+//    if (FnctionCall* func = lhs->AsFunctionCall()) {
+//      // FunctionCall
+//    } else {
+//      // ConstructorCall
+//      assert(lhs->AsConstructorCall());
+//    }
+  } else {
+    assert(lhs->AsPropertyAccess());
+    if (IdentifierAccess* identac = lhs->AsIdentifierAccess()) {
+      identac->target()->Accept(this);
+      const Result lhs(result_);
+      lhs.result().UpdateProperty(heap_,
+                                  Intern(identac->key()->value()),
+                                  res.result());
+      res.MergeException(lhs);
+      return res;
+    } else {
+      assert(lhs->AsIndexAccess());
+      IndexAccess* indexac = lhs->AsIndexAccess();
+      indexac->target()->Accept(this);
+      const Result target(result_);
+      indexac->key()->Accept(this);
+      const Result key(result_);
+      if (key.result().HasNumber()) {
+        // update number property
+      }
+      if (key.result().HasString()) {
+        // update string property
+      }
+      return res;
+    }
+  }
   return res;
 }
 
