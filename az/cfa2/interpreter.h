@@ -234,10 +234,11 @@ void Interpreter::Visit(BinaryOperation* binary) {
           error_found = true;
           err.Join(result_.exception());
         }
-        if (!res.IsTrue()) {
-          result_ = Result(lr.result() | res, err, error_found);
-        } else {
+        if (lr.result().IsTrue()) {
+          // true && "STRING" => STR
           result_ = Result(res, err, error_found);
+        } else {
+          result_ = Result(lr.result() | res, err, error_found);
         }
       }
       break;
@@ -259,10 +260,11 @@ void Interpreter::Visit(BinaryOperation* binary) {
           error_found = true;
           err.Join(result_.exception());
         }
-        if (!res.IsFalse()) {
-          result_ = Result(lr.result() | res, err, error_found);
-        } else {
+        if (lr.result().IsFalse()) {
+          // false || "STRING" => STRING
           result_ = Result(res, err, error_found);
+        } else {
+          result_ = Result(lr.result() | res, err, error_found);
         }
       }
       break;
@@ -433,7 +435,14 @@ void Interpreter::Visit(UnaryOperation* unary) {
 
     case Token::TK_NOT: {
       unary->expr()->Accept(this);
-      result_.set_result(AVal(AVAL_BOOL));
+      if (result_.result().IsTrue()) {
+        result_.set_result(AVal(AVAL_TRUE));
+      } else if (result_.result().IsFalse()) {
+        result_.set_result(AVal(AVAL_FALSE));
+      } else {
+        // indeterminate
+        result_.set_result(AVal(AVAL_BOOL));
+      }
       return;
     }
 
@@ -482,11 +491,11 @@ void Interpreter::Visit(NullLiteral* lit) {
 }
 
 void Interpreter::Visit(TrueLiteral* lit) {
-  result_ = Result(AVal(AVAL_BOOL));
+  result_ = Result(AVal(AVAL_TRUE));
 }
 
 void Interpreter::Visit(FalseLiteral* lit) {
-  result_ = Result(AVal(AVAL_BOOL));
+  result_ = Result(AVal(AVAL_FALSE));
 }
 
 void Interpreter::Visit(RegExpLiteral* literal) {
@@ -826,9 +835,9 @@ Result Interpreter::EvaluateFunction(AObject* function,
         // return only
         // if result value is NOBASE (no return statement),
         // add undefined
-//        if (result_.result() == AVal(AVAL_NOBASE)) {
-//          result_.set_result(AVal(AVAL_UNDEFINED));
-//        }
+        if (result_.result() == AVal(AVAL_NOBASE)) {
+          result_.set_result(AVal(AVAL_UNDEFINED));
+        }
       }
 
       heap_->RemoveWaitingResults(literal);

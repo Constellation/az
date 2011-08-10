@@ -93,12 +93,14 @@ AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* alre
 }
 
 iv::core::UString AVal::ToTypeString() const {
-  static const std::array<Pair, 5> kBase = { {
+  static const std::array<Pair, 7> kBase = { {
     { 1, "number" },
     { 2, "string" },
-    { 4, "boolean" },
-    { 8, "undefined" },
-    { 16, "null" }
+    { 4, "bool" },   // true
+    { 8, "bool" },   // false
+    { 16, "bool" },  // bool
+    { 32, "undefined" },
+    { 64, "null" }
   } };
   std::set<iv::core::UString> types;
   iv::core::UString str;
@@ -140,15 +142,18 @@ iv::core::UString AVal::ToTypeString() const {
 
 
 bool AVal::IsTrue() const {
-  return objects_.empty() && base_ == AVAL_STRING && (str_ && !str_->empty());
+  return
+      objects_.empty() &&
+      (base_ == AVAL_STRING && (str_ && !str_->empty())) ||
+      base_ == AVAL_TRUE;
 }
 
 bool AVal::IsFalse() const {
   return
       objects_.empty() &&
       base_ != 0 &&
-      ((base_ & (AVAL_NULL | AVAL_UNDEFINED)) ||
-       (base_ == AVAL_STRING && str_ && str_->empty()));
+      ((base_ == AVAL_NULL || base_ == AVAL_UNDEFINED || base_ == AVAL_FALSE)) ||
+       (base_ == AVAL_STRING && str_ && str_->empty());
 }
 
 } }  // namespace az::cfa2

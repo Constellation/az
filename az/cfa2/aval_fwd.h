@@ -16,15 +16,22 @@ enum BaseType {
   AVAL_NOBASE = 0,
   AVAL_NUMBER = 1,
   AVAL_STRING = 2,
-  AVAL_BOOL = 4,
-  AVAL_UNDEFINED = 8,
-  AVAL_NULL = 16
+  AVAL_FALSE = 4,
+  AVAL_TRUE = 8,
+  AVAL_BOOL = 16,
+  AVAL_UNDEFINED = 32,
+  AVAL_NULL = 64
 };
 
 // abstract value
 class AVal {
  public:
   typedef std::set<AObject*> ObjectSet;  // need to be ordered
+  enum BoolType {
+    BOOL_INDETERMINATE = 0,
+    BOOL_TRUE = 1,
+    BOOL_FALSE = 2
+  };
   explicit AVal(BaseType type)
     : base_(type),
       str_(),
@@ -64,6 +71,10 @@ class AVal {
     return base_ & AVAL_STRING;
   }
 
+  bool HasBool() const {
+    return base_ & AVAL_BOOL;
+  }
+
   bool IsUndefined() const {
     // undefined only pattern
     return base_ == AVAL_UNDEFINED;
@@ -86,6 +97,12 @@ class AVal {
     }
     if (base_ & AVAL_STRING) {
       result.Join(AVAL_STRING);
+    }
+    if (base_ & AVAL_TRUE) {
+      result.Join(AVAL_TRUE);
+    }
+    if (base_ & AVAL_FALSE) {
+      result.Join(AVAL_TRUE);
     }
     if (base_ & AVAL_BOOL) {
       result.Join(AVAL_BOOL);
