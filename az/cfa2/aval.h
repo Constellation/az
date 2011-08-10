@@ -59,8 +59,7 @@ void AVal::Construct(Heap* heap,
        last = objects_.end(); it != last; ++it) {
     if ((*it)->IsFunction()) {
       AVal prototype = (*it)->GetProperty(Intern("prototype"));
-      // TODO(Constellation) GetProperty result value
-      if (res.IsUndefined()) {
+      if (res == AVal(AVAL_NOBASE)) {
         prototype = AVal(heap->MakePrototype(*it));
         (*it)->UpdateProperty(heap, Intern("prototype"), prototype);
       }

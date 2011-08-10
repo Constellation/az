@@ -253,9 +253,10 @@ void HeapInitializer::Visit(ObjectLiteral* literal) {
 void HeapInitializer::Visit(FunctionLiteral* literal) {
   AObject* obj = heap_->MakeFunction(literal);
   heap_->DeclObject(literal, obj);
+  AVal prototype = AVal(heap_->MakePrototype(obj));
   obj->AddProperty(
       Intern("prototype"),
-      AProp(AVal(AVAL_NOBASE), A::W | A::C));
+      AProp(AVal(prototype), A::W | A::C));
 
   if (const iv::core::Maybe<Identifier> ident = literal->name()) {
     // function literal name has always binding
