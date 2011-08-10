@@ -15,7 +15,7 @@ class Work { };
 
 void Interpreter::Run(FunctionLiteral* global) {
   Frame frame;
-  frame_ = &frame;  // set current frame
+  frames_.push_back(&frame);
   {
     // initialize heap
     //
@@ -96,8 +96,8 @@ void Interpreter::Visit(VariableStatement* var) {
     if (binding->type() == Binding::HEAP) {
       heap_->UpdateHeap(binding, AVal(AVAL_NUMBER));
     } else if (binding->type() == Binding::STACK) {
-      const AVal val(frame_->Get(heap_, binding) | result_.result());
-      frame_->Set(heap_, binding, val);
+      const AVal val(CurrentFrame()->Get(heap_, binding) | result_.result());
+      CurrentFrame()->Set(heap_, binding, val);
       if (heap_->IsDeclaredHeapBinding(binding)) {
         heap_->UpdateHeap(binding, val);
       }
@@ -417,7 +417,7 @@ void Interpreter::Visit(Identifier* ident) {
       result_ = Result(binding->value());
     } else {
       // this is stack variable, so lookup from frame
-      result_ = Result(frame_->Get(heap_, binding));
+      result_ = Result(CurrentFrame()->Get(heap_, binding));
     }
   } else {
     // not found => global lookup
@@ -427,7 +427,7 @@ void Interpreter::Visit(Identifier* ident) {
 }
 
 void Interpreter::Visit(ThisLiteral* literal) {
-  result_ = Result(frame_->GetThis());
+  result_ = Result(CurrentFrame()->GetThis());
 }
 
 void Interpreter::Visit(NullLiteral* lit) {
@@ -501,17 +501,15 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
   AVal error(AVAL_NOBASE);
   bool error_found;
   Tasks tasks;
-  Tasks* previous_tasks = tasks_;
-  tasks_ = &tasks;  // set
 
-  tasks_->push_back(literal->normal());
+  tasks.push_back(literal->normal());
   while (true) {
-    if (tasks_->empty()) {
+    if (tasks.empty()) {
       // all task is done!
       break;
     }
-    Statement* const task = tasks_->back();
-    tasks_->pop_back();
+    Statement* const task = tasks.back();
+    tasks.pop_back();
     if (!task) {
       continue;  // next statement
     }
@@ -523,7 +521,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
     } else {
       task->Accept(this);
     }
-    tasks_->push_back(task->normal());
+    tasks.push_back(task->normal());
 
     // check answer value and determine evaluate raised path or not
     if (result_.HasException()) {
@@ -537,17 +535,17 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
           assert(raised->catch_name() && raised->catch_block());
           Binding* binding = raised->catch_name().Address()->refer();
           assert(binding);
-          if (frame_->IsDefined(heap_, binding)) {
-            frame_->Set(
+          if (CurrentFrame()->IsDefined(heap_, binding)) {
+            CurrentFrame()->Set(
                 heap_,
                 binding,
-                result_.exception() | frame_->Get(heap_, binding));
+                result_.exception() | CurrentFrame()->Get(heap_, binding));
           } else {
-            frame_->Set(heap_, binding, result_.exception());
+            CurrentFrame()->Set(heap_, binding, result_.exception());
           }
-          tasks_->push_back(raised->catch_block().Address());
+          tasks.push_back(raised->catch_block().Address());
         } else {
-          tasks_->push_back(task->raised());
+          tasks.push_back(task->raised());
         }
       } else {
         error |= result_.exception();
@@ -555,7 +553,6 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
     }
   }
   result_ = Result(result, error, error_found);
-  tasks_ = previous_tasks;
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
@@ -668,90 +665,132 @@ Result Interpreter::EvaluateFunction(AObject* function,
 
   FunctionLiteral* literal = function->function();
 
-  heap_->CountUpCall();
   Result res;
   if (heap_->FindSummary(function, this_binding, args, &res)) {
     // summary found. so, use this result
     return res;
   }
-  heap_->CountUpDepth();
 
   // interpret function
-  //
-  Frame* previous = frame_;
   Frame frame;
-  frame_ = &frame;
+  frames_.push_back(&frame);
 
-  frame_->SetThis(this_binding);
-  const FunctionLiteral::DeclType type = literal->type();
-  if (type == FunctionLiteral::STATEMENT ||
-      (type == FunctionLiteral::EXPRESSION && literal->name())) {
-    // in scope, so set to the frame
-    Identifier* name = literal->name().Address();
-    Binding* binding = name->refer();
-    assert(binding);
-    frame_->Set(heap_, binding, AVal(heap_->GetDeclObject(literal)));
-  }
+  std::shared_ptr<Heap::Execution> current;
+  while (true) {
+    try {
+      State start_state = heap_->state();
+      std::shared_ptr<Heap::Execution> prev = heap_->SearchWaitingResults(literal, this_binding, args);
+      if (!prev) {
+        // this is first time call
+        // so, add it to execution queue
+        current = heap_->AddWaitingResults(literal, this_binding, args, frames_.size(), false);
+      } else if (std::get<2>(*prev) == heap_->state()) {
+        // state is not changed
+        // first time, through it.
+        // second time, shut out this path and return NOBASE
+        if (std::get<4>(*prev)) {
+          frames_.pop_back();
+          return Result(AVal(AVAL_NOBASE));
+        } else {
+          current = heap_->AddWaitingResults(literal, this_binding, args, frames_.size(), true);
+        }
+      } else {
+        // waiting result is too old...
+        throw UnwindStack(std::get<3>(*prev) - 1);
+      }
 
-  // parameter binding initialization
-  std::size_t index = 0;
-  const std::size_t args_size = args.size();
-  for (Identifiers::const_iterator it = literal->params().begin(),
-       last = literal->params().end(); it != last; ++it, ++index) {
-    Binding* binding = (*it)->refer();
-    assert(binding);
-    const AVal target(args_size > index ? args[index] : AVal(AVAL_UNDEFINED));
-    if (binding->type() == Binding::HEAP) {
-      heap_->UpdateHeap(binding, target);
+      assert(CurrentFrame() == &frame);
+      CurrentFrame()->Clear();
+
+      CurrentFrame()->SetThis(this_binding);
+      const FunctionLiteral::DeclType type = literal->type();
+      if (type == FunctionLiteral::STATEMENT ||
+          (type == FunctionLiteral::EXPRESSION && literal->name())) {
+        // in scope, so set to the frame
+        Identifier* name = literal->name().Address();
+        Binding* binding = name->refer();
+        assert(binding);
+        CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(literal)));
+      }
+
+      // parameter binding initialization
+      std::size_t index = 0;
+      const std::size_t args_size = args.size();
+      for (Identifiers::const_iterator it = literal->params().begin(),
+           last = literal->params().end(); it != last; ++it, ++index) {
+        Binding* binding = (*it)->refer();
+        assert(binding);
+        const AVal target(args_size > index ? args[index] : AVal(AVAL_UNDEFINED));
+        if (binding->type() == Binding::HEAP) {
+          heap_->UpdateHeap(binding, target);
+        }
+        CurrentFrame()->Set(heap_, binding, target);
+      }
+
+      if (index < args_size) {
+        AVal result(AVAL_NOBASE);
+        for (;index < args_size; ++index) {
+          result.Join(args[index]);
+        }
+        CurrentFrame()->SetRest(result);
+      }
+
+      const Scope& scope = literal->scope();
+      for (Scope::Variables::const_iterator it = scope.variables().begin(),
+           last = scope.variables().end(); it != last; ++it) {
+        const Scope::Variable& var = *it;
+        Identifier* ident = var.first;
+        Binding* binding = ident->refer();
+        assert(binding);
+        CurrentFrame()->Set(heap_, binding, AVal(AVAL_NOBASE));
+      }
+
+      for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
+           last = scope.function_declarations().end(); it != last; ++it) {
+        const Symbol fn = Intern((*it)->name().Address()->value());
+        Identifier* ident = (*it)->name().Address();
+        Binding* binding = ident->refer();
+        assert(binding);
+        CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
+      }
+
+      // then, interpret
+      Interpret(literal);
+
+      if (IsConstructorCalled) {
+        // TODO(Constellation)
+        // fix bug like this:
+        //
+        //   function Test() {
+        //     return { };
+        //   }
+        //   new Test() => Object, not Test instance
+        result_.set_result(this_binding);
+      }
+
+      heap_->RemoveWaitingResults(literal);
+      frames_.pop_back();
+
+      heap_->AddSummary(function, start_state, this_binding, args, result_);
+
+      return result_;
+    } catch (const UnwindStack& ex) {
+      // unwind stack
+      // TODO(Constellation) not use exception
+      if (!current) {
+        // first case
+        frames_.pop_back();
+        throw ex;
+      }
+      if (ex.depth() == frames_.size()) {
+        heap_->RemoveWaitingResults(literal);
+      } else {
+        heap_->RemoveWaitingResults(literal);
+        frames_.pop_back();
+        throw ex;
+      }
     }
-    frame_->Set(heap_, binding, target);
   }
-
-  if (index < args_size) {
-    AVal result(AVAL_NOBASE);
-    for (;index < args_size; ++index) {
-      result.Join(args[index]);
-    }
-    frame_->SetRest(result);
-  }
-
-  const Scope& scope = literal->scope();
-  for (Scope::Variables::const_iterator it = scope.variables().begin(),
-       last = scope.variables().end(); it != last; ++it) {
-    const Scope::Variable& var = *it;
-    Identifier* ident = var.first;
-    Binding* binding = ident->refer();
-    assert(binding);
-    frame_->Set(heap_, binding, AVal(AVAL_NOBASE));
-  }
-
-  for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
-       last = scope.function_declarations().end(); it != last; ++it) {
-    const Symbol fn = Intern((*it)->name().Address()->value());
-    Identifier* ident = (*it)->name().Address();
-    Binding* binding = ident->refer();
-    assert(binding);
-    frame_->Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
-  }
-
-  // then, interpret
-  Interpret(literal);
-
-  if (IsConstructorCalled) {
-    // TODO(Constellation)
-    // fix bug like this:
-    //
-    //   function Test() {
-    //     return { };
-    //   }
-    //   new Test() => Object, not Test instance
-    result_.set_result(this_binding);
-  }
-
-  heap_->AddSummary(function, this_binding, args, result_);
-
-  frame_ = previous;
-  return result_;
 }
 
 Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
@@ -781,8 +820,8 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
         heap_->UpdateHeap(binding, res.result());
       } else {
         // stack
-        const AVal val(frame_->Get(heap_, binding) | res.result());
-        frame_->Set(heap_, binding, val);
+        const AVal val(CurrentFrame()->Get(heap_, binding) | res.result());
+        CurrentFrame()->Set(heap_, binding, val);
         if (heap_->IsDeclaredHeapBinding(binding)) {
           heap_->UpdateHeap(binding, val);
         }

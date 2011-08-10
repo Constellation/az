@@ -18,9 +18,15 @@ class Heap : private iv::core::Noncopyable<Heap> {
  public:
   friend class Frame;
   typedef std::unordered_set<Binding*> HeapSet;
+  typedef std::tuple<AVal, std::vector<AVal>, State, uint64_t, bool> Execution;
+
   Heap(AstFactory* ast_factory)
     : heap_(),
       declared_heap_bindings_(),
+      decls_(),
+      binding_heap_(),
+      summaries_(),
+      factory_(),
       ast_factory_(ast_factory),
       state_(kInitialState),
       call_count_(0) {
@@ -219,18 +225,16 @@ class Heap : private iv::core::Noncopyable<Heap> {
   }
 
   void AddSummary(AObject* func,
+                  State state,
                   const AVal& this_binding,
                   const std::vector<AVal>& args, const Result& result) {
     Summaries::iterator s = summaries_.find(func->function());
     assert(s != summaries_.end());
-    if (s->second->state() == state_) {
+    if (s->second->state() == state) {
       s->second->AddCandidate(this_binding, args, result);
-    } else if (s->second->state() < state_) {
+    } else if (s->second->state() < state) {
       // old, so clear candidates
-      s->second->UpdateCandidates(state_, this_binding, args, result);
-    } else {
-      std::cout << state_ << "AND" << s->second->state() << std::endl;
-      UNREACHABLE();
+      s->second->UpdateCandidates(state, this_binding, args, result);
     }
     s->second->UpdateType(this_binding, args, result);
   }
@@ -272,8 +276,54 @@ class Heap : private iv::core::Noncopyable<Heap> {
     ++call_count_;
   }
 
-  void CountUpDepth() {
-    ++depth_;
+  std::shared_ptr<Execution> AddWaitingResults(
+      FunctionLiteral* lit,
+      const AVal& this_binding,
+      const std::vector<AVal> args,
+      std::size_t depth,
+      bool last) {
+    WaitingMap::const_iterator it = waiting_result_.find(lit);
+    std::shared_ptr<ExecutionQueue> queue;
+    if (it == waiting_result_.end()) {
+      queue = std::shared_ptr<ExecutionQueue>(new ExecutionQueue());
+      waiting_result_.insert(std::make_pair(lit, queue));
+    } else {
+      queue = it->second;
+    }
+    std::shared_ptr<Execution> waiting(
+        new Execution(this_binding, args, state_, depth, last));
+    queue->push_back(waiting);
+    return waiting;
+  }
+
+  void RemoveWaitingResults(FunctionLiteral* lit) {
+    WaitingMap::iterator it = waiting_result_.find(lit);
+    assert(it != waiting_result_.end());
+    assert(it->second);
+    assert(!it->second->empty());
+    it->second->pop_back();
+  }
+
+  std::shared_ptr<Execution> SearchWaitingResults(FunctionLiteral* lit,
+                                                  const AVal& this_binding,
+                                                  const std::vector<AVal>& args) const {
+    WaitingMap::const_iterator it = waiting_result_.find(lit);
+    if (it != waiting_result_.end()) {
+      std::shared_ptr<ExecutionQueue> queue(it->second);
+      for (ExecutionQueue::const_reverse_iterator it = queue->rbegin(),
+           last = queue->rend(); it != last; ++it) {
+        if (std::get<0>(**it) == this_binding) {
+          if (std::get<1>(**it).size() == args.size()) {
+            if (std::equal(args.begin(),
+                           args.end(),
+                           std::get<1>(**it).begin())) {
+              return *it;
+            }
+          }
+        }
+      }
+    }
+    return std::shared_ptr<Execution>();
   }
 
  private:
@@ -286,12 +336,15 @@ class Heap : private iv::core::Noncopyable<Heap> {
   AstFactory* ast_factory_;
   State state_;
   uint64_t call_count_;
-  uint64_t depth_;
 
   AVal global_;
   AVal object_prototype_;
   AVal function_prototype_;
   AVal array_function_called_value_;
+
+  typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
+  typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
+  WaitingMap waiting_result_;
 };
 
 } }  // namespace az::cfa2

@@ -3,6 +3,7 @@
 #define _AZ_CFA2_INTERPRETER_FWD_H_
 #include <vector>
 #include <deque>
+#include <exception>
 #include <iv/detail/cstdint.h>
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
@@ -21,6 +22,17 @@ class Interpreter
   typedef std::deque<Statement*> Tasks;
   typedef std::deque<std::pair<Statement*, Result> > Errors;
   typedef std::vector<Binding*> Bindings;
+
+  class UnwindStack : public std::exception {
+   public:
+    UnwindStack(std::size_t depth) : std::exception(), depth_(depth) { }
+    std::size_t depth() const {
+      return depth_;
+    }
+
+   private:
+    std::size_t depth_;
+  };
 
   explicit Interpreter(Heap* heap,
                        Completer* completer)
@@ -84,13 +96,17 @@ class Interpreter
 
   inline void Interpret(FunctionLiteral* literal);
 
+  Frame* CurrentFrame() const {
+    return frames_.back();
+  }
+
   inline Result Assign(Assignment* assign, Result res, AVal old);
   Heap* heap_;
   Completer* completer_;
   Result result_;  // result value
   AVal base_;  // only use in FunctionCall / ConstructorCall this binding
   Frame* frame_;
-  Tasks* tasks_;
+  std::deque<Frame*> frames_;
   Errors* errors_;
 };
 

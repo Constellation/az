@@ -42,6 +42,10 @@ class Frame {
     return table_.find(binding) != table_.end();
   }
 
+  void Clear() {
+    table_.clear();
+  }
+
  private:
   Table table_;
   AVal this_binding_;
