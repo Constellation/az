@@ -4,12 +4,27 @@
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aval.h>
 #include <az/cfa2/state.h>
+#include <az/cfa2/interpreter_fwd.h>
 namespace az {
 namespace cfa2 {
 
 class Frame {
  public:
   typedef std::unordered_map<Binding*, std::pair<AVal, State> > Table;
+
+
+  Frame(Interpreter* interp)
+    : interp_(interp),
+      prev_(interp->CurrentFrame()),
+      table_(),
+      this_binding_(),
+      rest_() {
+    interp_->set_current_frame(this);
+  }
+
+  ~Frame() {
+    interp_->set_current_frame(prev_);
+  }
 
   void Set(Heap* heap, Binding* binding, const AVal& val) {
     table_[binding] = std::make_pair(val, heap->state());
@@ -47,6 +62,8 @@ class Frame {
   }
 
  private:
+  Interpreter* interp_;
+  Frame* prev_;
   Table table_;
   AVal this_binding_;
   AVal rest_;

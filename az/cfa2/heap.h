@@ -18,7 +18,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
  public:
   friend class Frame;
   typedef std::unordered_set<Binding*> HeapSet;
-  typedef std::tuple<AVal, std::vector<AVal>, State, uint64_t, bool> Execution;
+  typedef std::tuple<AVal, std::vector<AVal>, State, bool> Execution;
 
   Heap(AstFactory* ast_factory)
     : heap_(),
@@ -280,7 +280,6 @@ class Heap : private iv::core::Noncopyable<Heap> {
       FunctionLiteral* lit,
       const AVal& this_binding,
       const std::vector<AVal> args,
-      std::size_t depth,
       bool last) {
     WaitingMap::const_iterator it = waiting_result_.find(lit);
     std::shared_ptr<ExecutionQueue> queue;
@@ -291,17 +290,19 @@ class Heap : private iv::core::Noncopyable<Heap> {
       queue = it->second;
     }
     std::shared_ptr<Execution> waiting(
-        new Execution(this_binding, args, state_, depth, last));
+        new Execution(this_binding, args, state_, last));
     queue->push_back(waiting);
     return waiting;
   }
 
-  void RemoveWaitingResults(FunctionLiteral* lit) {
+  std::shared_ptr<Execution> RemoveWaitingResults(FunctionLiteral* lit) {
     WaitingMap::iterator it = waiting_result_.find(lit);
     assert(it != waiting_result_.end());
     assert(it->second);
     assert(!it->second->empty());
+    std::shared_ptr<Execution> last = it->second->back();
     it->second->pop_back();
+    return last;
   }
 
   std::shared_ptr<Execution> SearchWaitingResults(FunctionLiteral* lit,

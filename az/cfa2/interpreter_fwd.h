@@ -25,20 +25,40 @@ class Interpreter
 
   class UnwindStack : public std::exception {
    public:
-    UnwindStack(std::size_t depth) : std::exception(), depth_(depth) { }
-    std::size_t depth() const {
-      return depth_;
+    UnwindStack(FunctionLiteral* literal,
+                const AVal& this_binding,
+                const std::vector<AVal>& args)
+      : std::exception(),
+        literal_(literal),
+        this_binding_(this_binding),
+        args_(args) { }
+    virtual ~UnwindStack() throw() { }
+
+    FunctionLiteral* literal() const {
+      return literal_;
+    }
+
+    const AVal& this_binding() const {
+      return this_binding_;
+    }
+
+    const std::vector<AVal>& args() const {
+      return args_;
     }
 
    private:
-    std::size_t depth_;
+    FunctionLiteral* literal_;
+    const AVal this_binding_;
+    const std::vector<AVal> args_;
   };
 
   explicit Interpreter(Heap* heap,
                        Completer* completer)
     : heap_(heap),
       completer_(completer),
-      result_(AVal(AVAL_NOBASE)) {
+      result_(AVal(AVAL_NOBASE)),
+      base_(AVAL_NOBASE),
+      frame_(NULL) {
   }
 
   inline void Run(FunctionLiteral* global);
@@ -47,6 +67,14 @@ class Interpreter
                                  const AVal& this_binding,
                                  const std::vector<AVal>& args,
                                  bool IsConstructorCalled);
+
+  Frame* CurrentFrame() const {
+    return frame_;
+  }
+
+  void set_current_frame(Frame* frame) {
+    frame_ = frame;
+  }
 
  private:
   inline void Visit(Block* block);
@@ -96,17 +124,12 @@ class Interpreter
 
   inline void Interpret(FunctionLiteral* literal);
 
-  Frame* CurrentFrame() const {
-    return frames_.back();
-  }
-
   inline Result Assign(Assignment* assign, Result res, AVal old);
   Heap* heap_;
   Completer* completer_;
   Result result_;  // result value
   AVal base_;  // only use in FunctionCall / ConstructorCall this binding
   Frame* frame_;
-  std::deque<Frame*> frames_;
   Errors* errors_;
 };
 

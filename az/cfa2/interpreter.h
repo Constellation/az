@@ -14,8 +14,7 @@ namespace cfa2 {
 class Work { };
 
 void Interpreter::Run(FunctionLiteral* global) {
-  Frame frame;
-  frames_.push_back(&frame);
+  Frame frame(this);
   {
     // initialize heap
     //
@@ -48,6 +47,8 @@ void Interpreter::Run(FunctionLiteral* global) {
 
   // then interpret global function
   Interpret(global);
+
+  assert(CurrentFrame() == &frame);
 
   // summary update phase
   //
@@ -753,9 +754,6 @@ Result Interpreter::EvaluateFunction(AObject* function,
   }
 
   // interpret function
-  Frame frame;
-  frames_.push_back(&frame);
-
   std::shared_ptr<Heap::Execution> current;
   while (true) {
     try {
@@ -764,24 +762,23 @@ Result Interpreter::EvaluateFunction(AObject* function,
       if (!prev) {
         // this is first time call
         // so, add it to execution queue
-        current = heap_->AddWaitingResults(literal, this_binding, args, frames_.size(), false);
+        current = heap_->AddWaitingResults(literal, this_binding, args, false);
       } else if (std::get<2>(*prev) == heap_->state()) {
         // state is not changed
         // first time, through it.
         // second time, shut out this path and return NOBASE
-        if (std::get<4>(*prev)) {
-          frames_.pop_back();
+        if (std::get<3>(*prev)) {
           return Result(AVal(AVAL_NOBASE));
         } else {
-          current = heap_->AddWaitingResults(literal, this_binding, args, frames_.size(), true);
+          current = heap_->AddWaitingResults(literal, this_binding, args, true);
         }
       } else {
         // waiting result is too old...
-        throw UnwindStack(std::get<3>(*prev) - 1);
+        // throw UnwindStack(std::get<3>(*prev) - 1);
+        throw UnwindStack(literal, this_binding, args);
       }
 
-      assert(CurrentFrame() == &frame);
-      CurrentFrame()->Clear();
+      Frame frame(this);
 
       CurrentFrame()->SetThis(this_binding);
       const FunctionLiteral::DeclType type = literal->type();
@@ -866,24 +863,22 @@ Result Interpreter::EvaluateFunction(AObject* function,
       }
 
       heap_->RemoveWaitingResults(literal);
-      frames_.pop_back();
-
       heap_->AddSummary(function, start_state, this_binding, args, result_);
-
       return result_;
     } catch (const UnwindStack& ex) {
-      // unwind stack
-      // TODO(Constellation) not use exception
       if (!current) {
         // first case
-        frames_.pop_back();
         throw ex;
       }
-      if (ex.depth() == frames_.size()) {
-        heap_->RemoveWaitingResults(literal);
+      if (ex.literal() == literal &&
+          ex.this_binding() == this_binding &&
+          ex.args().size() == args.size() &&
+          std::equal(args.begin(), args.end(), ex.args().begin())) {
+        if (std::get<3>(*heap_->RemoveWaitingResults(literal))) {
+          throw ex;
+        }
       } else {
         heap_->RemoveWaitingResults(literal);
-        frames_.pop_back();
         throw ex;
       }
     }
