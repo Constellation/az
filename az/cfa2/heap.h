@@ -22,7 +22,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
     : heap_(),
       declared_heap_bindings_(),
       ast_factory_(ast_factory),
-      state_(kStartState),
+      state_(kInitialState),
       call_count_(0) {
     // initialize builtin objects
 

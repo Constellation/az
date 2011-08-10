@@ -20,7 +20,7 @@ class Binding : private iv::core::Noncopyable<Binding> {
   explicit Binding(Symbol name, Type type)
     : name_(name),
       type_(type),
-      state_(kInitialState),
+      state_(kInvalidState),
       value_(AVAL_NOBASE) {
   }
 

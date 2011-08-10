@@ -86,11 +86,11 @@ class Summary : private iv::core::Noncopyable<Summary> {
       candidates_(),
       value_(AVAL_NOBASE),
       type_(function),
-      state_(kInitialState) {
+      state_(kInvalidState) {
   }
 
   bool IsExists() const {
-    return state_ != kInitialState;
+    return state_ != kInvalidState;
   }
 
   State state() const {

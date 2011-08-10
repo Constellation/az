@@ -5,8 +5,8 @@ namespace az {
 namespace cfa2 {
 
 typedef uint64_t State;
-static const State kInitialState = 0;
-static const State kStartState = 1;
+static const State kInvalidState = 0;
+static const State kInitialState = 1;
 
 } }  // namespace az::cfa2
 #endif  //_AZ_CFA2_STATE_H_
