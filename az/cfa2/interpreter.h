@@ -393,8 +393,33 @@ void Interpreter::Visit(ConditionalExpression* cond) {
     error_found = true;
     err |= rr.exception();
   }
-  result_ = Result(
-      lr.result() | rr.result(), err, error_found);
+  if (cr.result().IsTrue()) {
+    // true
+    if (lr.HasException()) {
+      error_found = true;
+      err |= lr.exception();
+    }
+    result_ = Result(lr.result(), err, error_found);
+  } else if (cr.result().IsFalse()) {
+    // false
+    if (rr.HasException()) {
+      error_found = true;
+      err |= lr.exception();
+    }
+    result_ = Result(rr.result(), err, error_found);
+  } else {
+    // indeterminate
+    if (lr.HasException()) {
+      error_found = true;
+      err |= lr.exception();
+    }
+    if (rr.HasException()) {
+      error_found = true;
+      err |= rr.exception();
+    }
+    result_ = Result(
+        lr.result() | rr.result(), err, error_found);
+  }
 }
 
 void Interpreter::Visit(UnaryOperation* unary) {
