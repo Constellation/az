@@ -1,7 +1,7 @@
 #ifndef _AZ_CFA2_AVAL_H_
 #define _AZ_CFA2_AVAL_H_
 #include <az/cfa2/aval_fwd.h>
-#include <az/cfa2/aobject.h>
+#include <az/cfa2/aobject_fwd.h>
 namespace az {
 namespace cfa2 {
 
@@ -18,7 +18,21 @@ AVal AVal::GetProperty(Heap* heap, Symbol name) const {
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
-    val.Join((*it)->GetProperty(name));
+    val |= (*it)->GetProperty(name);
+  }
+  return val;
+}
+
+
+AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<AObject*>* already_searched) const {
+  AVal val(AVAL_NOBASE);
+  for (ObjectSet::const_iterator it = objects_.begin(),
+       last = objects_.end(); it != last; ++it) {
+    // get object property and merge it
+    if (already_searched->find(*it) == already_searched->end()) {
+      already_searched->insert(*it);
+      val |= (*it)->GetPropertyImpl(name, already_searched);
+    }
   }
   return val;
 }

@@ -100,6 +100,8 @@ class AVal {
 
   inline AVal GetProperty(Heap* heap, Symbol name) const;
 
+  inline AVal GetPropertyImpl(Symbol name, std::unordered_set<AObject*>* already_searched) const;
+
   // join rhs aval to this
   void Join(const AVal& rhs) {
     const int base = base_ | rhs.base_;
@@ -139,6 +141,12 @@ class AVal {
     return *this;
   }
 
+  AVal& operator|=(BaseType rhs) {
+    Join(rhs);
+    return *this;
+  }
+
+  // operator< is likely true
   friend bool operator<(const AVal& lhs, const AVal& rhs) {
     if (lhs.base_ > (lhs.base_ & rhs.base_)) {
       // lhs has a base type which rhs doesn't have

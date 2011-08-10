@@ -5,7 +5,7 @@
 #include <iv/detail/unordered_map.h>
 #include <iv/detail/tuple.h>
 #include <iv/detail/cstdint.h>
-#include <az/cfa2/aobject.h>
+#include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/result.h>
 #include <az/cfa2/state.h>
 namespace az {

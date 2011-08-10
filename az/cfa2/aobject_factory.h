@@ -8,7 +8,7 @@
 #include <iv/alloc.h>
 #include <az/destructor.h>
 #include <az/cfa2/fwd.h>
-#include <az/cfa2/aobject.h>
+#include <az/cfa2/aobject_fwd.h>
 namespace az {
 namespace cfa2 {
 

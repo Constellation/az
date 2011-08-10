@@ -3,6 +3,8 @@
 #include <deque>
 #include <iv/debug.h>
 #include <az/cfa2/interpreter_fwd.h>
+#include <az/cfa2/aobject.h>
+#include <az/cfa2/aval.h>
 #include <az/cfa2/heap_initializer.h>
 #include <az/cfa2/frame.h>
 #include <az/cfa2/result.h>

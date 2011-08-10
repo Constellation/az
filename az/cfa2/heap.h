@@ -252,6 +252,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return summaries_;
   }
 
+  void MoveState() {
+    ++state_;
+  }
+
   void CountUpCall() {
     ++call_count_;
   }
