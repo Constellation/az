@@ -117,6 +117,9 @@ class AVal {
                         AObject* this_binding,
                         const std::vector<AVal>& args, Result* result) const;
 
+  inline bool IsTrue() const;
+  inline bool IsFalse() const;
+
   // join rhs aval to this
   void Join(const AVal& rhs) {
     const int base = base_ | rhs.base_;

@@ -137,5 +137,18 @@ iv::core::UString AVal::ToTypeString() const {
   return str;
 }
 
+
+bool AVal::IsTrue() const {
+  return objects_.empty() && base_ == AVAL_STRING && (!str_ || !str_->empty());
+}
+
+bool AVal::IsFalse() const {
+  return
+      objects_.empty() &&
+      base_ != 0 &&
+      ((base_ & (AVAL_NULL | AVAL_UNDEFINED)) ||
+       (base_ == AVAL_STRING && str_ && str_->empty()));
+}
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_AVAL_H_

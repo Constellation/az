@@ -219,8 +219,56 @@ void Interpreter::Visit(BinaryOperation* binary) {
   using iv::core::Token;
   const Token::Type token = binary->op();
   switch (token) {
-    case Token::TK_LOGICAL_AND:  // &&
-    case Token::TK_LOGICAL_OR:  // ||
+    case Token::TK_LOGICAL_AND: {  // &&
+      binary->left()->Accept(this);
+      const Result lr = result_;
+      if (!lr.result().IsFalse()) {
+        binary->right()->Accept(this);
+        AVal res(result_.result());
+        AVal err(AVAL_NOBASE);
+        bool error_found = false;
+        if (lr.HasException()) {
+          error_found = true;
+          err.Join(lr.exception());
+        }
+        if (result_.HasException()) {
+          error_found = true;
+          err.Join(result_.exception());
+        }
+        if (!res.IsTrue()) {
+          result_ = Result(lr.result() | res, err, error_found);
+        } else {
+          result_ = Result(res, err, error_found);
+        }
+      }
+      break;
+    }
+
+    case Token::TK_LOGICAL_OR: {  // ||
+      binary->left()->Accept(this);
+      const Result lr = result_;
+      if (!lr.result().IsTrue()) {
+        binary->right()->Accept(this);
+        AVal res(result_.result());
+        AVal err(AVAL_NOBASE);
+        bool error_found = false;
+        if (lr.HasException()) {
+          error_found = true;
+          err.Join(lr.exception());
+        }
+        if (result_.HasException()) {
+          error_found = true;
+          err.Join(result_.exception());
+        }
+        if (!res.IsFalse()) {
+          result_ = Result(lr.result() | res, err, error_found);
+        } else {
+          result_ = Result(res, err, error_found);
+        }
+      }
+      break;
+    }
+
     case Token::TK_MUL:  // *
     case Token::TK_DIV:  // /
     case Token::TK_MOD:  // %
