@@ -220,6 +220,9 @@ class Heap : private iv::core::Noncopyable<Heap> {
     } else if (s->second->state() < state_) {
       // old, so clear candidates
       s->second->UpdateCandidates(state_, this_binding, args, result);
+    } else {
+      std::cout << state_ << "AND" << s->second->state() << std::endl;
+      UNREACHABLE();
     }
     s->second->UpdateType(this_binding, args, result);
   }

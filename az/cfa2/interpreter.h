@@ -561,9 +561,10 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
 
 void Interpreter::Visit(IdentifierAccess* prop) {
   prop->target()->Accept(this);
-  const Result res(result_);
+  const Result target(result_);
+  base_ = target.result();
   result_.set_result(
-      res.result().GetProperty(heap_, Intern(prop->key()->value())));
+      target.result().GetProperty(heap_, Intern(prop->key()->value())));
 }
 
 void Interpreter::Visit(IndexAccess* prop) {
@@ -588,10 +589,45 @@ void Interpreter::Visit(IndexAccess* prop) {
     }
     res.set_exception(ex);
   }
+  base_ = target.result();
   result_ = res;
 }
 
 void Interpreter::Visit(FunctionCall* call) {
+  // TODO(Constellation) get this_binding value
+  call->target()->Accept(this);
+  AVal this_binding(AVAL_NOBASE);
+  if (call->target()->AsPropertyAccess()) {
+    // get base binding
+    this_binding = base_;
+  } else {
+    this_binding = heap_->GetGlobal();
+  }
+  AVal err(AVAL_NOBASE);
+  bool error_found = false;
+  if (result_.HasException()) {
+    error_found = true;
+    err |= result_.exception();
+  }
+  const AVal target = result_.result();
+  // fill arguments
+  std::vector<AVal> args(call->args().size(), AVal(AVAL_NOBASE));
+  std::vector<AVal>::iterator args_it = args.begin();
+  for (Expressions::const_iterator it = call->args().begin(),
+       last = call->args().end(); it != last; ++it, ++args_it) {
+    (*it)->Accept(this);
+    args_it->Join(result_.result());
+    if (result_.HasException()) {
+      error_found = true;
+      err |= result_.exception();
+    }
+  }
+  Result res;
+  target.Call(heap_, this_binding, args, &res);
+  if (error_found) {
+    res.MergeException(err);
+  }
+  result_ = res;
 }
 
 void Interpreter::Visit(ConstructorCall* call) {

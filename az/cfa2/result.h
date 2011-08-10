@@ -59,9 +59,13 @@ class Result {
   void MergeException(const Result& rhs) {
     if (rhs.HasException()) {  // error found
       // error val
-      exception_.Join(rhs.exception_);
-      has_exception_ = true;
+      MergeException(rhs.exception_);
     }
+  }
+
+  void MergeException(const AVal& rhs) {
+    exception_.Join(rhs);
+    has_exception_ = true;
   }
 
   bool HasException() const {

@@ -2,6 +2,7 @@
 #define _AZ_CFA2_AVAL_H_
 #include <az/cfa2/aval_fwd.h>
 #include <az/cfa2/aobject_fwd.h>
+#include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {
 
@@ -21,6 +22,12 @@ AVal AVal::GetProperty(Heap* heap, Symbol name) const {
     val |= (*it)->GetProperty(name);
   }
   return val;
+}
+
+void AVal::Call(Heap* heap,
+                const AVal& this_binding,
+                const std::vector<AVal>& args, Result* result) const {
+  *result = Result();
 }
 
 

@@ -18,5 +18,7 @@ class Heap;
 
 class Frame;
 
+class Result;
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_FWD_H_
