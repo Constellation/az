@@ -158,7 +158,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
       old.Join(val);
       binding->set_value(old);
       // heap update, so count up state
-      binding->set_state(++state_);
+      UpdateState();
+      binding->set_state(state());
     }
   }
 
@@ -252,7 +253,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return summaries_;
   }
 
-  void MoveState() {
+  void UpdateState() {
     ++state_;
   }
 

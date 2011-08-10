@@ -11,11 +11,11 @@ void AObject::UpdateProperty(Heap* heap, Symbol name, AVal val) {
     // found
     if (!(val < it->second.value())) {
       it->second.Merge(val);
-      heap->MoveState();  // to new state (object layout change)
+      heap->UpdateState();  // to new state (object layout change)
     }
   } else {
     AddProperty(name, AProp(val));
-    heap->MoveState();  // to new state (object layout change)
+    heap->UpdateState();  // to new state (object layout change)
   }
 }
 
@@ -23,7 +23,7 @@ void AObject::UpdateProperty(Heap* heap, Symbol name, AVal val) {
 void AObject::UpdateProto(Heap* heap, AVal val) {
   if (!(val < proto_)) {
     proto_ |= val;
-    heap->MoveState();
+    heap->UpdateState();
   }
 }
 
