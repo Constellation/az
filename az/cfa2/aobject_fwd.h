@@ -105,7 +105,7 @@ class AObject
 
   inline void UpdateProperty(Heap* heap, Symbol name, AVal val);
 
-  inline void UpdateProto(Heap* heap, AVal val);
+  inline void UpdatePrototype(Heap* heap, AVal val);
 
   bool GetOwnProperty(Symbol name, AVal* val) const {
     const Properties::const_iterator it = properties_.find(name);

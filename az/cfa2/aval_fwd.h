@@ -108,8 +108,14 @@ class AVal {
   inline AVal GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const;
 
   inline void Call(Heap* heap,
+                   Interpreter* interp,
                    const AVal& this_binding,
                    const std::vector<AVal>& args, Result* result) const;
+
+  inline void Construct(Heap* heap,
+                        Interpreter* interp,
+                        AObject* this_binding,
+                        const std::vector<AVal>& args, Result* result) const;
 
   // join rhs aval to this
   void Join(const AVal& rhs) {

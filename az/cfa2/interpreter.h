@@ -57,8 +57,7 @@ void Interpreter::Run(FunctionLiteral* global) {
     if (!it->second->IsExists()) {
       // not summarized yet
       const std::vector<AVal> vec(it->first->params().size(), AVal(AVAL_NOBASE));
-      EvaluateFunction(it->first,
-                       it->second->target(),
+      EvaluateFunction(it->second->target(),
                        AVal(heap_->MakeObject()),
                        vec,
                        false);
@@ -594,7 +593,6 @@ void Interpreter::Visit(IndexAccess* prop) {
 }
 
 void Interpreter::Visit(FunctionCall* call) {
-  // TODO(Constellation) get this_binding value
   call->target()->Accept(this);
   AVal this_binding(AVAL_NOBASE);
   if (call->target()->AsPropertyAccess()) {
@@ -622,15 +620,37 @@ void Interpreter::Visit(FunctionCall* call) {
       err |= result_.exception();
     }
   }
-  Result res;
-  target.Call(heap_, this_binding, args, &res);
+  target.Call(heap_, this, this_binding, args, &result_);
   if (error_found) {
-    res.MergeException(err);
+    result_.MergeException(err);
   }
-  result_ = res;
 }
 
 void Interpreter::Visit(ConstructorCall* call) {
+  call->target()->Accept(this);
+  AVal err(AVAL_NOBASE);
+  bool error_found = false;
+  if (result_.HasException()) {
+    error_found = true;
+    err |= result_.exception();
+  }
+  const AVal target = result_.result();
+  // fill arguments
+  std::vector<AVal> args(call->args().size(), AVal(AVAL_NOBASE));
+  std::vector<AVal>::iterator args_it = args.begin();
+  for (Expressions::const_iterator it = call->args().begin(),
+       last = call->args().end(); it != last; ++it, ++args_it) {
+    (*it)->Accept(this);
+    args_it->Join(result_.result());
+    if (result_.HasException()) {
+      error_found = true;
+      err |= result_.exception();
+    }
+  }
+  target.Construct(heap_, this, heap_->GetDeclObject(call), args, &result_);
+  if (error_found) {
+    result_.MergeException(err);
+  }
 }
 
 // Others
@@ -638,14 +658,15 @@ void Interpreter::Visit(ConstructorCall* call) {
 void Interpreter::Visit(Declaration* dummy) {
 }
 
-Result Interpreter::EvaluateFunction(FunctionLiteral* literal,
-                                     AObject* function,
+Result Interpreter::EvaluateFunction(AObject* function,
                                      const AVal& this_binding,
                                      const std::vector<AVal>& args,
                                      bool IsConstructorCalled) {
   if (function->builtin()) {
     return function->builtin()(heap_, this_binding, args, IsConstructorCalled);
   }
+
+  FunctionLiteral* literal = function->function();
 
   heap_->CountUpCall();
   Result res;
@@ -716,11 +737,21 @@ Result Interpreter::EvaluateFunction(FunctionLiteral* literal,
   // then, interpret
   Interpret(literal);
 
+  if (IsConstructorCalled) {
+    // TODO(Constellation)
+    // fix bug like this:
+    //
+    //   function Test() {
+    //     return { };
+    //   }
+    //   new Test() => Object, not Test instance
+    result_.set_result(this_binding);
+  }
+
   heap_->AddSummary(function, this_binding, args, result_);
 
   frame_ = previous;
-
-  return res;
+  return result_;
 }
 
 Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {

@@ -20,7 +20,7 @@ void AObject::UpdateProperty(Heap* heap, Symbol name, AVal val) {
 }
 
 
-void AObject::UpdateProto(Heap* heap, AVal val) {
+void AObject::UpdatePrototype(Heap* heap, AVal val) {
   if (!(val < proto_)) {
     proto_ |= val;
     heap->UpdateState();

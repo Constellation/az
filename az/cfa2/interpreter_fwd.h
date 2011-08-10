@@ -31,6 +31,11 @@ class Interpreter
 
   inline void Run(FunctionLiteral* global);
 
+  inline Result EvaluateFunction(AObject* function,
+                                 const AVal& this_binding,
+                                 const std::vector<AVal>& args,
+                                 bool IsConstructorCalled);
+
  private:
   inline void Visit(Block* block);
   inline void Visit(FunctionStatement* func);
@@ -78,11 +83,6 @@ class Interpreter
   inline void Visit(CaseClause* clause);
 
   inline void Interpret(FunctionLiteral* literal);
-  inline Result EvaluateFunction(FunctionLiteral* literal,
-                                 AObject* function,
-                                 const AVal& this_binding,
-                                 const std::vector<AVal>& args,
-                                 bool IsConstructorCalled);
 
   inline Result Assign(Assignment* assign, Result res, AVal old);
   Heap* heap_;

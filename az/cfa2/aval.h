@@ -1,6 +1,7 @@
 #ifndef _AZ_CFA2_AVAL_H_
 #define _AZ_CFA2_AVAL_H_
 #include <az/cfa2/aval_fwd.h>
+#include <az/cfa2/interpreter_fwd.h>
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/result.h>
 namespace az {
@@ -25,11 +26,58 @@ AVal AVal::GetProperty(Heap* heap, Symbol name) const {
 }
 
 void AVal::Call(Heap* heap,
+                Interpreter* interp,
                 const AVal& this_binding,
                 const std::vector<AVal>& args, Result* result) const {
-  *result = Result();
+  AVal res(AVAL_NOBASE);
+  bool error_found = false;
+  AVal err(AVAL_NOBASE);
+  for (ObjectSet::const_iterator it = objects_.begin(),
+       last = objects_.end(); it != last; ++it) {
+    if ((*it)->IsFunction()) {
+      const Result ret = interp->EvaluateFunction(*it, this_binding, args, false);
+      // merge result values
+      res |= ret.result();
+      if (ret.HasException()) {
+        error_found = true;
+        err |= ret.exception();
+      }
+    }
+  }
+  *result = Result(res, err, error_found);
 }
 
+void AVal::Construct(Heap* heap,
+                     Interpreter* interp,
+                     AObject* this_binding,
+                     const std::vector<AVal>& args, Result* result) const {
+  AVal res(AVAL_NOBASE);
+  bool error_found = false;
+  AVal err(AVAL_NOBASE);
+  const AVal base(this_binding);
+  for (ObjectSet::const_iterator it = objects_.begin(),
+       last = objects_.end(); it != last; ++it) {
+    if ((*it)->IsFunction()) {
+      AVal prototype = (*it)->GetProperty(Intern("prototype"));
+      // TODO(Constellation) GetProperty result value
+      if (res.IsUndefined()) {
+        prototype = AVal(heap->MakePrototype(*it));
+        (*it)->UpdateProperty(heap, Intern("prototype"), prototype);
+      }
+      this_binding->UpdatePrototype(heap, prototype);
+      const Result ret = interp->EvaluateFunction(*it, base, args, true);
+
+      res |= ret.result();
+      // merge result values
+      res |= ret.result();
+      if (ret.HasException()) {
+        error_found = true;
+        err |= ret.exception();
+      }
+    }
+  }
+  *result = Result(res, err, error_found);
+}
 
 AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const {
   AVal val(AVAL_NOBASE);

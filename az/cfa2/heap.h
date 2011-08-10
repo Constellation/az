@@ -127,6 +127,14 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return factory_.NewAObject(object_prototype_);
   }
 
+  AObject* MakePrototype(AObject* constructor) {
+    AObject* obj = MakeObject();
+    obj->AddProperty(
+        Intern("constructor"),
+        AProp(AVal(constructor), A::W | A::C));
+    return obj;
+  }
+
   AObject* MakeFunction(FunctionLiteral* function) {
     return factory_.NewAObject(function, function_prototype_);
   }
