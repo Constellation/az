@@ -10,7 +10,7 @@
 #include <az/cfa2/heap.h>
 #include <az/cfa2/binding.h>
 #include <az/cfa2/completer.h>
-#include <az/cfa2/answer.h>
+#include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {
 
@@ -19,13 +19,14 @@ class Interpreter
     public MutableAstVisitor {
  public:
   typedef std::deque<Statement*> Tasks;
-  typedef std::deque<std::pair<Statement*, Answer> > Errors;
+  typedef std::deque<std::pair<Statement*, Result> > Errors;
   typedef std::vector<Binding*> Bindings;
 
   explicit Interpreter(Heap* heap,
                        Completer* completer)
     : heap_(heap),
-      completer_(completer) {
+      completer_(completer),
+      result_(AVal(AVAL_NOBASE)) {
   }
 
   inline void Run(FunctionLiteral* global);
@@ -77,14 +78,14 @@ class Interpreter
   inline void Visit(CaseClause* clause);
 
   inline void Interpret(FunctionLiteral* literal);
-  inline Answer EvaluateFunction(FunctionLiteral* literal,
+  inline Result EvaluateFunction(FunctionLiteral* literal,
                                  AObject* function,
                                  const AVal& this_binding,
                                  const std::vector<AVal>& args,
                                  bool IsConstructorCalled);
   Heap* heap_;
   Completer* completer_;
-  Answer answer_;  // result tuple
+  Result result_;  // result value
   Frame* frame_;
   Tasks* tasks_;
   Errors* errors_;

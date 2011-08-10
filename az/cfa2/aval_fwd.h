@@ -1,6 +1,7 @@
 #ifndef _AZ_CFA2_AVAL_FWD_H_
 #define _AZ_CFA2_AVAL_FWD_H_
 #include <set>
+#include <algorithm>
 #include <iterator>
 #include <algorithm>
 #include <iv/noncopyable.h>
@@ -127,6 +128,11 @@ class AVal {
     return res;
   }
 
+  AVal& operator|=(const AVal& rhs) {
+    Join(rhs);
+    return *this;
+  }
+
   friend bool operator<(const AVal& lhs, const AVal& rhs) {
     if (lhs.base_ > (lhs.base_ & rhs.base_)) {
       // lhs has a base type which rhs doesn't have
@@ -185,6 +191,13 @@ class AVal {
       base |= AVAL_NUMBER;
     }
     return AVal(base);
+  }
+
+  friend void swap(AVal& lhs, AVal& rhs) {
+    using std::swap;
+    swap(lhs.base_, rhs.base_);
+    swap(lhs.str_, rhs.str_);
+    swap(lhs.objects_, rhs.objects_);
   }
 
   struct Pair {

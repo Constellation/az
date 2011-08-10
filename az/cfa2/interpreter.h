@@ -5,6 +5,7 @@
 #include <az/cfa2/interpreter_fwd.h>
 #include <az/cfa2/heap_initializer.h>
 #include <az/cfa2/frame.h>
+#include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {
 
@@ -81,16 +82,16 @@ void Interpreter::Visit(VariableStatement* var) {
     if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
       expr.Address()->Accept(this);
     }
-    if (std::get<1>(answer_)) {
+    if (result_.HasException()) {
       // add raised path to error queue
-      errors_->push_back(std::make_pair(var->raised(), answer_));
+      errors_->push_back(std::make_pair(var->raised(), result_));
       // surpress error
-      std::get<1>(answer_) = false;
+      result_ = Result(result_.result());
     }
     if (binding->type() == Binding::HEAP) {
       heap_->UpdateHeap(binding, AVal(AVAL_NUMBER));
     } else if (binding->type() == Binding::STACK) {
-      const AVal val(frame_->Get(heap_, binding) | std::get<0>(answer_));
+      const AVal val(frame_->Get(heap_, binding) | result_.result());
       frame_->Set(heap_, binding, val);
       if (heap_->IsDeclaredHeapBinding(binding)) {
         heap_->UpdateHeap(binding, val);
@@ -144,7 +145,7 @@ void Interpreter::Visit(ReturnStatement* stmt) {
   if (const iv::core::Maybe<Expression> expr = stmt->expr()) {
     expr.Address()->Accept(this);
   } else {
-    answer_ = Answer(AVal(AVAL_UNDEFINED), false, AVal(AVAL_NOBASE));
+    result_ = Result(AVal(AVAL_UNDEFINED));
   }
 }
 
@@ -168,12 +169,12 @@ void Interpreter::Visit(CaseClause* clause) {
 
 void Interpreter::Visit(ThrowStatement* stmt) {
   stmt->expr()->Accept(this);
-  AVal err(std::get<0>(answer_));  // normal result thrown
+  AVal err(result_.result());  // normal result thrown
   // and if expr throw error, merge this
-  if (std::get<1>(answer_)) {
-    err.Join(std::get<2>(answer_));
+  if (result_.HasException()) {
+    err |= result_.exception();
   }
-  answer_ = Answer(AVal(AVAL_NOBASE), true, err);
+  result_ = Result(AVal(AVAL_NOBASE), err);
 }
 
 
@@ -212,39 +213,39 @@ void Interpreter::Visit(BinaryOperation* binary) {
     case Token::TK_BIT_OR: {  // |
       // returns number
       binary->left()->Accept(this);
-      const Answer la = answer_;
+      const Result lr = result_;
       binary->right()->Accept(this);
       AVal err(AVAL_NOBASE);
       bool error_found = false;
-      if (std::get<1>(la)) {
+      if (lr.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(la));
+        err.Join(lr.exception());
       }
-      if (std::get<1>(answer_)) {
+      if (result_.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(answer_));
+        err.Join(result_.exception());
       }
-      answer_ = Answer(AVal(AVAL_NUMBER), error_found, err);
+      result_ = Result(AVal(AVAL_NUMBER), err, error_found);
       break;
     }
 
     case Token::TK_ADD: {  // +
       // add STRING + STRING is STRING
       binary->left()->Accept(this);
-      const Answer la = answer_;
+      const Result lr = result_;
       binary->right()->Accept(this);
-      const AVal res(std::get<0>(answer_) + std::get<0>(la));
+      const AVal res(result_.result() + lr.result());
       AVal err(AVAL_NOBASE);
       bool error_found = false;
-      if (std::get<1>(la)) {
+      if (lr.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(la));
+        err.Join(lr.exception());
       }
-      if (std::get<1>(answer_)) {
+      if (result_.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(answer_));
+        err.Join(result_.exception());
       }
-      answer_ = Answer(res, error_found, err);
+      result_ = Result(res, err, error_found);
       break;
     }
 
@@ -260,37 +261,37 @@ void Interpreter::Visit(BinaryOperation* binary) {
     case Token::TK_NE_STRICT: {  // !==
       // returns bool
       binary->left()->Accept(this);
-      const Answer la = answer_;
+      const Result lr = result_;
       binary->right()->Accept(this);
       AVal err(AVAL_NOBASE);
       bool error_found = false;
-      if (std::get<1>(la)) {
+      if (lr.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(la));
+        err.Join(lr.exception());
       }
-      if (std::get<1>(answer_)) {
+      if (result_.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(answer_));
+        err.Join(result_.exception());
       }
-      answer_ = Answer(AVal(AVAL_BOOL), error_found, err);
+      result_ = Result(AVal(AVAL_BOOL), err, error_found);
       break;
     }
 
     case Token::TK_COMMA: {  // ,
       binary->left()->Accept(this);
-      const Answer la = answer_;
+      const Result lr = result_;
       binary->right()->Accept(this);
       AVal err(AVAL_NOBASE);
       bool error_found = false;
-      if (std::get<1>(la)) {
+      if (lr.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(la));
+        err.Join(lr.exception());
       }
-      if (std::get<1>(answer_)) {
+      if (result_.HasException()) {
         error_found = true;
-        err.Join(std::get<2>(answer_));
+        err.Join(result_.exception());
       }
-      answer_ = Answer(std::get<0>(answer_), error_found, err);
+      result_ = Result(result_.result(), err, error_found);
       break;
     }
 
@@ -303,30 +304,28 @@ void Interpreter::Visit(BinaryOperation* binary) {
 
 void Interpreter::Visit(ConditionalExpression* cond) {
   cond->cond()->Accept(this);
-  Answer ca = answer_;  // cond answer
+  const Result cr = result_;  // cond result
   cond->left()->Accept(this);
-  Answer la = answer_;  // left answer
+  const Result lr = result_;  // left result
   cond->right()->Accept(this);
-  Answer ra = answer_;  // right answer
+  const Result rr = result_;  // right result 
   // aggregate error and result values
   AVal err(AVAL_NOBASE);
   bool error_found = false;
-  if (std::get<1>(ca)) {
+  if (cr.HasException()) {
     error_found = true;
-    err.Join(std::get<2>(ca));
+    err |= cr.exception();
   }
-  if (std::get<1>(la)) {
+  if (lr.HasException()) {
     error_found = true;
-    err.Join(std::get<2>(la));
+    err |= lr.exception();
   }
-  if (std::get<1>(ra)) {
+  if (rr.HasException()) {
     error_found = true;
-    err.Join(std::get<2>(ra));
+    err |= rr.exception();
   }
-  answer_ = Answer(
-      std::get<0>(la) | std::get<0>(ra),
-      error_found,
-      err);
+  result_ = Result(
+      lr.result() | rr.result(), err, error_found);
 }
 
 void Interpreter::Visit(UnaryOperation* unary) {
@@ -336,30 +335,21 @@ void Interpreter::Visit(UnaryOperation* unary) {
     case Token::TK_DELETE: {
       // if no error occurred, this always returns BOOL / UNDEFINED
       unary->expr()->Accept(this);
-      answer_ = Answer(
-          AVal(AVAL_BOOL) | AVal(AVAL_UNDEFINED),
-          std::get<1>(answer_),
-          std::get<2>(answer_));
+      result_.set_result(AVal(AVAL_BOOL) | AVal(AVAL_UNDEFINED));
       return;
     }
 
     case Token::TK_VOID: {
       // if no error occurred, this always returns UNDEFINED
       unary->expr()->Accept(this);
-      answer_ = Answer(
-          AVal(AVAL_UNDEFINED),
-          std::get<1>(answer_),
-          std::get<2>(answer_));
+      result_.set_result(AVal(AVAL_UNDEFINED));
       return;
     }
 
     case Token::TK_TYPEOF: {
       // if no error occurred, this always returns STRING
       unary->expr()->Accept(this);
-      answer_ = Answer(
-          AVal(AVAL_STRING),
-          std::get<1>(answer_),
-          std::get<2>(answer_));
+      result_.set_result(AVal(AVAL_STRING));
       return;
     }
 
@@ -370,19 +360,13 @@ void Interpreter::Visit(UnaryOperation* unary) {
     case Token::TK_BIT_NOT: {
       // if no error occurred, this always returns NUMBER
       unary->expr()->Accept(this);
-      answer_ = Answer(
-          AVal(AVAL_NUMBER),
-          std::get<1>(answer_),
-          std::get<2>(answer_));
+      result_.set_result(AVal(AVAL_NUMBER));
       return;
     }
 
     case Token::TK_NOT: {
       unary->expr()->Accept(this);
-      answer_ = Answer(
-          AVal(AVAL_BOOL),
-          std::get<1>(answer_),
-          std::get<2>(answer_));
+      result_.set_result(AVal(AVAL_BOOL));
       return;
     }
 
@@ -393,18 +377,15 @@ void Interpreter::Visit(UnaryOperation* unary) {
 
 void Interpreter::Visit(PostfixExpression* postfix) {
   postfix->expr()->Accept(this);
-  answer_ = Answer(
-      AVal(AVAL_NUMBER),
-      std::get<1>(answer_),
-      std::get<2>(answer_));
+  result_.set_result(AVal(AVAL_NUMBER));
 }
 
 void Interpreter::Visit(StringLiteral* literal) {
-  answer_ = Answer(AVal(literal->value()), false, AVal(AVAL_NOBASE));
+  result_ = Result(AVal(literal->value()));
 }
 
 void Interpreter::Visit(NumberLiteral* literal) {
-  answer_ = Answer(AVal(AVAL_NUMBER), false, AVal(AVAL_NOBASE));
+  result_ = Result(AVal(AVAL_NUMBER));
 }
 
 void Interpreter::Visit(Identifier* ident) {
@@ -413,14 +394,10 @@ void Interpreter::Visit(Identifier* ident) {
   if (binding) {
     if (ident->refer()->type() == Binding::HEAP) {
       // this is heap variable, so lookup from heap
-      answer_ = Answer(
-          binding->value(),
-          false, AVal(AVAL_NOBASE));
+      result_ = Result(binding->value());
     } else {
       // this is stack variable, so lookup from frame
-      answer_ = Answer(
-          frame_->Get(heap_, binding),
-          false, AVal(AVAL_NOBASE));
+      result_ = Result(frame_->Get(heap_, binding));
     }
   } else {
     // not found => global lookup
@@ -429,23 +406,23 @@ void Interpreter::Visit(Identifier* ident) {
 }
 
 void Interpreter::Visit(ThisLiteral* literal) {
-  answer_ = Answer(frame_->GetThis(), false, AVal(AVAL_NOBASE));
+  result_ = Result(frame_->GetThis());
 }
 
 void Interpreter::Visit(NullLiteral* lit) {
-  answer_ = Answer(AVal(AVAL_NULL), false, AVal(AVAL_NOBASE));
+  result_ = Result(AVal(AVAL_NULL));
 }
 
 void Interpreter::Visit(TrueLiteral* lit) {
-  answer_ = Answer(AVal(AVAL_BOOL), false, AVal(AVAL_NOBASE));
+  result_ = Result(AVal(AVAL_BOOL));
 }
 
 void Interpreter::Visit(FalseLiteral* lit) {
-  answer_ = Answer(AVal(AVAL_BOOL), false, AVal(AVAL_NOBASE));
+  result_ = Result(AVal(AVAL_BOOL));
 }
 
 void Interpreter::Visit(RegExpLiteral* literal) {
-  answer_ = Answer(AVal(heap_->GetDeclObject(literal)), false, AVal(AVAL_NOBASE));
+  result_ = Result(AVal(heap_->GetDeclObject(literal)));
 }
 
 void Interpreter::Visit(ArrayLiteral* literal) {
@@ -458,15 +435,15 @@ void Interpreter::Visit(ArrayLiteral* literal) {
        last = literal->items().end(); it != last; ++it, ++index) {
     if (const iv::core::Maybe<Expression> expr = *it) {
       expr.Address()->Accept(this);
-      ary->UpdateProperty(heap_, Intern(index), std::get<0>(answer_));
-      if (std::get<1>(answer_)) {
+      ary->UpdateProperty(heap_, Intern(index), result_.result());
+      if (result_.HasException()) {
         // error found
         error_found = true;
-        err.Join(std::get<2>(answer_));
+        err |= result_.exception();
       }
     }
   }
-  answer_ = Answer(AVal(ary), error_found, err);
+  result_ = Result(AVal(ary), err, error_found);
 }
 
 void Interpreter::Visit(ObjectLiteral* literal) {
@@ -480,19 +457,19 @@ void Interpreter::Visit(ObjectLiteral* literal) {
     if (std::get<0>(prop) == ObjectLiteral::DATA) {
       std::get<2>(prop)->Accept(this);
       Identifier* ident = std::get<1>(prop);
-      obj->UpdateProperty(heap_, Intern(ident->value()), std::get<0>(answer_));
-      if (std::get<1>(answer_)) {
+      obj->UpdateProperty(heap_, Intern(ident->value()), result_.result());
+      if (result_.HasException())  {
         // error found
         error_found = true;
-        err.Join(std::get<2>(answer_));
+        err |= result_.exception();
       }
     }
   }
-  answer_ = Answer(AVal(obj), error_found, err);
+  result_ = Result(AVal(obj), err, error_found);
 }
 
 void Interpreter::Visit(FunctionLiteral* literal) {
-  answer_ = Answer(AVal(heap_->GetDeclObject(literal)), false, AVal(AVAL_NOBASE));
+  result_ = Result(AVal(heap_->GetDeclObject(literal)));
 }
 
 void Interpreter::Interpret(FunctionLiteral* literal) {
@@ -524,13 +501,13 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
     // patching phase
     if (task->AsReturnStatement()) {
       task->Accept(this);
-      result.Join(std::get<0>(answer_));
+      result |= result_.result();
     } else {
       task->Accept(this);
     }
     tasks_->push_back(task->normal());
     // check answer value and determine evaluate raised path or not
-    if (std::get<1>(answer_)) {
+    if (result_.HasException()) {
       error_found = true;
       // raised path is catch / finally / NULL
       // if catch   ... TryStatement,
@@ -544,16 +521,16 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
             frame_->Set(
                 heap_,
                 binding,
-                std::get<2>(answer_) | frame_->Get(heap_, binding));
+                result_.exception() | frame_->Get(heap_, binding));
           } else {
-            frame_->Set(heap_, binding, std::get<2>(answer_));
+            frame_->Set(heap_, binding, result_.exception());
           }
           tasks_->push_back(raised->catch_block().Address());
         } else {
           tasks_->push_back(task->raised());
         }
       } else {
-        error.Join(std::get<2>(answer_));
+        error |= result_.exception();
       }
     }
 
@@ -572,19 +549,19 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
             frame_->Set(
                 heap_,
                 binding,
-                std::get<2>(answer_) | frame_->Get(heap_, binding));
+                result_.exception() | frame_->Get(heap_, binding));
           } else {
-            frame_->Set(heap_, binding, std::get<2>(answer_));
+            frame_->Set(heap_, binding, result_.exception());
           }
         }
         tasks_->push_back(task->raised());
       } else {
-        error.Join(std::get<2>(it->second));
+        error |= it->second.exception();
       }
     }
     errors_->clear();
   }
-  answer_ = Answer(result, error_found, error);
+  result_ = Result(result, error, error_found);
   tasks_ = previous_tasks;
   errors_ = previous_errors;
 }
@@ -606,7 +583,7 @@ void Interpreter::Visit(ConstructorCall* call) {
 void Interpreter::Visit(Declaration* dummy) {
 }
 
-Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
+Result Interpreter::EvaluateFunction(FunctionLiteral* literal,
                                      AObject* function,
                                      const AVal& this_binding,
                                      const std::vector<AVal>& args,
@@ -616,10 +593,10 @@ Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
   }
 
   heap_->CountUpCall();
-  Answer result;
-  if (heap_->FindSummary(function, this_binding, args, &result)) {
+  Result res;
+  if (heap_->FindSummary(function, this_binding, args, &res)) {
     // summary found. so, use this result
-    return result;
+    return res;
   }
   heap_->CountUpDepth();
 
@@ -680,11 +657,11 @@ Answer Interpreter::EvaluateFunction(FunctionLiteral* literal,
   // then, interpret
   Interpret(literal);
 
-  heap_->AddSummary(function, this_binding, args, answer_);
+  heap_->AddSummary(function, this_binding, args, result_);
 
   frame_ = previous;
 
-  return result;
+  return res;
 }
 
 } }  // namespace az::cfa2

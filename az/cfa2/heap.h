@@ -10,6 +10,7 @@
 #include <az/cfa2/aobject_factory.h>
 #include <az/cfa2/summary.h>
 #include <az/cfa2/timestamp.h>
+#include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {
 
@@ -185,7 +186,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
   bool FindSummary(AObject* func,
                    const AVal& this_binding,
-                   const std::vector<AVal>& args, Answer* result) const {
+                   const std::vector<AVal>& args, Result* result) const {
     Summaries::const_iterator s = summaries_.find(func->function());
     assert(s != summaries_.end());
     if (s->second->timestamp() < timestamp_) {
@@ -210,7 +211,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
   void AddSummary(AObject* func,
                   const AVal& this_binding,
-                  const std::vector<AVal>& args, const Answer& result) {
+                  const std::vector<AVal>& args, const Result& result) {
     Summaries::iterator s = summaries_.find(func->function());
     assert(s != summaries_.end());
     if (s->second->timestamp() == timestamp_) {

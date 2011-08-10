@@ -6,19 +6,19 @@
 #include <iv/detail/tuple.h>
 #include <iv/detail/cstdint.h>
 #include <az/cfa2/aobject.h>
-#include <az/cfa2/answer.h>
+#include <az/cfa2/result.h>
 #include <az/cfa2/timestamp.h>
 namespace az {
 namespace cfa2 {
 
 class Summary : private iv::core::Noncopyable<Summary> {
  public:
-  // this_binding, arguments and answer tuple
+  // this_binding, arguments and result
   class Entry {
    public:
     Entry(const AVal& this_binding,
           const std::vector<AVal>& args,
-          const Answer& result)
+          const Result& result)
       : this_binding_(this_binding),
         args_(args),
         result_(result) {
@@ -27,7 +27,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
     explicit Entry(const FunctionLiteral* function)
       : this_binding_(AVAL_NOBASE),
         args_(function->params().size(), AVal(AVAL_NOBASE)),
-        result_(std::make_tuple(AVal(AVAL_NOBASE), false, AVal(AVAL_NOBASE))) {
+      result_(AVal(AVAL_NOBASE)) {
     }
 
     const AVal& this_binding() const {
@@ -56,31 +56,25 @@ class Summary : private iv::core::Noncopyable<Summary> {
       }
     }
 
-    const Answer& result() const {
+    const Result& result() const {
       return result_;
     }
 
-    // TODO(Constellation) implement more efficiency Answer
-    void MergeResult(const Answer& result) {
-      // return val
-      std::get<0>(result_) = std::get<0>(result_) | std::get<0>(result);
-      if (std::get<1>(result)) {  // error found
-        // error val
-        std::get<2>(result_) = std::get<2>(result_) | std::get<0>(result);
-      }
+    void MergeResult(const Result& result) {
+      result_.Merge(result);
     }
 
     void Merge(const AVal& this_binding,
-               const std::vector<AVal>& args, const Answer& result) {
+               const std::vector<AVal>& args, const Result& result) {
       MergeThisBinding(this_binding);
       MergeArgs(args);
-      MergeResult(result);
+      result_.Merge(result);
     }
 
    private:
     AVal this_binding_;
     std::vector<AVal> args_;
-    Answer result_;
+    Result result_;
   };
 
   typedef std::vector<std::shared_ptr<Entry> > Entries;
@@ -112,28 +106,28 @@ class Summary : private iv::core::Noncopyable<Summary> {
   }
 
   void AddCandidate(const AVal& this_binding,
-                    const std::vector<AVal>& args, const Answer& result) {
+                    const std::vector<AVal>& args, const Result& result) {
     candidates_.push_back(
         std::shared_ptr<Entry>(new Entry(this_binding, args, result)));
   }
 
   void UpdateCandidates(uint64_t timestamp,
                         const AVal& this_binding,
-                        const std::vector<AVal>& args, const Answer& result) {
+                        const std::vector<AVal>& args, const Result& result) {
     timestamp_ = timestamp;
     candidates_.clear();
     AddCandidate(this_binding, args, result);
   }
 
   void UpdateType(const AVal& this_binding,
-                  const std::vector<AVal>& args, const Answer& result) {
+                  const std::vector<AVal>& args, const Result& result) {
     type_.Merge(this_binding, args, result);
   }
 
   iv::core::UString ToTypeString() const {
     assert(IsExists());
     iv::core::UString result;
-    result.append(std::get<0>(type_.result()).ToTypeString());
+    result.append(type_.result().result().ToTypeString());
     return result;
   }
 

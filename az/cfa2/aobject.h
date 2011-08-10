@@ -4,11 +4,11 @@
 #include <iv/space.h>
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aval_fwd.h>
-#include <az/cfa2/answer.h>
+#include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {
 
-typedef Answer (*Builtin)(Heap* heap,
+typedef Result (*Builtin)(Heap* heap,
                           const AVal& this_binding,
                           const std::vector<AVal>& args,
                           bool IsConstructorCalled);
