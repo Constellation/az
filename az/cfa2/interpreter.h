@@ -14,7 +14,6 @@ namespace cfa2 {
 class Work { };
 
 void Interpreter::Run(FunctionLiteral* global) {
-  Frame frame(this);
   {
     // initialize heap
     //
@@ -25,6 +24,7 @@ void Interpreter::Run(FunctionLiteral* global) {
     initializer.Initialize(global);
   }
 
+  Frame frame(this);
   frame.SetThis(heap_->GetGlobal());
   const Scope& scope = global->scope();
   for (Scope::Variables::const_iterator it = scope.variables().begin(),
