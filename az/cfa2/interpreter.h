@@ -422,7 +422,8 @@ void Interpreter::Visit(Identifier* ident) {
     }
   } else {
     // not found => global lookup
-    // TODO(Constellation) implement it
+    result_ = Result(
+        heap_->GetGlobal().GetProperty(heap_, Intern(ident->value())));
   }
 }
 
@@ -515,14 +516,15 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
     if (!task) {
       continue;  // next statement
     }
+
     // patching phase
     if (task->AsReturnStatement()) {
       task->Accept(this);
       result |= result_.result();
     } else {
       task->Accept(this);
-      tasks_->push_back(task->normal());
     }
+    tasks_->push_back(task->normal());
 
     // check answer value and determine evaluate raised path or not
     if (result_.HasException()) {
@@ -558,10 +560,10 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
-//  prop->target()->Accept(this);
-//  const Result res(result_);
-//  result_.set_result(
-//      res.result().GetProperty(heap_, Intern(prop->key()->value())));
+  prop->target()->Accept(this);
+  const Result res(result_);
+  result_.set_result(
+      res.result().GetProperty(heap_, Intern(prop->key()->value())));
 }
 
 void Interpreter::Visit(IndexAccess* prop) {
@@ -719,8 +721,10 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
         }
       }
     } else {
-      // global
-      // TODO(Constellation) implement it
+      // global assignment
+      heap_->GetGlobal().UpdateProperty(heap_,
+                                        Intern(ident->value()),
+                                        res.result());
     }
     return res;
   } else if (lhs->AsCall()) {
