@@ -119,6 +119,16 @@ using iv::core::Token;
     return NULL;\
   } while (0)
 
+#define RAISE_WITH_NUMBER_NO_RETURN(str, line)\
+  do {\
+    *res = false;\
+    error_state_ |= kNotRecoverable;\
+    error_.append(str);\
+    errors_.push_back(error_);\
+    error_.clear();\
+    return NULL;\
+  } while (0)
+
 #define CHECK  res);\
   if (!*res) {\
     return NULL;\
@@ -303,9 +313,11 @@ class Parser : private iv::core::Noncopyable<> {
               expr->AsStringLiteral()->value().compare(detail::kUseStrict.data()) == 0) {
             strict_switcher.SwitchStrictMode();
             if (octal_escaped_directive_found) {
-              RAISE_WITH_NUMBER(
+              RAISE_WITH_NUMBER_NO_RETURN(
                   "octal escape sequence not allowed in strict code",
                   line);
+              reporter_->ReportSyntaxError(errors_.back(), lexer_.previous_end_position());
+              *res = true;  // recovery
             }
             // and one token lexed is not in strict
             // so rescan
@@ -338,7 +350,9 @@ class Parser : private iv::core::Noncopyable<> {
       }
     }
     if (token_ != end) {
-      UNEXPECT(token_);
+      UNEXPECT_STATEMENT(token_);
+      reporter_->ReportSyntaxError(errors_.back(), lexer_.previous_end_position());
+      *res = true;  // recovery
     }
     return strict_switcher.IsStrict();
   }
@@ -2523,6 +2537,7 @@ class Parser : private iv::core::Noncopyable<> {
     // IDENTIFIER_opt
     std::unordered_set<IdentifierKey> param_set;
     std::size_t throw_error_if_strict_code_line = 0;
+    std::size_t throw_error_if_strict_code_number = 0;
     const std::size_t begin_position = lexer_.begin_position();
     enum {
       kDetectNone = 0,
@@ -2547,6 +2562,7 @@ class Parser : private iv::core::Noncopyable<> {
         if (Token::IsAddedFutureReservedWordInStrictCode(current)) {
           throw_error_if_strict_code = kDetectFutureReservedWords;
           throw_error_if_strict_code_line = lexer_.line_number();
+          throw_error_if_strict_code_number = lexer_.previous_end_position();
         } else {
           assert(current == Token::TK_IDENTIFIER);
           const EvalOrArguments val = IsEvalOrArguments(name);
@@ -2554,6 +2570,7 @@ class Parser : private iv::core::Noncopyable<> {
             throw_error_if_strict_code = (val == kEval) ?
                 kDetectEvalName : kDetectArgumentsName;
             throw_error_if_strict_code_line = lexer_.line_number();
+            throw_error_if_strict_code_number = lexer_.previous_end_position();
           }
         }
       } else if (decl_type == FunctionLiteral::DECLARATION ||
@@ -2583,6 +2600,7 @@ class Parser : private iv::core::Noncopyable<> {
         if (Token::IsAddedFutureReservedWordInStrictCode(current)) {
           throw_error_if_strict_code = kDetectFutureReservedWords;
           throw_error_if_strict_code_line = lexer_.line_number();
+          throw_error_if_strict_code_number = lexer_.previous_end_position();
         } else {
           assert(current == Token::TK_IDENTIFIER);
           const EvalOrArguments val = IsEvalOrArguments(ident);
@@ -2590,6 +2608,7 @@ class Parser : private iv::core::Noncopyable<> {
             throw_error_if_strict_code = (val == kEval) ?
                 kDetectEvalName : kDetectArgumentsName;
             throw_error_if_strict_code_line = lexer_.line_number();
+            throw_error_if_strict_code_number = lexer_.previous_end_position();
           }
         }
       }
@@ -2608,6 +2627,7 @@ class Parser : private iv::core::Noncopyable<> {
             if (Token::IsAddedFutureReservedWordInStrictCode(current)) {
               throw_error_if_strict_code = kDetectFutureReservedWords;
               throw_error_if_strict_code_line = lexer_.line_number();
+              throw_error_if_strict_code_number = lexer_.previous_end_position();
             } else {
               assert(current == Token::TK_IDENTIFIER);
               const EvalOrArguments val = IsEvalOrArguments(ident);
@@ -2615,12 +2635,14 @@ class Parser : private iv::core::Noncopyable<> {
                 throw_error_if_strict_code = (val == kEval) ?
                     kDetectEvalName : kDetectArgumentsName;
                 throw_error_if_strict_code_line = lexer_.line_number();
+                throw_error_if_strict_code_number = lexer_.previous_end_position();
               }
             }
             if ((!throw_error_if_strict_code) &&
                 (param_set.find(ident) != param_set.end())) {
               throw_error_if_strict_code = kDetectDuplicateParameter;
               throw_error_if_strict_code_line = lexer_.line_number();
+              throw_error_if_strict_code_number = lexer_.previous_end_position();
             }
           }
           params->push_back(ident);
@@ -2655,34 +2677,46 @@ class Parser : private iv::core::Noncopyable<> {
         case kDetectNone:
           break;
         case kDetectEvalName:
-          RAISE_WITH_NUMBER(
+          RAISE_WITH_NUMBER_NO_RETURN(
               "function name \"eval\" not allowed in strict code",
               throw_error_if_strict_code_line);
+          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
+          *res = true;  // recovery
           break;
         case kDetectArgumentsName:
-          RAISE_WITH_NUMBER(
+          RAISE_WITH_NUMBER_NO_RETURN(
               "function name \"arguments\" not allowed in strict code",
               throw_error_if_strict_code_line);
+          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
+          *res = true;  // recovery
           break;
         case kDetectEvalParameter:
-          RAISE_WITH_NUMBER(
+          RAISE_WITH_NUMBER_NO_RETURN(
               "parameter \"eval\" not allowed in strict code",
               throw_error_if_strict_code_line);
+          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
+          *res = true;  // recovery
           break;
         case kDetectArgumentsParameter:
-          RAISE_WITH_NUMBER(
+          RAISE_WITH_NUMBER_NO_RETURN(
               "parameter \"arguments\" not allowed in strict code",
               throw_error_if_strict_code_line);
+          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
+          *res = true;  // recovery
           break;
         case kDetectDuplicateParameter:
-          RAISE_WITH_NUMBER(
+          RAISE_WITH_NUMBER_NO_RETURN(
               "duplicate parameter not allowed in strict code",
               throw_error_if_strict_code_line);
+          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
+          *res = true;  // recovery
           break;
         case kDetectFutureReservedWords:
-          RAISE_WITH_NUMBER(
+          RAISE_WITH_NUMBER_NO_RETURN(
               "FutureReservedWords is found in strict code",
               throw_error_if_strict_code_line);
+          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
+          *res = true;  // recovery
           break;
       }
     }
