@@ -143,17 +143,12 @@ iv::core::UString AVal::ToTypeString() const {
 
 bool AVal::IsTrue() const {
   return
-      objects_.empty() &&
-      (base_ == AVAL_STRING && (str_ && !str_->empty())) ||
-      base_ == AVAL_TRUE;
+      objects_.empty() && ((base_ == AVAL_STRING && (str_ && !str_->empty())) || base_ == AVAL_TRUE);
 }
 
 bool AVal::IsFalse() const {
   return
-      objects_.empty() &&
-      base_ != 0 &&
-      ((base_ == AVAL_NULL || base_ == AVAL_UNDEFINED || base_ == AVAL_FALSE)) ||
-       (base_ == AVAL_STRING && str_ && str_->empty());
+      objects_.empty() && base_ != 0 && (((base_ == AVAL_NULL || base_ == AVAL_UNDEFINED || base_ == AVAL_FALSE)) || (base_ == AVAL_STRING && str_ && str_->empty()));
 }
 
 } }  // namespace az::cfa2

@@ -38,7 +38,6 @@ void Interpreter::Run(FunctionLiteral* global) {
 
   for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
        last = scope.function_declarations().end(); it != last; ++it) {
-    const Symbol fn = Intern((*it)->name().Address()->value());
     Identifier* ident = (*it)->name().Address();
     Binding* binding = ident->refer();
     assert(binding);
@@ -825,7 +824,6 @@ Result Interpreter::EvaluateFunction(AObject* function,
 
       for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
            last = scope.function_declarations().end(); it != last; ++it) {
-        const Symbol fn = Intern((*it)->name().Address()->value());
         Identifier* ident = (*it)->name().Address();
         Binding* binding = ident->refer();
         assert(binding);
