@@ -107,7 +107,7 @@ class AObject
 
   inline void UpdateProto(Heap* heap, AVal val);
 
-  bool GetOwnProperty(Symbol name, AVal* val) {
+  bool GetOwnProperty(Symbol name, AVal* val) const {
     const Properties::const_iterator it = properties_.find(name);
     if (it != properties_.end()) {
       *val = it->second.value();
@@ -117,19 +117,19 @@ class AObject
     return false;
   }
 
-  AVal GetProperty(Symbol name) {
+  AVal GetProperty(Symbol name) const {
     AVal result;
     if (GetOwnProperty(name, &result)) {
       return result;
     } else {
       // Lookup [[Prototype]]
-      std::unordered_set<AObject*> already_searched;
+      std::unordered_set<const AObject*> already_searched;
       already_searched.insert(this);
       return proto_.GetPropertyImpl(name, &already_searched);
     }
   }
 
-  AVal GetPropertyImpl(Symbol name, std::unordered_set<AObject*>* already_searched) {
+  AVal GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const {
     AVal result;
     if (GetOwnProperty(name, &result)) {
       return result;
@@ -138,8 +138,26 @@ class AObject
     }
   }
 
-  iv::core::UString ToTypeString() const {
-    return iv::core::UString();
+  iv::core::UString ToTypeString(std::unordered_set<const AObject*>* already_searched) const {
+    if (already_searched->find(this) != already_searched->end()) {
+      return iv::core::ToUString("any");
+    } else {
+      already_searched->insert(this);
+    }
+    if (IsFunction()) {
+      // TODO(Constellation) implement it
+      return iv::core::ToUString("function");
+    }
+    const AVal constructor = GetProperty(Intern("constructor"));
+    if (constructor.IsUndefined()) {
+      // constructor not found
+      return iv::core::ToUString("Global");
+    }
+    return iv::core::ToUString("Object");
+  }
+
+  bool IsFunction() const {
+    return function_ || builtin_;
   }
 
  private:

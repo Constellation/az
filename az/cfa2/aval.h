@@ -24,7 +24,7 @@ AVal AVal::GetProperty(Heap* heap, Symbol name) const {
 }
 
 
-AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<AObject*>* already_searched) const {
+AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const {
   AVal val(AVAL_NOBASE);
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
@@ -56,9 +56,10 @@ iv::core::UString AVal::ToTypeString() const {
     }
   }
 
+  std::unordered_set<const AObject*> already_searched;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
-    types.insert((*it)->ToTypeString());
+    types.insert((*it)->ToTypeString(&already_searched));
   }
 
   if (types.empty()) {

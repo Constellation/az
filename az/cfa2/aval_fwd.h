@@ -64,6 +64,11 @@ class AVal {
     return base_ & AVAL_STRING;
   }
 
+  bool IsUndefined() const {
+    // undefined only pattern
+    return base_ == AVAL_UNDEFINED;
+  }
+
   AVal GetBase() const {
     return AVal(base_);
   }
@@ -100,7 +105,7 @@ class AVal {
 
   inline AVal GetProperty(Heap* heap, Symbol name) const;
 
-  inline AVal GetPropertyImpl(Symbol name, std::unordered_set<AObject*>* already_searched) const;
+  inline AVal GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const;
 
   // join rhs aval to this
   void Join(const AVal& rhs) {
