@@ -140,7 +140,7 @@ iv::core::UString AVal::ToTypeString() const {
 
 
 bool AVal::IsTrue() const {
-  return objects_.empty() && base_ == AVAL_STRING && (!str_ || !str_->empty());
+  return objects_.empty() && base_ == AVAL_STRING && (str_ && !str_->empty());
 }
 
 bool AVal::IsFalse() const {
