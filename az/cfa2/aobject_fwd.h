@@ -103,9 +103,9 @@ class AObject
     properties_.insert(std::make_pair(name, prop));
   }
 
-  inline void UpdateProperty(Heap* heap, Symbol name, AVal val);
+  inline void UpdateProperty(Heap* heap, Symbol name, const AVal& val);
 
-  inline void UpdatePrototype(Heap* heap, AVal val);
+  inline void UpdatePrototype(Heap* heap, const AVal& val);
 
   bool GetOwnProperty(Symbol name, AVal* val) const {
     const Properties::const_iterator it = properties_.find(name);
@@ -113,7 +113,7 @@ class AObject
       *val = it->second.value();
       return true;
     }
-    *val = AVal();  // undefined
+    *val = AVal(AVAL_NOBASE);
     return false;
   }
 
@@ -132,8 +132,10 @@ class AObject
   AVal GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const {
     AVal result;
     if (GetOwnProperty(name, &result)) {
+      already_searched->insert(this);
       return result;
     } else {
+      already_searched->insert(this);
       return proto_.GetPropertyImpl(name, already_searched);
     }
   }

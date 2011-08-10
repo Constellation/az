@@ -17,10 +17,11 @@ void AVal::UpdateProperty(Heap* heap, Symbol name, const AVal& val) const {
 
 AVal AVal::GetProperty(Heap* heap, Symbol name) const {
   AVal val(AVAL_NOBASE);
+  std::unordered_set<const AObject*> already_searched;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
-    val |= (*it)->GetProperty(name);
+    val |= (*it)->GetPropertyImpl(name, &already_searched);
   }
   return val;
 }
@@ -59,8 +60,9 @@ void AVal::Construct(Heap* heap,
        last = objects_.end(); it != last; ++it) {
     if ((*it)->IsFunction()) {
       AVal prototype = (*it)->GetProperty(Intern("prototype"));
-      if (res == AVal(AVAL_NOBASE)) {
-        prototype = AVal(heap->MakePrototype(*it));
+      if (prototype == AVal(AVAL_NOBASE)) {
+        AObject* proto = heap->MakePrototype(*it);
+        prototype = AVal(proto);
         (*it)->UpdateProperty(heap, Intern("prototype"), prototype);
       }
       this_binding->UpdatePrototype(heap, prototype);
@@ -84,7 +86,6 @@ AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* alre
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
     if (already_searched->find(*it) == already_searched->end()) {
-      already_searched->insert(*it);
       val |= (*it)->GetPropertyImpl(name, already_searched);
     }
   }

@@ -5,7 +5,7 @@
 namespace az {
 namespace cfa2 {
 
-void AObject::UpdateProperty(Heap* heap, Symbol name, AVal val) {
+void AObject::UpdateProperty(Heap* heap, Symbol name, const AVal& val) {
   const Properties::iterator it = properties_.find(name);
   if (it != properties_.end()) {
     // found
@@ -20,7 +20,7 @@ void AObject::UpdateProperty(Heap* heap, Symbol name, AVal val) {
 }
 
 
-void AObject::UpdatePrototype(Heap* heap, AVal val) {
+void AObject::UpdatePrototype(Heap* heap, const AVal& val) {
   if (!(val < proto_)) {
     proto_ |= val;
     heap->UpdateState();

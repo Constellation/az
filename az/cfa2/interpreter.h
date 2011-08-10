@@ -606,8 +606,8 @@ void Interpreter::Visit(IdentifierAccess* prop) {
   prop->target()->Accept(this);
   const Result target(result_);
   base_ = target.result();
-  result_.set_result(
-      target.result().GetProperty(heap_, Intern(prop->key()->value())));
+  const AVal refer = target.result().GetProperty(heap_, Intern(prop->key()->value()));
+  result_.set_result(refer);
 }
 
 void Interpreter::Visit(IndexAccess* prop) {
@@ -908,9 +908,10 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
     if (IdentifierAccess* identac = lhs->AsIdentifierAccess()) {
       identac->target()->Accept(this);
       const Result target(result_);
-      target.result().UpdateProperty(heap_,
-                                  Intern(identac->key()->value()),
-                                  res.result());
+      target.result().UpdateProperty(
+          heap_,
+          Intern(identac->key()->value()),
+          res.result());
       res.MergeException(target);
       return res;
     } else {

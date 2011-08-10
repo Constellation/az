@@ -8,10 +8,6 @@ namespace cfa2 {
 
 void HeapInitializer::Initialize(FunctionLiteral* global) {
   const Scope& scope = global->scope();
-  for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
-       last = scope.function_declarations().end(); it != last; ++it) {
-    Visit(*it);
-  }
 
   for (Scope::Variables::const_iterator it = scope.variables().begin(),
        last = scope.variables().end(); it != last; ++it) {
@@ -22,6 +18,7 @@ void HeapInitializer::Initialize(FunctionLiteral* global) {
       binding->set_value(AVal(AVAL_NOBASE));
     }
   }
+
   for (Statements::const_iterator it = global->body().begin(),
        last = global->body().end(); it != last; ++it) {
     (*it)->Accept(this);
@@ -256,7 +253,7 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
   AVal prototype = AVal(heap_->MakePrototype(obj));
   obj->AddProperty(
       Intern("prototype"),
-      AProp(AVal(prototype), A::W | A::C));
+      AProp(prototype, A::W | A::C));
 
   if (const iv::core::Maybe<Identifier> ident = literal->name()) {
     // function literal name has always binding
