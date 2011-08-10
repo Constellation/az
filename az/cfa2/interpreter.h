@@ -773,7 +773,6 @@ Result Interpreter::EvaluateFunction(AObject* function,
         }
       } else {
         // waiting result is too old...
-        // throw UnwindStack(std::get<3>(*prev) - 1);
         throw UnwindStack(literal, this_binding, args);
       }
 
@@ -834,13 +833,6 @@ Result Interpreter::EvaluateFunction(AObject* function,
       Interpret(literal);
 
       if (IsConstructorCalled) {
-        // TODO(Constellation)
-        // fix bug like this:
-        //
-        //   function Test() {
-        //     return { };
-        //   }
-        //   new Test() => Object, not Test instance
         if (result_.result() == AVal(AVAL_NOBASE)) {
           // not nobase => no return statement found
           result_.set_result(this_binding);

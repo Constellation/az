@@ -221,7 +221,7 @@ class SymbolTable : public iv::core::Singleton<SymbolTable> {
 
   // for type dispatching
   static Symbol MakeSymbol(const iv::core::UString* str) {
-    Symbol symbol = { };
+    Symbol symbol = { { { 0u, 0u } } };
     symbol.str_.str_ = str;
     return symbol;
   }
