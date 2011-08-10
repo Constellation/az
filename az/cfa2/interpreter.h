@@ -779,9 +779,9 @@ Result Interpreter::EvaluateFunction(AObject* function,
         // return only
         // if result value is NOBASE (no return statement),
         // add undefined
-        if (result_.result() == AVal(AVAL_NOBASE)) {
-          result_.set_result(AVal(AVAL_UNDEFINED));
-        }
+//        if (result_.result() == AVal(AVAL_NOBASE)) {
+//          result_.set_result(AVal(AVAL_UNDEFINED));
+//        }
       }
 
       heap_->RemoveWaitingResults(literal);
