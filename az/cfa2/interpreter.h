@@ -83,7 +83,8 @@ void Interpreter::Visit(VariableStatement* var) {
   bool error_found = false;
   for (Declarations::const_iterator it = var->decls().begin(),
        last = var->decls().end(); it != last; ++it) {
-    Binding* binding = (*it)->name()->refer();
+    Identifier* ident = (*it)->name();
+    Binding* binding = ident->refer();
     assert(binding);
     if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
       expr.Address()->Accept(this);
@@ -99,11 +100,9 @@ void Interpreter::Visit(VariableStatement* var) {
       const AVal val(CurrentFrame()->Get(heap_, binding) | result_.result());
       CurrentFrame()->Set(heap_, binding, val);
       if (heap_->IsDeclaredHeapBinding(binding)) {
+        // Global variable
         heap_->UpdateHeap(binding, val);
       }
-    } else {
-      // binding type is stack?
-      // TODO(Constellation) fix it when global
     }
   }
   result_ = Result(AVal(AVAL_NOBASE), error, error_found);
