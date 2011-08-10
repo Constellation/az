@@ -52,8 +52,12 @@ class Result {
 
   void Merge(const Result& rhs) {
     // return val
-    result_.Join(rhs.result_);
+    MergeResult(rhs.result());
     MergeException(rhs);
+  }
+
+  void MergeResult(const AVal& val) {
+    result_.Join(val);
   }
 
   void MergeException(const Result& rhs) {

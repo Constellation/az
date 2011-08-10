@@ -765,7 +765,23 @@ Result Interpreter::EvaluateFunction(AObject* function,
         //     return { };
         //   }
         //   new Test() => Object, not Test instance
-        result_.set_result(this_binding);
+        if (result_.result() == AVal(AVAL_NOBASE)) {
+          // not nobase => no return statement found
+          result_.set_result(this_binding);
+        } else {
+          // return statement enabled
+          // but, if no object found, use this value
+          if (result_.result().objects().empty()) {
+            result_.set_result(this_binding);
+          }
+        }
+      } else {
+        // return only
+        // if result value is NOBASE (no return statement),
+        // add undefined
+        if (result_.result() == AVal(AVAL_NOBASE)) {
+          result_.set_result(AVal(AVAL_UNDEFINED));
+        }
       }
 
       heap_->RemoveWaitingResults(literal);

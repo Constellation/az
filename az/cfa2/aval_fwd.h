@@ -24,7 +24,7 @@ enum BaseType {
 // abstract value
 class AVal {
  public:
-  typedef std::set<AObject*> ObjectSet;
+  typedef std::set<AObject*> ObjectSet;  // need to be ordered
   explicit AVal(BaseType type)
     : base_(type),
       str_(),
