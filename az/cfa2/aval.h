@@ -13,7 +13,7 @@ void AVal::UpdateProperty(Heap* heap, Symbol name, const AVal& val) const {
   }
 }
 
-AVal AVal::GetProperty(Symbol name) const {
+AVal AVal::GetProperty(Heap* heap, Symbol name) const {
   AVal val(AVAL_NOBASE);
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {

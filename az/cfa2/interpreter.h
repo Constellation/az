@@ -581,6 +581,10 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
+  prop->target()->Accept(this);
+  const Result res(result_);
+  result_.set_result(
+      res.result().GetProperty(heap_, Intern(prop->key()->value())));
 }
 
 void Interpreter::Visit(IndexAccess* prop) {
@@ -718,11 +722,11 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
     assert(lhs->AsPropertyAccess());
     if (IdentifierAccess* identac = lhs->AsIdentifierAccess()) {
       identac->target()->Accept(this);
-      const Result lhs(result_);
-      lhs.result().UpdateProperty(heap_,
+      const Result target(result_);
+      target.result().UpdateProperty(heap_,
                                   Intern(identac->key()->value()),
                                   res.result());
-      res.MergeException(lhs);
+      res.MergeException(target);
       return res;
     } else {
       assert(lhs->AsIndexAccess());
@@ -731,11 +735,19 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
       const Result target(result_);
       indexac->key()->Accept(this);
       const Result key(result_);
-      if (key.result().HasNumber()) {
+      const AVal keyr(key.result());
+      if (keyr.HasNumber()) {
         // update number property
       }
-      if (key.result().HasString()) {
+      if (keyr.HasString()) {
         // update string property
+        if (keyr.GetStringValue()) {
+          target.result().UpdateProperty(
+              heap_,
+              Intern(*keyr.GetStringValue()),
+              res.result());
+        } else {
+        }
       }
       return res;
     }

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iterator>
 #include <algorithm>
+#include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <iv/ustring.h>
 #include <iv/ustringpiece.h>
@@ -26,28 +27,32 @@ class AVal {
   typedef std::set<AObject*> ObjectSet;
   explicit AVal(BaseType type)
     : base_(type),
+      str_(),
       objects_() {
   }
 
   explicit AVal(int type)
     : base_(type),
+      str_(),
       objects_() {
   }
 
   explicit AVal(AObject* obj)
     : base_(AVAL_NOBASE),
+      str_(),
       objects_() {
     objects_.insert(obj);
   }
 
   AVal()
     : base_(AVAL_UNDEFINED),
+      str_(),
       objects_() {
   }
 
   explicit AVal(const iv::core::UStringPiece& str)
     : base_(AVAL_STRING),
-      str_(str.begin(), str.end()),
+      str_(new iv::core::UString(str.begin(), str.end())),
       objects_() {
   }
 
@@ -83,7 +88,7 @@ class AVal {
     return result;
   }
 
-  const iv::core::UString& GetStringValue() const {
+  std::shared_ptr<iv::core::UString> GetStringValue() const {
     return str_;
   }
 
@@ -93,16 +98,17 @@ class AVal {
 
   inline void UpdateProperty(Heap* heap, Symbol name, const AVal& val) const;
 
-  inline AVal GetProperty(Symbol name) const;
+  inline AVal GetProperty(Heap* heap, Symbol name) const;
 
   // join rhs aval to this
   void Join(const AVal& rhs) {
     const int base = base_ | rhs.base_;
     if (base & AVAL_STRING) {
       if (base_ & AVAL_STRING) {
-        if ((rhs.base_ & AVAL_STRING) && (str_ != rhs.str_)) {
+        if ((rhs.base_ & AVAL_STRING) &&
+            ((str_ && rhs.str_) && (*str_ != *rhs.str_))) {
           // rhs contains AVAL_STRING && lhs.str_ != rhs.str_
-          str_.clear();
+          str_.reset();
         }
       } else {
         str_ = rhs.str_;
@@ -116,8 +122,8 @@ class AVal {
 
   // join basetype to this
   void Join(BaseType rhs) {
-    if (base_ & AVAL_STRING && rhs == AVAL_STRING) {
-      str_.clear();
+    if ((base_ & AVAL_STRING) && rhs == AVAL_STRING) {
+      str_.reset();
     }
     base_ |= rhs;
   }
@@ -139,8 +145,7 @@ class AVal {
       return false;
     }
     if ((lhs.base_ & AVAL_STRING) &&
-        !rhs.str_.empty() &&
-        rhs.str_ != lhs.str_) {
+        (rhs.str_ && lhs.str_) && (*rhs.str_ != *lhs.str_)) {
       // lhs has string & rhs has string & lhs and rhs string is not equal
       return false;
     }
@@ -166,7 +171,7 @@ class AVal {
     if (lhs.base_ != rhs.base_) {
       return false;
     }
-    if (lhs.str_ != rhs.str_) {
+    if ((lhs.str_ && rhs.str_) && (*lhs.str_ != *rhs.str_)) {
       return false;
     }
     if (lhs.objects_.size() != rhs.objects_.size()) {
@@ -209,7 +214,7 @@ class AVal {
 
  private:
   int base_;
-  iv::core::UString str_;
+  std::shared_ptr<iv::core::UString> str_;
   ObjectSet objects_;
 };
 
