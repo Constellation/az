@@ -4,6 +4,7 @@
 #include <iv/noncopyable.h>
 #include <az/symbol.h>
 #include <az/cfa2/aval_fwd.h>
+#include <az/cfa2/state.h>
 namespace az {
 namespace cfa2 {
 
@@ -19,7 +20,7 @@ class Binding : private iv::core::Noncopyable<Binding> {
   explicit Binding(Symbol name, Type type)
     : name_(name),
       type_(type),
-      timestamp_(0),
+      state_(kInitialState),
       value_(AVAL_NOBASE) {
   }
 
@@ -31,12 +32,12 @@ class Binding : private iv::core::Noncopyable<Binding> {
     return type_;
   }
 
-  uint64_t timestamp() const {
-    return timestamp_;
+  State state() const {
+    return state_;
   }
 
-  void set_timestamp(uint64_t timestamp) {
-    timestamp_ = timestamp;
+  void set_state(State state) {
+    state_ = state;
   }
 
   AVal value() const {
@@ -58,7 +59,7 @@ class Binding : private iv::core::Noncopyable<Binding> {
  private:
   Symbol name_;
   Type type_;
-  uint64_t timestamp_;
+  State state_;
   AVal value_;
 };
 

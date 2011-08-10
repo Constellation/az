@@ -3,15 +3,16 @@
 #include <iv/detail/unordered_map.h>
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aval.h>
+#include <az/cfa2/state.h>
 namespace az {
 namespace cfa2 {
 
 class Frame {
  public:
-  typedef std::unordered_map<Binding*, std::pair<AVal, uint64_t> > Table;
+  typedef std::unordered_map<Binding*, std::pair<AVal, State> > Table;
 
   void Set(Heap* heap, Binding* binding, const AVal& val) {
-    table_[binding] = std::make_pair(val, heap->timestamp());
+    table_[binding] = std::make_pair(val, heap->state());
   }
 
   void SetThis(const AVal& binding) {
@@ -28,10 +29,10 @@ class Frame {
 
   // check heap and update and return
   AVal Get(Heap* heap, Binding* binding) {
-    std::pair<AVal, uint64_t> pair = table_[binding];
-    if (pair.second < binding->timestamp()) {
+    std::pair<AVal, State> pair = table_[binding];
+    if (pair.second < binding->state()) {
       pair.first.Join(binding->value());
-      pair.second = binding->timestamp();
+      pair.second = binding->state();
       table_[binding] = pair;
     }
     return pair.first;

@@ -9,7 +9,7 @@
 #include <az/cfa2/binding.h>
 #include <az/cfa2/aobject_factory.h>
 #include <az/cfa2/summary.h>
-#include <az/cfa2/timestamp.h>
+#include <az/cfa2/state.h>
 #include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {
@@ -22,7 +22,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
     : heap_(),
       declared_heap_bindings_(),
       ast_factory_(ast_factory),
-      timestamp_(1),
+      state_(kStartState),
       call_count_(0) {
     // initialize builtin objects
 
@@ -157,13 +157,13 @@ class Heap : private iv::core::Noncopyable<Heap> {
     if (!(val < old)) {
       old.Join(val);
       binding->set_value(old);
-      // heap update, so count up timestamp
-      binding->set_timestamp(++timestamp_);
+      // heap update, so count up state
+      binding->set_state(++state_);
     }
   }
 
-  uint64_t timestamp() const {
-    return timestamp_;
+  State state() const {
+    return state_;
   }
 
   AVal GetGlobal() const {
@@ -189,7 +189,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
                    const std::vector<AVal>& args, Result* result) const {
     Summaries::const_iterator s = summaries_.find(func->function());
     assert(s != summaries_.end());
-    if (s->second->timestamp() < timestamp_) {
+    if (s->second->state() < state_) {
       // out of date summary
       return false;
     }
@@ -214,11 +214,11 @@ class Heap : private iv::core::Noncopyable<Heap> {
                   const std::vector<AVal>& args, const Result& result) {
     Summaries::iterator s = summaries_.find(func->function());
     assert(s != summaries_.end());
-    if (s->second->timestamp() == timestamp_) {
+    if (s->second->state() == state_) {
       s->second->AddCandidate(this_binding, args, result);
-    } else if (s->second->timestamp() < timestamp_) {
+    } else if (s->second->state() < state_) {
       // old, so clear candidates
-      s->second->UpdateCandidates(timestamp_, this_binding, args, result);
+      s->second->UpdateCandidates(state_, this_binding, args, result);
     }
     s->second->UpdateType(this_binding, args, result);
   }
@@ -268,7 +268,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   Summaries summaries_;
   AObjectFactory factory_;
   AstFactory* ast_factory_;
-  uint64_t timestamp_;
+  State state_;
   uint64_t call_count_;
   uint64_t depth_;
 

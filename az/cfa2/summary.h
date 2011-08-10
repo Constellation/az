@@ -7,7 +7,7 @@
 #include <iv/detail/cstdint.h>
 #include <az/cfa2/aobject.h>
 #include <az/cfa2/result.h>
-#include <az/cfa2/timestamp.h>
+#include <az/cfa2/state.h>
 namespace az {
 namespace cfa2 {
 
@@ -86,15 +86,15 @@ class Summary : private iv::core::Noncopyable<Summary> {
       candidates_(),
       value_(AVAL_NOBASE),
       type_(function),
-      timestamp_(kInvalidTimestamp) {
+      state_(kInitialState) {
   }
 
   bool IsExists() const {
-    return timestamp_ != kInvalidTimestamp;
+    return state_ != kInitialState;
   }
 
-  uint64_t timestamp() const {
-    return timestamp_;
+  State state() const {
+    return state_;
   }
 
   AObject* target() const {
@@ -111,10 +111,10 @@ class Summary : private iv::core::Noncopyable<Summary> {
         std::shared_ptr<Entry>(new Entry(this_binding, args, result)));
   }
 
-  void UpdateCandidates(uint64_t timestamp,
+  void UpdateCandidates(State state,
                         const AVal& this_binding,
                         const std::vector<AVal>& args, const Result& result) {
-    timestamp_ = timestamp;
+    state_ = state;
     candidates_.clear();
     AddCandidate(this_binding, args, result);
   }
@@ -137,7 +137,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
   Entries candidates_;
   AVal value_;
   Entry type_;
-  uint64_t timestamp_;
+  State state_;
 };
 
 typedef std::unordered_map<FunctionLiteral*, std::shared_ptr<Summary> > Summaries;
