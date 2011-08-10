@@ -580,7 +580,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
   // so this function use this and walking flow and evaluate this.
   AVal result(AVAL_NOBASE);
   AVal error(AVAL_NOBASE);
-  bool error_found;
+  bool error_found = false;
   Tasks tasks;
 
   tasks.push_back(literal->normal());
