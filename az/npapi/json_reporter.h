@@ -89,6 +89,9 @@ class JSONReporter : public BasicReporter {
   void ReportAutomaticSemicolonInsertion(std::size_t point) {
   }
 
+  void ReportTrailingCommaInObjectLiteral(std::size_t point) {
+  }
+
   void ReportNotProcedure(const Statement& stmt) {
   }
 

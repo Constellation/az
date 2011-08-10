@@ -2498,6 +2498,15 @@ class Parser : private iv::core::Noncopyable<> {
         IS(Token::TK_COMMA);
         // IDENTIFIERNAME
         Next<iv::core::IgnoreReservedWordsAndIdentifyGetterOrSetter>();
+        if (token_ == Token::TK_RBRACE) {
+          // trailing comma found like,
+          // var obj = {
+          //   test: "OK",
+          // };
+          // in ES5, this is valid expr, but in ES3, this is not valid.
+          // so, report warning
+          reporter_->ReportTrailingCommaInObjectLiteral(lexer_.previous_end_position());
+        }
       }
     }
     const std::size_t end = lexer_.begin_position();

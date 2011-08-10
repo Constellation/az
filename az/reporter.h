@@ -189,6 +189,15 @@ class Reporter : public BasicReporter {
                 static_cast<unsigned long>(pair.second));
   }
 
+  void ReportTrailingCommaInObjectLiteral(std::size_t point) {
+    const std::pair<std::size_t, std::size_t> pair =
+        structured_.GetLineAndColumn(point);
+    std::printf("%s %lu:%lu\n",
+                "TRAILING COMMA IN OBJECT LITERAL",
+                static_cast<unsigned long>(pair.first),
+                static_cast<unsigned long>(pair.second));
+  }
+
   void ReportNotProcedure(const Statement& stmt) {
     const std::pair<std::size_t, std::size_t> pair =
         structured_.GetLineAndColumn(stmt.begin_position());
