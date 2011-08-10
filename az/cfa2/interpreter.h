@@ -32,16 +32,18 @@ void Interpreter::Run(FunctionLiteral* global) {
        last = scope.variables().end(); it != last; ++it) {
     const Scope::Variable& var = *it;
     Identifier* ident = var.first;
-    assert(ident->refer());
-    frame.Set(heap_, ident->refer(), AVal(AVAL_NOBASE));
+    Binding* binding = ident->refer();
+    assert(binding);
+    frame.Set(heap_, binding, AVal(AVAL_NOBASE));
   }
 
   for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
        last = scope.function_declarations().end(); it != last; ++it) {
     const Symbol fn = Intern((*it)->name().Address()->value());
     Identifier* ident = (*it)->name().Address();
-    assert(ident->refer());
-    frame.Set(heap_, ident->refer(), AVal(heap_->GetDeclObject(*it)));
+    Binding* binding = ident->refer();
+    assert(binding);
+    frame.Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
   }
 
   // then interpret global function
@@ -78,17 +80,19 @@ void Interpreter::Visit(FunctionDeclaration* func) {
 }
 
 void Interpreter::Visit(VariableStatement* var) {
+  AVal error(AVAL_NOBASE);
+  bool error_found = false;
   for (Declarations::const_iterator it = var->decls().begin(),
        last = var->decls().end(); it != last; ++it) {
     Binding* binding = (*it)->name()->refer();
+    assert(binding);
     if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
       expr.Address()->Accept(this);
     }
     if (result_.HasException()) {
-      // add raised path to error queue
-      errors_->push_back(std::make_pair(var->raised(), result_));
-      // surpress error
-      result_ = Result(result_.result());
+      // collecting errors
+      error_found = true;
+      error |= result_.exception();
     }
     if (binding->type() == Binding::HEAP) {
       heap_->UpdateHeap(binding, AVal(AVAL_NUMBER));
@@ -103,6 +107,7 @@ void Interpreter::Visit(VariableStatement* var) {
       // TODO(Constellation) fix it when global
     }
   }
+  result_ = Result(AVal(AVAL_NOBASE), error, error_found);
 }
 
 void Interpreter::Visit(EmptyStatement* stmt) {
@@ -499,10 +504,6 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
   Tasks* previous_tasks = tasks_;
   tasks_ = &tasks;  // set
 
-  Errors errors;
-  Errors* previous_errors = errors_;
-  errors_ = &errors;  // set
-
   tasks_->push_back(literal->normal());
   while (true) {
     if (tasks_->empty()) {
@@ -520,8 +521,9 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
       result |= result_.result();
     } else {
       task->Accept(this);
+      tasks_->push_back(task->normal());
     }
-    tasks_->push_back(task->normal());
+
     // check answer value and determine evaluate raised path or not
     if (result_.HasException()) {
       error_found = true;
@@ -533,6 +535,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
           error_found = false;
           assert(raised->catch_name() && raised->catch_block());
           Binding* binding = raised->catch_name().Address()->refer();
+          assert(binding);
           if (frame_->IsDefined(heap_, binding)) {
             frame_->Set(
                 heap_,
@@ -549,47 +552,41 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
         error |= result_.exception();
       }
     }
-
-
-    // treat errors
-    // TODO(Constellation) clean up code
-    for (Errors::const_iterator it = errors_->begin(),
-         last = errors_->end(); it != last; ++it) {
-      error_found = true;
-      if (it->first) {
-        if (TryStatement* raised = task->AsTryStatement()) {
-          error_found = false;
-          assert(raised->catch_name() && raised->catch_block());
-          Binding* binding = raised->catch_name().Address()->refer();
-          if (frame_->IsDefined(heap_, binding)) {
-            frame_->Set(
-                heap_,
-                binding,
-                result_.exception() | frame_->Get(heap_, binding));
-          } else {
-            frame_->Set(heap_, binding, result_.exception());
-          }
-        }
-        tasks_->push_back(task->raised());
-      } else {
-        error |= it->second.exception();
-      }
-    }
-    errors_->clear();
   }
   result_ = Result(result, error, error_found);
   tasks_ = previous_tasks;
-  errors_ = previous_errors;
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
-  prop->target()->Accept(this);
-  const Result res(result_);
-  result_.set_result(
-      res.result().GetProperty(heap_, Intern(prop->key()->value())));
+//  prop->target()->Accept(this);
+//  const Result res(result_);
+//  result_.set_result(
+//      res.result().GetProperty(heap_, Intern(prop->key()->value())));
 }
 
 void Interpreter::Visit(IndexAccess* prop) {
+  prop->target()->Accept(this);
+  const Result target(result_);
+  prop->key()->Accept(this);
+  const Result key(result_);
+  Result res;
+  bool error_found = target.HasException() || key.HasException();
+  const AVal keyr(key.result());
+  if (keyr.HasString() && keyr.GetStringValue()) {
+    res.set_result(
+        target.result().GetProperty(heap_, Intern(*keyr.GetStringValue())));
+  }
+  if (error_found) {
+    AVal ex(AVAL_NOBASE);
+    if (target.HasException()) {
+      ex |= target.exception();
+    }
+    if (key.HasException()) {
+      ex |= key.exception();
+    }
+    res.set_exception(ex);
+  }
+  result_ = res;
 }
 
 void Interpreter::Visit(FunctionCall* call) {
@@ -632,7 +629,9 @@ Result Interpreter::EvaluateFunction(FunctionLiteral* literal,
       (type == FunctionLiteral::EXPRESSION && literal->name())) {
     // in scope, so set to the frame
     Identifier* name = literal->name().Address();
-    frame_->Set(heap_, name->refer(), AVal(heap_->GetDeclObject(literal)));
+    Binding* binding = name->refer();
+    assert(binding);
+    frame_->Set(heap_, binding, AVal(heap_->GetDeclObject(literal)));
   }
 
   // parameter binding initialization
@@ -662,16 +661,18 @@ Result Interpreter::EvaluateFunction(FunctionLiteral* literal,
        last = scope.variables().end(); it != last; ++it) {
     const Scope::Variable& var = *it;
     Identifier* ident = var.first;
-    assert(ident->refer());
-    frame_->Set(heap_, ident->refer(), AVal(AVAL_NOBASE));
+    Binding* binding = ident->refer();
+    assert(binding);
+    frame_->Set(heap_, binding, AVal(AVAL_NOBASE));
   }
 
   for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
        last = scope.function_declarations().end(); it != last; ++it) {
     const Symbol fn = Intern((*it)->name().Address()->value());
     Identifier* ident = (*it)->name().Address();
-    assert(ident->refer());
-    frame_->Set(heap_, ident->refer(), AVal(heap_->GetDeclObject(*it)));
+    Binding* binding = ident->refer();
+    assert(binding);
+    frame_->Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
   }
 
   // then, interpret
@@ -695,18 +696,27 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
   //   + Identifier
   Expression* lhs = assign->left();
   assert(lhs->IsValidLeftHandSide());
+  if (assign->op() != iv::core::Token::TK_ASSIGN) {
+    if (assign->op() == iv::core::Token::TK_ASSIGN_ADD) {
+      res.set_result(res.result() + old);
+    } else {
+      res.set_result(AVal(AVAL_NUMBER));
+    }
+  }
   if (Identifier* ident = lhs->AsIdentifier()) {
     // Identifier
     Binding* binding = ident->refer();
-    if (binding->type() == Binding::HEAP) {
-      // heap
-      heap_->UpdateHeap(binding, res.result());
-    } else if (binding->type() == Binding::STACK) {
-      // stack
-      const AVal val(frame_->Get(heap_, binding) | res.result());
-      frame_->Set(heap_, binding, val);
-      if (heap_->IsDeclaredHeapBinding(binding)) {
-        heap_->UpdateHeap(binding, val);
+    if (binding) {
+      if (binding->type() == Binding::HEAP) {
+        // heap
+        heap_->UpdateHeap(binding, res.result());
+      } else {
+        // stack
+        const AVal val(frame_->Get(heap_, binding) | res.result());
+        frame_->Set(heap_, binding, val);
+        if (heap_->IsDeclaredHeapBinding(binding)) {
+          heap_->UpdateHeap(binding, val);
+        }
       }
     } else {
       // global

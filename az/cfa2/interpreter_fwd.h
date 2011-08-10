@@ -88,6 +88,7 @@ class Interpreter
   Heap* heap_;
   Completer* completer_;
   Result result_;  // result value
+  AVal base_;  // only use in FunctionCall / ConstructorCall this binding
   Frame* frame_;
   Tasks* tasks_;
   Errors* errors_;
