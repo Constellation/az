@@ -89,9 +89,7 @@ class AVal {
       return *this;
     }
     AVal result(AVAL_NOBASE);
-    std::copy(objects_.begin(),
-              objects_.end(),
-              std::inserter(result.objects_, result.objects_.end()));
+    result.objects_ = objects_;
     if (base_ & AVAL_NUMBER) {
       result.Join(AVAL_NUMBER);
     }
@@ -152,9 +150,7 @@ class AVal {
       }
     }
     base_ = base;
-    std::copy(rhs.objects_.begin(),
-              rhs.objects_.end(),
-              std::inserter(objects_, objects_.end()));
+    objects_.insert(rhs.objects_.begin(), rhs.objects_.end());
   }
 
   // join basetype to this
