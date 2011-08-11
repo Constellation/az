@@ -12,8 +12,7 @@ class Frame {
  public:
   typedef std::unordered_map<Binding*, std::pair<AVal, State> > Table;
 
-
-  Frame(Interpreter* interp)
+  explicit Frame(Interpreter* interp)
     : interp_(interp),
       prev_(interp->CurrentFrame()),
       table_(),
@@ -57,10 +56,6 @@ class Frame {
     return table_.find(binding) != table_.end();
   }
 
-  void Clear() {
-    table_.clear();
-  }
-
  private:
   Interpreter* interp_;
   Frame* prev_;
@@ -68,7 +63,6 @@ class Frame {
   AVal this_binding_;
   AVal rest_;
 };
-
 
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_FRAME_H_
