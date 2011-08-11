@@ -60,11 +60,6 @@ void AVal::Construct(Heap* heap,
        last = objects_.end(); it != last; ++it) {
     if ((*it)->IsFunction()) {
       AVal prototype = (*it)->GetProperty(Intern("prototype"));
-      if (prototype == AVal(AVAL_NOBASE)) {
-        AObject* proto = heap->MakePrototype(*it);
-        prototype = AVal(proto);
-        (*it)->UpdateProperty(heap, Intern("prototype"), prototype);
-      }
       this_binding->UpdatePrototype(heap, prototype);
       const Result ret = interp->EvaluateFunction(*it, base, args, true);
 
