@@ -916,12 +916,13 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
     }
     return res;
   } else if (lhs->AsCall()) {
-//    if (FnctionCall* func = lhs->AsFunctionCall()) {
-//      // FunctionCall
-//    } else {
-//      // ConstructorCall
-//      assert(lhs->AsConstructorCall());
-//    }
+    // code like:
+    // func() = 20;
+    //
+    // this is not invalid code,
+    // but generally raise ReferenceError
+    lhs->Accept(this);
+    return res;
   } else {
     assert(lhs->AsPropertyAccess());
     if (IdentifierAccess* identac = lhs->AsIdentifierAccess()) {
