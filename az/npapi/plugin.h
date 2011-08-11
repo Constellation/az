@@ -49,7 +49,7 @@ struct NPClass NPAPI::kNpcRefObject = {
   NULL,
   NULL,
   NULL,
-  NULL,
+  NULL
 };
 
 }  // namespace az

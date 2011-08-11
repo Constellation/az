@@ -78,7 +78,7 @@ def Build():
       "-pedantic",
       "-Wall", "-Wextra", "-Werror", '-pipe',
       "-Wno-unused-parameter", "-Wwrite-strings", "-Wreturn-type", "-Wpointer-arith",
-      "-Wwrite-strings", "-Wno-long-long"],
+      "-Wwrite-strings", "-Wno-long-long", "-Wno-missing-field-initializers"],
     CPPPATH=[join(root_dir, 'iv'), root_dir],
     CPPDEFINES=[
       "_GNU_SOURCE",
