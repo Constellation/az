@@ -26,5 +26,40 @@ inline Result REGEXP_CONSTRUCTOR(Heap* heap,
                                  const std::vector<AVal>& args,
                                  bool IsConstructorCalled);
 
+inline Result STRING_CONSTRUCTOR(Heap* heap,
+                                 const AVal& this_binding,
+                                 const std::vector<AVal>& args,
+                                 bool IsConstructorCalled);
+
+inline Result BOOLEAN_CONSTRUCTOR(Heap* heap,
+                                  const AVal& this_binding,
+                                  const std::vector<AVal>& args,
+                                  bool IsConstructorCalled);
+
+inline Result NUMBER_CONSTRUCTOR(Heap* heap,
+                                 const AVal& this_binding,
+                                 const std::vector<AVal>& args,
+                                 bool IsConstructorCalled);
+
+inline Result DATE_CONSTRUCTOR(Heap* heap,
+                               const AVal& this_binding,
+                               const std::vector<AVal>& args,
+                               bool IsConstructorCalled);
+
+inline Result TO_NUMBER(Heap* heap,
+                        const AVal& this_binding,
+                        const std::vector<AVal>& args,
+                        bool IsConstructorCalled);
+
+inline Result TO_STRING(Heap* heap,
+                        const AVal& this_binding,
+                        const std::vector<AVal>& args,
+                        bool IsConstructorCalled);
+
+inline Result TO_BOOLEAN(Heap* heap,
+                         const AVal& this_binding,
+                         const std::vector<AVal>& args,
+                         bool IsConstructorCalled);
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_BUILTINS_FWD_H_

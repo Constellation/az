@@ -38,5 +38,84 @@ inline Result REGEXP_CONSTRUCTOR(Heap* heap,
   return Result(AVal());
 }
 
+inline Result STRING_CONSTRUCTOR(Heap* heap,
+                                 const AVal& this_binding,
+                                 const std::vector<AVal>& args,
+                                 bool IsConstructorCalled) {
+  if (IsConstructorCalled) {
+    this_binding.UpdatePrototype(heap, heap->GetStringPrototype());
+    return Result(this_binding);
+  } else {
+    // return string
+    return Result(AVal(AVAL_STRING));
+  }
+}
+
+inline Result BOOLEAN_CONSTRUCTOR(Heap* heap,
+                                  const AVal& this_binding,
+                                  const std::vector<AVal>& args,
+                                  bool IsConstructorCalled) {
+  if (IsConstructorCalled) {
+    this_binding.UpdatePrototype(heap, heap->GetBooleanPrototype());
+    return Result(this_binding);
+  } else {
+    // return number
+    if (this_binding.IsTrue()) {
+      return Result(AVal(AVAL_TRUE));
+    } else if (this_binding.IsFalse()) {
+      return Result(AVal(AVAL_FALSE));
+    } else {
+      return Result(AVal(AVAL_BOOL));
+    }
+  }
+}
+
+inline Result NUMBER_CONSTRUCTOR(Heap* heap,
+                                 const AVal& this_binding,
+                                 const std::vector<AVal>& args,
+                                 bool IsConstructorCalled) {
+  if (IsConstructorCalled) {
+    this_binding.UpdatePrototype(heap, heap->GetNumberPrototype());
+    return Result(this_binding);
+  } else {
+    // return number
+    return Result(AVal(AVAL_NUMBER));
+  }
+}
+
+inline Result DATE_CONSTRUCTOR(Heap* heap,
+                               const AVal& this_binding,
+                               const std::vector<AVal>& args,
+                               bool IsConstructorCalled) {
+  if (IsConstructorCalled) {
+    this_binding.UpdatePrototype(heap, heap->GetDatePrototype());
+    return Result(this_binding);
+  } else {
+    // return string
+    return Result(AVal(AVAL_STRING));
+  }
+}
+
+inline Result TO_NUMBER(Heap* heap,
+                        const AVal& this_binding,
+                        const std::vector<AVal>& args,
+                        bool IsConstructorCalled) {
+  return Result(AVal(AVAL_NUMBER));
+}
+
+inline Result TO_STRING(Heap* heap,
+                        const AVal& this_binding,
+                        const std::vector<AVal>& args,
+                        bool IsConstructorCalled) {
+  return Result(AVal(AVAL_STRING));
+}
+
+inline Result TO_BOOLEAN(Heap* heap,
+                         const AVal& this_binding,
+                         const std::vector<AVal>& args,
+                         bool IsConstructorCalled) {
+  return Result(AVal(AVAL_BOOL));
+}
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_BUILTINS_H_

@@ -15,6 +15,13 @@ void AVal::UpdateProperty(Heap* heap, Symbol name, const AVal& val) const {
   }
 }
 
+void AVal::UpdatePrototype(Heap* heap, const AVal& val) const {
+  for (ObjectSet::const_iterator it = objects_.begin(),
+       last = objects_.end(); it != last; ++it) {
+    (*it)->UpdatePrototype(heap, val);
+  }
+}
+
 AVal AVal::GetProperty(Heap* heap, Symbol name) const {
   AVal val(AVAL_NOBASE);
   std::unordered_set<const AObject*> already_searched;

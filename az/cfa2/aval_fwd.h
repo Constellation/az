@@ -118,6 +118,8 @@ class AVal {
 
   inline void UpdateProperty(Heap* heap, Symbol name, const AVal& val) const;
 
+  inline void UpdatePrototype(Heap* heap, const AVal& val) const;
+
   inline AVal GetProperty(Heap* heap, Symbol name) const;
 
   inline AVal GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const;
