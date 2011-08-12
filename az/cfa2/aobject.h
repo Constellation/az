@@ -36,7 +36,6 @@ void AObject::UpdatePrototype(Heap* heap, const AVal& val) {
 
 AVal AObject::GetNumberProperty(Heap* heap) {
   MergeNumberProperty(heap);
-  assert(number_);
   return *number_;
 }
 
@@ -44,7 +43,7 @@ AVal AObject::GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_
   if (number_) {
     return *number_;
   } else {
-    return proto_.GetStringPropertyImpl(already_searched);
+    return proto_.GetNumberPropertyImpl(already_searched);
   }
 }
 
@@ -65,8 +64,12 @@ void AObject::UpdateNumberProperty(Heap* heap, const AVal& val) {
 }
 
 AVal AObject::GetStringProperty(Heap* heap) {
-  MergeStringProperty(heap);
-  return *string_;
+  if (string_) {
+    return *string_;
+  } else {
+    // TODO(Constellation) implement it
+    return AVal(AVAL_NOBASE);
+  }
 }
 
 AVal AObject::GetStringPropertyImpl(std::unordered_set<const AObject*>* already_searched) const {
