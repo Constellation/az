@@ -69,5 +69,11 @@ inline Result TO_BASE(Heap* heap,
   return Result(AVal(BASE_TYPE));
 }
 
+
+inline Result StringSplit(Heap* heap,
+                          const AVal& this_binding,
+                          const std::vector<AVal>& args,
+                          bool IsConstructorCalled);
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_BUILTINS_FWD_H_

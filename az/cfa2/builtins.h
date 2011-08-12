@@ -124,5 +124,13 @@ inline Result TO_BOOLEAN(Heap* heap,
   return Result(AVal(AVAL_BOOL));
 }
 
+
+inline Result StringSplit(Heap* heap,
+                          const AVal& this_binding,
+                          const std::vector<AVal>& args,
+                          bool IsConstructorCalled) {
+  return Result(heap->GetStringSplitResult());
+}
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_BUILTINS_H_

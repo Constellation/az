@@ -31,6 +31,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
       state_(kInitialState),
       call_count_(0) {
 
+    const std::vector<AVal> empty;
     // initialize builtin objects
 
     // Global
@@ -234,8 +235,13 @@ class Heap : private iv::core::Noncopyable<Heap> {
         Intern("slice"),
         AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
     // section 15.5.4.14 String.prototype.split(separator, limit)
-    // TODO(Constellation) implement it
-
+    AObject* spresult = MakeObject();
+    string_split_result_ = AVal(spresult);
+    ARRAY_CONSTRUCTOR(this, string_split_result_, empty, true);
+    // TODO(Constellation) num prop
+    sp->AddProperty(
+        Intern("split"),
+        AProp(AVal(factory_.NewAObject(StringSplit, function_prototype_)), A::W | A::C));
     // section 15.5.4.15 String.prototype.substring(start, end)
     sp->AddProperty(
         Intern("substring"),
@@ -971,6 +977,13 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return regexp_prototype_;
   }
 
+
+  // results
+
+  const AVal& GetStringSplitResult() const {
+    return string_split_result_;
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
@@ -991,6 +1004,9 @@ class Heap : private iv::core::Noncopyable<Heap> {
   AVal number_prototype_;
   AVal date_prototype_;
   AVal regexp_prototype_;
+
+  // results
+  AVal string_split_result_;
 
   typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
