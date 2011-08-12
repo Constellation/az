@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   }
 
   std::vector<char> vec;
-  if (!ReadFile(argv[1], &vec)) {
+  if (!ReadFile(rest.front(), &vec)) {
     return EXIT_FAILURE;
   }
 
