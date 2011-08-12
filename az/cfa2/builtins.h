@@ -35,7 +35,14 @@ inline Result REGEXP_CONSTRUCTOR(Heap* heap,
                                  const AVal& this_binding,
                                  const std::vector<AVal>& args,
                                  bool IsConstructorCalled) {
-  return Result(AVal());
+  // TODO(Constellation) more fast code
+  this_binding.UpdatePrototype(heap, heap->GetRegExpPrototype());
+  this_binding.UpdateProperty(heap, Intern("global"), AVal(AVAL_BOOL));
+  this_binding.UpdateProperty(heap, Intern("ignoreCase"), AVal(AVAL_BOOL));
+  this_binding.UpdateProperty(heap, Intern("lastIndex"), AVal(AVAL_NUMBER));
+  this_binding.UpdateProperty(heap, Intern("multiline"), AVal(AVAL_BOOL));
+  this_binding.UpdateProperty(heap, Intern("source"), AVal(AVAL_STRING));
+  return Result(this_binding);
 }
 
 inline Result STRING_CONSTRUCTOR(Heap* heap,

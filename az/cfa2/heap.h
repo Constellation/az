@@ -360,6 +360,117 @@ class Heap : private iv::core::Noncopyable<Heap> {
         Intern("toPrecision"),
         AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
 
+    // section 15.8 Math
+    AObject* m = factory_.NewAObject(object_prototype_);
+    AVal mav(m);
+    global->AddProperty(
+        Intern("Math"),
+        AProp(mav, A::W | A::C));
+    // section 15.8.1.1 E
+    m->AddProperty(
+        Intern("E"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.1.2 LN10
+    m->AddProperty(
+        Intern("LN10"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.1.3 LN2
+    m->AddProperty(
+        Intern("LN2"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.1.4 LOG2E
+    m->AddProperty(
+        Intern("LOG2E"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.1.5 LOG10E
+    m->AddProperty(
+        Intern("LOG10E"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.1.6 PI
+    m->AddProperty(
+        Intern("PI"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.1.7 SQRT1_2
+    m->AddProperty(
+        Intern("SQRT1_2"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.1.8 SQRT2
+    m->AddProperty(
+        Intern("SQRT2"),
+        AProp(AVal(AVAL_NUMBER), A::N));
+    // section 15.8.2.1 abs(x)
+    m->AddProperty(
+        Intern("abs"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.2 acos(x)
+    m->AddProperty(
+        Intern("acos"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.3 asin(x)
+    m->AddProperty(
+        Intern("asin"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.4 atan(x)
+    m->AddProperty(
+        Intern("atan"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.5 atan2(y, x)
+    m->AddProperty(
+        Intern("atan2"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.6 ceil(x)
+    m->AddProperty(
+        Intern("ceil"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.7 cos(x)
+    m->AddProperty(
+        Intern("cos"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.8 exp(x)
+    m->AddProperty(
+        Intern("exp"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.9 floor(x)
+    m->AddProperty(
+        Intern("floor"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.10 log(x)
+    m->AddProperty(
+        Intern("log"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.11 max([value1[, value2[, ... ]]])
+    m->AddProperty(
+        Intern("max"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.12 min([value1[, value2[, ... ]]])
+    m->AddProperty(
+        Intern("min"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.13 pow(x, y)
+    m->AddProperty(
+        Intern("pow"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.14 random()
+    m->AddProperty(
+        Intern("random"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.15 round(x)
+    m->AddProperty(
+        Intern("round"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.16 sin(x)
+    m->AddProperty(
+        Intern("sin"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.17 sqrt(x)
+    m->AddProperty(
+        Intern("sqrt"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.8.2.18 tan(x)
+    m->AddProperty(
+        Intern("tan"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+
     // section 15.9 Date
     AObject* dp = factory_.NewAObject(object_prototype_);
     date_prototype_ = AVal(dp);
@@ -580,116 +691,36 @@ class Heap : private iv::core::Noncopyable<Heap> {
         Intern("setYear"),
         AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
 
-    // section 15.8 Math
-    AObject* m = factory_.NewAObject(object_prototype_);
-    AVal mav(m);
+    // section 15.10 RegExp
+    AObject* rp = factory_.NewAObject(object_prototype_);
+    regexp_prototype_ = AVal(rp);
+    AObject* r = factory_.NewAObject(
+        REGEXP_CONSTRUCTOR,
+        function_prototype_);
+    AVal rav(r);
     global->AddProperty(
-        Intern("Math"),
-        AProp(mav, A::W | A::C));
-    // section 15.8.1.1 E
-    m->AddProperty(
-        Intern("E"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.1.2 LN10
-    m->AddProperty(
-        Intern("LN10"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.1.3 LN2
-    m->AddProperty(
-        Intern("LN2"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.1.4 LOG2E
-    m->AddProperty(
-        Intern("LOG2E"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.1.5 LOG10E
-    m->AddProperty(
-        Intern("LOG10E"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.1.6 PI
-    m->AddProperty(
-        Intern("PI"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.1.7 SQRT1_2
-    m->AddProperty(
-        Intern("SQRT1_2"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.1.8 SQRT2
-    m->AddProperty(
-        Intern("SQRT2"),
-        AProp(AVal(AVAL_NUMBER), A::N));
-    // section 15.8.2.1 abs(x)
-    m->AddProperty(
-        Intern("abs"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.2 acos(x)
-    m->AddProperty(
-        Intern("acos"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.3 asin(x)
-    m->AddProperty(
-        Intern("asin"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.4 atan(x)
-    m->AddProperty(
-        Intern("atan"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.5 atan2(y, x)
-    m->AddProperty(
-        Intern("atan2"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.6 ceil(x)
-    m->AddProperty(
-        Intern("ceil"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.7 cos(x)
-    m->AddProperty(
-        Intern("cos"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.8 exp(x)
-    m->AddProperty(
-        Intern("exp"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.9 floor(x)
-    m->AddProperty(
-        Intern("floor"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.10 log(x)
-    m->AddProperty(
-        Intern("log"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.11 max([value1[, value2[, ... ]]])
-    m->AddProperty(
-        Intern("max"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.12 min([value1[, value2[, ... ]]])
-    m->AddProperty(
-        Intern("min"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.13 pow(x, y)
-    m->AddProperty(
-        Intern("pow"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.14 random()
-    m->AddProperty(
-        Intern("random"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.15 round(x)
-    m->AddProperty(
-        Intern("round"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.16 sin(x)
-    m->AddProperty(
-        Intern("sin"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.17 sqrt(x)
-    m->AddProperty(
-        Intern("sqrt"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
-    // section 15.8.2.18 tan(x)
-    m->AddProperty(
-        Intern("tan"),
-        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+        Intern("RegExp"),
+        AProp(rav, A::W | A::C));
+
+    // section 15.10.5.1 RegExp.prototype
+    r->AddProperty(
+        Intern("prototype"),
+        AProp(regexp_prototype_, A::N));
+
+    // section 15.10.6.1 RegExp.prototype.constructor
+    rp->AddProperty(
+        Intern("constructor"),
+        AProp(rav, A::W | A::C));
+    // section 15.10.6.2 RegExp.prototype.exec(string)
+    // TODO(Constellation) implement it
+    // section 15.10.6.3 RegExp.prototype.test(string)
+    rp->AddProperty(
+        Intern("test"),
+        AProp(AVal(factory_.NewAObject(TO_BOOLEAN, function_prototype_)), A::W | A::C));
+    // section 15.10.6.4 RegExp.prototype.toString()
+    rp->AddProperty(
+        Intern("toString"),
+        AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
 
     // section 15.12 JSON
     AObject* json = factory_.NewAObject(object_prototype_);
@@ -936,6 +967,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return date_prototype_;
   }
 
+  const AVal& GetRegExpPrototype() const {
+    return regexp_prototype_;
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
@@ -955,6 +990,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   AVal boolean_prototype_;
   AVal number_prototype_;
   AVal date_prototype_;
+  AVal regexp_prototype_;
 
   typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
