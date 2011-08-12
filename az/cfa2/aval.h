@@ -33,6 +33,25 @@ AVal AVal::GetProperty(Heap* heap, Symbol name) const {
   return val;
 }
 
+AVal AVal::BaseToObject(Heap* heap) const {
+  // convert STRING / NUMBER / BOOL => String / Number / Boolean object
+  if (base_ == AVAL_NOBASE) {
+    return *this;
+  }
+  AVal result(AVAL_NOBASE);
+  result.objects_ = objects_;
+  if (base_ & AVAL_STRING) {
+    result |= heap->GetStringObject();
+  }
+  if (base_ & (AVAL_TRUE | AVAL_FALSE | AVAL_BOOL)) {
+    result |= heap->GetBooleanObject();
+  }
+  if (base_ & AVAL_NUMBER) {
+    result |= heap->GetNumberObject();
+  }
+  return result;
+}
+
 void AVal::Call(Heap* heap,
                 Interpreter* interp,
                 const AVal& this_binding,

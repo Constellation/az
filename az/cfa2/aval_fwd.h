@@ -84,29 +84,7 @@ class AVal {
     return AVal(base_);
   }
 
-  AVal BaseToObject() const {
-    if (base_ == AVAL_NOBASE) {
-      return *this;
-    }
-    AVal result(AVAL_NOBASE);
-    result.objects_ = objects_;
-    if (base_ & AVAL_NUMBER) {
-      result.Join(AVAL_NUMBER);
-    }
-    if (base_ & AVAL_STRING) {
-      result.Join(AVAL_STRING);
-    }
-    if (base_ & AVAL_TRUE) {
-      result.Join(AVAL_TRUE);
-    }
-    if (base_ & AVAL_FALSE) {
-      result.Join(AVAL_TRUE);
-    }
-    if (base_ & AVAL_BOOL) {
-      result.Join(AVAL_BOOL);
-    }
-    return result;
-  }
+  AVal BaseToObject(Heap* heap) const;
 
   std::shared_ptr<iv::core::UString> GetStringValue() const {
     return str_;

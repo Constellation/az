@@ -366,6 +366,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
     sp->AddProperty(
         Intern("substr"),
         AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
+    string_object_ = AVal(factory_.NewAObject(string_prototype_));
 
     // section 15.6 Boolean
     AObject* bp = factory_.NewAObject(object_prototype_);
@@ -395,6 +396,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
     bp->AddProperty(
         Intern("valueOf"),
         AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    boolean_object_ = AVal(factory_.NewAObject(boolean_prototype_));
 
     // section 15.7 Number
     AObject* np = factory_.NewAObject(object_prototype_);
@@ -460,6 +462,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
     np->AddProperty(
         Intern("toPrecision"),
         AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
+    number_object_ = AVal(factory_.NewAObject(number_prototype_));
 
     // section 15.8 Math
     AObject* m = factory_.NewAObject(object_prototype_);
@@ -1098,6 +1101,18 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return json_parse_result_;
   }
 
+  const AVal& GetStringObject() const {
+    return string_object_;
+  }
+
+  const AVal& GetBooleanObject() const {
+    return boolean_object_;
+  }
+
+  const AVal& GetNumberObject() const {
+    return number_object_;
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
@@ -1125,6 +1140,11 @@ class Heap : private iv::core::Noncopyable<Heap> {
   AVal string_split_result_;
   AVal regexp_exec_result_;
   AVal json_parse_result_;
+
+  // primitive object values
+  AVal string_object_;
+  AVal boolean_object_;
+  AVal number_object_;
 
   typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
