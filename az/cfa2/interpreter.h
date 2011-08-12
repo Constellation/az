@@ -652,8 +652,16 @@ void Interpreter::Visit(IndexAccess* prop) {
   bool error_found = target.HasException() || key.HasException();
   const AVal keyr(key.result());
   base_ = target.result().ToObject(heap_);
-  if (keyr.HasString() && keyr.GetStringValue()) {
-    res.set_result(base_.GetProperty(heap_, Intern(*keyr.GetStringValue())));
+  if (keyr.HasString()) {
+    if (keyr.GetStringValue()) {
+      res.set_result(base_.GetProperty(heap_, Intern(*keyr.GetStringValue())));
+    } else {
+      res.set_result(base_.GetStringProperty(heap_));
+    }
+  } else if (keyr.HasNumber()) {
+    res.set_result(base_.GetNumberProperty(heap_));
+  } else {
+    res.set_result(AVal(AVAL_NOBASE));
   }
   if (error_found) {
     AVal ex(AVAL_NOBASE);
@@ -942,6 +950,7 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
       const AVal keyr(key.result());
       if (keyr.HasNumber()) {
         // update number property
+        target.result().UpdateNumberProperty(heap_, res.result());
       }
       if (keyr.HasString()) {
         // update string property
@@ -951,6 +960,7 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
               Intern(*keyr.GetStringValue()),
               res.result());
         } else {
+          target.result().UpdateStringProperty(heap_, res.result());
         }
       }
       return res;

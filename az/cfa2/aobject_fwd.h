@@ -65,6 +65,8 @@ class AObject
   typedef std::unordered_map<Symbol, AProp> Properties;
   AObject()
     : proto_(AVAL_NOBASE),
+      number_(),
+      string_(),
       function_(NULL),
       builtin_(NULL),
       properties_() {
@@ -72,6 +74,8 @@ class AObject
 
   AObject(FunctionLiteral* function, const AVal& proto)
     : proto_(proto),
+      number_(),
+      string_(),
       function_(function),
       builtin_(NULL),
       properties_() {
@@ -79,6 +83,8 @@ class AObject
 
   AObject(Builtin builtin, const AVal& proto)
     : proto_(proto),
+      number_(),
+      string_(),
       function_(NULL),
       builtin_(builtin),
       properties_() {
@@ -86,6 +92,8 @@ class AObject
 
   explicit AObject(const AVal& proto)
     : proto_(proto),
+      number_(),
+      string_(),
       function_(NULL),
       builtin_(NULL),
       properties_() {
@@ -122,6 +130,12 @@ class AObject
     if (GetOwnProperty(name, &result)) {
       return result;
     } else {
+      if (number_ && IsArrayIndexSymbol(name)) {
+        return *number_;
+      }
+      if (string_) {
+        return *string_;
+      }
       // Lookup [[Prototype]]
       std::unordered_set<const AObject*> already_searched;
       already_searched.insert(this);
@@ -162,14 +176,24 @@ class AObject
     return function_ || builtin_;
   }
 
+
+  inline AVal GetNumberProperty(Heap* heap);
+  inline AVal GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;
+  inline void MergeNumberProperty(Heap* heap);
+  inline void UpdateNumberProperty(Heap* heap, const AVal& val);
+  inline AVal GetStringProperty(Heap* heap);
+  inline AVal GetStringPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;
+  inline void MergeStringProperty(Heap* heap);
+  inline void UpdateStringProperty(Heap* heap, const AVal& val);
+
  private:
   AVal proto_;
+  std::shared_ptr<AVal> number_;
+  std::shared_ptr<AVal> string_;
   FunctionLiteral* function_;
   Builtin builtin_;
   Properties properties_;
 };
-
-
 
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_AOBJECT_FWD_H_
