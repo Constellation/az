@@ -144,10 +144,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
     // Array
     AObject* ap = factory_.NewAObject(object_prototype_);
-    AVal apav(ap);
+    array_prototype_ = AVal(ap);
 
-    AObject* anonew = factory_.NewAObject(apav);
-    array_function_called_value_ = AVal(anonew);
+    AObject* anonew = factory_.NewAObject(array_prototype_);
+    array_constructor_result_ = AVal(anonew);
 
     AObject* a = factory_.NewAObject(
         ARRAY_CONSTRUCTOR,
@@ -158,10 +158,100 @@ class Heap : private iv::core::Noncopyable<Heap> {
         AProp(aav, A::W | A::C));
     a->AddProperty(
         Intern("prototype"),
-        AProp(apav, A::N));
+        AProp(array_prototype_, A::N));
+    // section 15.4.3.2 Array.isArray(arg)
+    // TODO(Constellation) check array
+    a->AddProperty(
+        Intern("isArray"),
+        AProp(AVal(factory_.NewAObject(TO_BOOLEAN, function_prototype_)), A::W | A::C));
+
+    // section 15.5.4.1 Array.prototype.constructor
     ap->AddProperty(
         Intern("constructor"),
         AProp(aav, A::W | A::C));
+    // section 15.4.4.2 Array.prototype.toString()
+    ap->AddProperty(
+        Intern("toString"),
+        AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
+    // section 15.4.4.3 Array.prototype.toLocaleString()
+    ap->AddProperty(
+        Intern("toLocaleString"),
+        AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
+    // section 15.4.4.4 Array.prototype.concat([item1[, item2[, ...]]])
+    // TODO(Constellation) refine it
+    ap->AddProperty(
+        Intern("concat"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.5 Array.prototype.join(separator)
+    ap->AddProperty(
+        Intern("join"),
+        AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
+    // section 15.4.4.6 Array.prototype.pop()
+    // TODO(Constellation) refine it
+    // section 15.4.4.7 Array.prototype.push([item1[, item2[, ...]]])
+    // TODO(Constellation) refine it
+    // section 15.4.4.8 Array.prototype.reverse()
+    ap->AddProperty(
+        Intern("reverse"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.9 Array.prototype.shift()
+    // TODO(Constellation) refine it
+    // section 15.4.4.10 Array.prototype.slice(start, end)
+    ap->AddProperty(
+        Intern("slice"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.11 Array.prototype.sort(comparefn)
+    ap->AddProperty(
+        Intern("sort"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.12
+    // Array.prototype.splice(start, deleteCount[, item1[, item2[, ...]]])
+    ap->AddProperty(
+        Intern("splice"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.13 Array.prototype.unshift([item1[, item2[, ...]]])
+    // TODO(Constellation) refine it
+    // section 15.4.4.14 Array.prototype.indexOf(searchElement[, fromIndex])
+    ap->AddProperty(
+        Intern("indexOf"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.4.4.15 Array.prototype.lastIndexOf(searchElement[, fromIndex])
+    ap->AddProperty(
+        Intern("lastIndexOf"),
+        AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
+    // section 15.4.4.16 Array.prototype.every(callbackfn[, thisArg])
+    ap->AddProperty(
+        Intern("every"),
+        AProp(AVal(factory_.NewAObject(TO_BOOLEAN, function_prototype_)), A::W | A::C));
+    // section 15.4.4.17 Array.prototype.some(callbackfn[, thisArg])
+    ap->AddProperty(
+        Intern("some"),
+        AProp(AVal(factory_.NewAObject(TO_BOOLEAN, function_prototype_)), A::W | A::C));
+    // section 15.4.4.18 Array.prototype.forEach(callbackfn[, thisArg])
+    // TODO(Constellation) refine it
+    ap->AddProperty(
+        Intern("forEach"),
+        AProp(AVal(factory_.NewAObject(TO_UNDEFINED, function_prototype_)), A::W | A::C));
+    // section 15.4.4.19 Array.prototype.map(callbackfn[, thisArg])
+    // TODO(Constellation) refine it
+    ap->AddProperty(
+        Intern("map"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.20 Array.prototype.filter(callbackfn[, thisArg])
+    // TODO(Constellation) refine it
+    ap->AddProperty(
+        Intern("filter"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.21 Array.prototype.reduce(callbackfn[, initialValue])
+    // TODO(Constellation) refine it
+    ap->AddProperty(
+        Intern("reduce"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
+    // section 15.4.4.22 Array.prototype.reduceRight(callbackfn[, initialValue])
+    // TODO(Constellation) refine it
+    ap->AddProperty(
+        Intern("reduceRight"),
+        AProp(AVal(factory_.NewAObject(TO_THIS, function_prototype_)), A::W | A::C));
 
     // section 15.5 String
     AObject* sp = factory_.NewAObject(object_prototype_);
@@ -220,8 +310,13 @@ class Heap : private iv::core::Noncopyable<Heap> {
         Intern("localeCompare"),
         AProp(AVal(factory_.NewAObject(TO_NUMBER, function_prototype_)), A::W | A::C));
     // section 15.5.4.10 String.prototype.match(regexp)
-    // TODO(Constellation) implement it
-
+    AObject* maresult = MakeObject();
+    string_match_result_ = AVal(maresult);
+    ARRAY_CONSTRUCTOR(this, string_match_result_, empty, true);
+    // TODO(Constellation) num prop
+    sp->AddProperty(
+        Intern("match"),
+        AProp(AVal(factory_.NewAObject(StringMatch, function_prototype_)), A::W | A::C));
     // section 15.5.4.11 String.prototype.replace(searchValue, replaceValue)
     sp->AddProperty(
         Intern("replace"),
@@ -718,7 +813,14 @@ class Heap : private iv::core::Noncopyable<Heap> {
         Intern("constructor"),
         AProp(rav, A::W | A::C));
     // section 15.10.6.2 RegExp.prototype.exec(string)
-    // TODO(Constellation) implement it
+    AObject* exresult = MakeObject();
+    regexp_exec_result_ = AVal(exresult);
+    ARRAY_CONSTRUCTOR(this, regexp_exec_result_, empty, true);
+    regexp_exec_result_.UpdateProperty(this, Intern("index"), AVal(AVAL_NUMBER));
+    regexp_exec_result_.UpdateProperty(this, Intern("input"), AVal(AVAL_STRING));
+    rp->AddProperty(
+        Intern("exec"),
+        AProp(AVal(factory_.NewAObject(RegExpExec, function_prototype_)), A::W | A::C));
     // section 15.10.6.3 RegExp.prototype.test(string)
     rp->AddProperty(
         Intern("test"),
@@ -732,9 +834,11 @@ class Heap : private iv::core::Noncopyable<Heap> {
     AObject* json = factory_.NewAObject(object_prototype_);
     AVal jsonav(json);
     // section 15.12.2 parse(text[, reviver])
-//    json->AddProperty(
-//        Intern("parse"),
-//        AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
+    AObject* paresult = MakeObject();
+    json_parse_result_ = AVal(paresult);
+    json->AddProperty(
+        Intern("parse"),
+        AProp(AVal(factory_.NewAObject(JSONParse, function_prototype_)), A::W | A::C));
     // section 15.12.3 stringify(value[, replacer[, space]])
     json->AddProperty(
         Intern("stringify"),
@@ -810,13 +914,6 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
   AVal GetGlobal() const {
     return global_;
-  }
-
-  AVal GetArrayFunctionCalledValue() const {
-    return array_function_called_value_;
-  }
-
-  void InitPending(AObject* func) {
   }
 
   void InitSummary(FunctionLiteral* literal, AObject* func) {
@@ -957,6 +1054,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
   // prototype getters
   //
 
+  const AVal& GetArrayPrototype() const {
+    return array_prototype_;
+  }
+
   const AVal& GetStringPrototype() const {
     return string_prototype_;
   }
@@ -979,9 +1080,24 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
 
   // results
+  const AVal& GetArrayConstructorResult() const {
+    return array_constructor_result_;
+  }
+
+  const AVal& GetStringMatchResult() const {
+    return string_match_result_;
+  }
 
   const AVal& GetStringSplitResult() const {
     return string_split_result_;
+  }
+
+  const AVal& GetRegExpExecResult() const {
+    return regexp_exec_result_;
+  }
+
+  const AVal& GetJSONParseResult() const {
+    return json_parse_result_;
   }
 
  private:
@@ -998,7 +1114,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   AVal global_;
   AVal object_prototype_;
   AVal function_prototype_;
-  AVal array_function_called_value_;
+  AVal array_prototype_;
   AVal string_prototype_;
   AVal boolean_prototype_;
   AVal number_prototype_;
@@ -1006,7 +1122,11 @@ class Heap : private iv::core::Noncopyable<Heap> {
   AVal regexp_prototype_;
 
   // results
+  AVal array_constructor_result_;
+  AVal string_match_result_;
   AVal string_split_result_;
+  AVal regexp_exec_result_;
+  AVal json_parse_result_;
 
   typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;

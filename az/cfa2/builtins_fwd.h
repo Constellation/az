@@ -61,6 +61,16 @@ inline Result TO_BOOLEAN(Heap* heap,
                          const std::vector<AVal>& args,
                          bool IsConstructorCalled);
 
+inline Result TO_THIS(Heap* heap,
+                      const AVal& this_binding,
+                      const std::vector<AVal>& args,
+                      bool IsConstructorCalled);
+
+inline Result TO_UNDEFINED(Heap* heap,
+                           const AVal& this_binding,
+                           const std::vector<AVal>& args,
+                           bool IsConstructorCalled);
+
 template<int BASE_TYPE>
 inline Result TO_BASE(Heap* heap,
                       const AVal& this_binding,
@@ -69,11 +79,25 @@ inline Result TO_BASE(Heap* heap,
   return Result(AVal(BASE_TYPE));
 }
 
+inline Result StringMatch(Heap* heap,
+                          const AVal& this_binding,
+                          const std::vector<AVal>& args,
+                          bool IsConstructorCalled);
 
 inline Result StringSplit(Heap* heap,
                           const AVal& this_binding,
                           const std::vector<AVal>& args,
                           bool IsConstructorCalled);
+
+inline Result RegExpExec(Heap* heap,
+                         const AVal& this_binding,
+                         const std::vector<AVal>& args,
+                         bool IsConstructorCalled);
+
+inline Result JSONParse(Heap* heap,
+                        const AVal& this_binding,
+                        const std::vector<AVal>& args,
+                        bool IsConstructorCalled);
 
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_BUILTINS_FWD_H_

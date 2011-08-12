@@ -18,30 +18,41 @@ inline Result ARRAY_CONSTRUCTOR(Heap* heap,
                                 const std::vector<AVal>& args,
                                 bool IsConstructorCalled) {
   // const std::size_t len = args.size();
-  if (IsConstructorCalled) {
-    // called by new Array() form
-    // TODO(Constellation) implement it
-    return Result(AVal());
-  } else {
-    // called by Array() form
-    // TODO(Constellation) implement it
-    AVal val = heap->GetArrayFunctionCalledValue();
-    // mutate and return this
-    return Result(val);
+  AVal val = (IsConstructorCalled) ?
+      this_binding : heap->GetArrayConstructorResult();
+  AVal dummy;
+  const bool init_with_args = args.size() > 1;
+  for (AVal::ObjectSet::iterator it = val.objects().begin(),
+       last = val.objects().end(); it != last; ++it) {
+    (*it)->UpdatePrototype(heap, heap->GetArrayPrototype());
+    if ((*it)->GetOwnProperty(Intern("length"), &dummy)) {
+      (*it)->UpdateProperty(heap, Intern("length"), AVal(AVAL_NUMBER));
+    } else {
+      (*it)->AddProperty(
+          Intern("length"), AProp(AVal(AVAL_NUMBER), A::C | A::W));
+    }
+    if (init_with_args) {
+      for (uint32_t index = 0, len = args.size(); index < len; ++index) {
+        (*it)->UpdateProperty(heap, Intern(index), args[index]);
+      }
+    }
   }
+  return Result(val);
 }
 
 inline Result REGEXP_CONSTRUCTOR(Heap* heap,
                                  const AVal& this_binding,
                                  const std::vector<AVal>& args,
                                  bool IsConstructorCalled) {
-  // TODO(Constellation) more fast code
-  this_binding.UpdatePrototype(heap, heap->GetRegExpPrototype());
-  this_binding.UpdateProperty(heap, Intern("global"), AVal(AVAL_BOOL));
-  this_binding.UpdateProperty(heap, Intern("ignoreCase"), AVal(AVAL_BOOL));
-  this_binding.UpdateProperty(heap, Intern("lastIndex"), AVal(AVAL_NUMBER));
-  this_binding.UpdateProperty(heap, Intern("multiline"), AVal(AVAL_BOOL));
-  this_binding.UpdateProperty(heap, Intern("source"), AVal(AVAL_STRING));
+  for (AVal::ObjectSet::iterator it = this_binding.objects().begin(),
+       last = this_binding.objects().end(); it != last; ++it) {
+    (*it)->UpdatePrototype(heap, heap->GetRegExpPrototype());
+    (*it)->UpdateProperty(heap, Intern("global"), AVal(AVAL_BOOL));
+    (*it)->UpdateProperty(heap, Intern("ignoreCase"), AVal(AVAL_BOOL));
+    (*it)->UpdateProperty(heap, Intern("lastIndex"), AVal(AVAL_NUMBER));
+    (*it)->UpdateProperty(heap, Intern("multiline"), AVal(AVAL_BOOL));
+    (*it)->UpdateProperty(heap, Intern("source"), AVal(AVAL_STRING));
+  }
   return Result(this_binding);
 }
 
@@ -124,12 +135,46 @@ inline Result TO_BOOLEAN(Heap* heap,
   return Result(AVal(AVAL_BOOL));
 }
 
+inline Result TO_THIS(Heap* heap,
+                      const AVal& this_binding,
+                      const std::vector<AVal>& args,
+                      bool IsConstructorCalled) {
+  return Result(this_binding);
+}
+
+inline Result TO_UNDEFINED(Heap* heap,
+                           const AVal& this_binding,
+                           const std::vector<AVal>& args,
+                           bool IsConstructorCalled) {
+  return Result(AVal(AVAL_UNDEFINED));
+}
+
+inline Result StringMatch(Heap* heap,
+                          const AVal& this_binding,
+                          const std::vector<AVal>& args,
+                          bool IsConstructorCalled) {
+  return Result(heap->GetStringMatchResult());
+}
 
 inline Result StringSplit(Heap* heap,
                           const AVal& this_binding,
                           const std::vector<AVal>& args,
                           bool IsConstructorCalled) {
   return Result(heap->GetStringSplitResult());
+}
+
+inline Result RegExpExec(Heap* heap,
+                         const AVal& this_binding,
+                         const std::vector<AVal>& args,
+                         bool IsConstructorCalled) {
+  return Result(heap->GetRegExpExecResult());
+}
+
+inline Result JSONParse(Heap* heap,
+                        const AVal& this_binding,
+                        const std::vector<AVal>& args,
+                        bool IsConstructorCalled) {
+  return Result(heap->GetJSONParseResult());
 }
 
 } }  // namespace az::cfa2
