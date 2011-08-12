@@ -638,7 +638,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
 
 void Interpreter::Visit(IdentifierAccess* prop) {
   prop->target()->Accept(this);
-  base_ = result_.result().BaseToObject(heap_);
+  base_ = result_.result().ToObject(heap_);
   const AVal refer = base_.GetProperty(heap_, Intern(prop->key()->value()));
   result_.set_result(refer);
 }
@@ -651,7 +651,7 @@ void Interpreter::Visit(IndexAccess* prop) {
   Result res;
   bool error_found = target.HasException() || key.HasException();
   const AVal keyr(key.result());
-  base_ = target.result().BaseToObject(heap_);
+  base_ = target.result().ToObject(heap_);
   if (keyr.HasString() && keyr.GetStringValue()) {
     res.set_result(base_.GetProperty(heap_, Intern(*keyr.GetStringValue())));
   }

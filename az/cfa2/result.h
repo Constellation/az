@@ -83,6 +83,11 @@ class Result {
     swap(lhs.has_exception_, rhs.has_exception_);
   }
 
+  Result& operator|=(const Result& rhs) {
+    Merge(rhs);
+    return *this;
+  }
+
  private:
   AVal result_;
   AVal exception_;

@@ -84,7 +84,7 @@ class AVal {
     return AVal(base_);
   }
 
-  AVal BaseToObject(Heap* heap) const;
+  AVal ToObject(Heap* heap) const;
 
   std::shared_ptr<iv::core::UString> GetStringValue() const {
     return str_;

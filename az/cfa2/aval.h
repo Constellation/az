@@ -33,7 +33,7 @@ AVal AVal::GetProperty(Heap* heap, Symbol name) const {
   return val;
 }
 
-AVal AVal::BaseToObject(Heap* heap) const {
+AVal AVal::ToObject(Heap* heap) const {
   // convert STRING / NUMBER / BOOL => String / Number / Boolean object
   if (base_ == AVAL_NOBASE) {
     return *this;
@@ -56,49 +56,31 @@ void AVal::Call(Heap* heap,
                 Interpreter* interp,
                 const AVal& this_binding,
                 const std::vector<AVal>& args, Result* result) const {
-  AVal res(AVAL_NOBASE);
-  bool error_found = false;
-  AVal err(AVAL_NOBASE);
+  Result res;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     if ((*it)->IsFunction()) {
-      const Result ret = interp->EvaluateFunction(*it, this_binding, args, false);
       // merge result values
-      res |= ret.result();
-      if (ret.HasException()) {
-        error_found = true;
-        err |= ret.exception();
-      }
+      res |= interp->EvaluateFunction(*it, this_binding, args, false);
     }
   }
-  *result = Result(res, err, error_found);
+  *result = res;
 }
 
 void AVal::Construct(Heap* heap,
                      Interpreter* interp,
                      AObject* this_binding,
                      const std::vector<AVal>& args, Result* result) const {
-  AVal res(AVAL_NOBASE);
-  bool error_found = false;
-  AVal err(AVAL_NOBASE);
   const AVal base(this_binding);
+  Result res;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     if ((*it)->IsFunction()) {
-      AVal prototype = (*it)->GetProperty(Intern("prototype"));
-      this_binding->UpdatePrototype(heap, prototype);
-      const Result ret = interp->EvaluateFunction(*it, base, args, true);
-
-      res |= ret.result();
-      // merge result values
-      res |= ret.result();
-      if (ret.HasException()) {
-        error_found = true;
-        err |= ret.exception();
-      }
+      this_binding->UpdatePrototype(heap, (*it)->GetProperty(Intern("prototype")));
+      res |= interp->EvaluateFunction(*it, base, args, true);
     }
   }
-  *result = Result(res, err, error_found);
+  *result = res;
 }
 
 AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const {

@@ -1053,7 +1053,6 @@ class Heap : private iv::core::Noncopyable<Heap> {
   }
 
   // prototype getters
-  //
 
   const AVal& GetArrayPrototype() const {
     return array_prototype_;
