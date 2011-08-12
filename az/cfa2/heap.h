@@ -1000,22 +1000,22 @@ class Heap : private iv::core::Noncopyable<Heap> {
     ++call_count_;
   }
 
+  void InitWaitingResults(FunctionLiteral* lit) {
+    assert(waiting_result_.find(lit) == waiting_result_.end());
+    waiting_result_.insert(
+        std::make_pair(lit, std::shared_ptr<ExecutionQueue>(new ExecutionQueue())));
+  }
+
   std::shared_ptr<Execution> AddWaitingResults(
       FunctionLiteral* lit,
       const AVal& this_binding,
       const std::vector<AVal> args,
       bool last) {
     WaitingMap::const_iterator it = waiting_result_.find(lit);
-    std::shared_ptr<ExecutionQueue> queue;
-    if (it == waiting_result_.end()) {
-      queue = std::shared_ptr<ExecutionQueue>(new ExecutionQueue());
-      waiting_result_.insert(std::make_pair(lit, queue));
-    } else {
-      queue = it->second;
-    }
+    assert(it != waiting_result_.end());
     std::shared_ptr<Execution> waiting(
         new Execution(this_binding, args, state_, last));
-    queue->push_back(waiting);
+    it->second->push_back(waiting);
     return waiting;
   }
 
@@ -1033,17 +1033,15 @@ class Heap : private iv::core::Noncopyable<Heap> {
                                                   const AVal& this_binding,
                                                   const std::vector<AVal>& args) const {
     WaitingMap::const_iterator it = waiting_result_.find(lit);
-    if (it != waiting_result_.end()) {
-      std::shared_ptr<ExecutionQueue> queue(it->second);
-      for (ExecutionQueue::const_reverse_iterator it = queue->rbegin(),
-           last = queue->rend(); it != last; ++it) {
-        if (std::get<0>(**it) == this_binding) {
-          if (std::get<1>(**it).size() == args.size()) {
-            if (std::equal(args.begin(),
-                           args.end(),
-                           std::get<1>(**it).begin())) {
-              return *it;
-            }
+    assert(it != waiting_result_.end());
+    for (ExecutionQueue::const_reverse_iterator qit = it->second->rbegin(),
+         last = it->second->rend(); qit != last; ++qit) {
+      if (std::get<0>(**qit) == this_binding) {
+        if (std::get<1>(**qit).size() == args.size()) {
+          if (std::equal(args.begin(),
+                         args.end(),
+                         std::get<1>(**qit).begin())) {
+            return *qit;
           }
         }
       }

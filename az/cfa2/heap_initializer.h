@@ -277,7 +277,7 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
 
   // insert current function summary
   heap_->InitSummary(literal, obj);
-  heap_->InitPending(obj);
+  heap_->InitWaitingResults(literal);
 
   for (Statements::const_iterator it = literal->body().begin(),
        last = literal->body().end(); it != last; ++it) {
