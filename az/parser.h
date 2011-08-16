@@ -322,7 +322,7 @@ class Parser : private iv::core::Noncopyable<> {
             // and one token lexed is not in strict
             // so rescan
             if (token_ == Token::TK_IDENTIFIER) {
-              typedef iv::core::detail::Keyword<iv::core::IdentifyReservedWords> KeywordChecker;
+              typedef iv::core::Keyword<iv::core::IdentifyReservedWords> KeywordChecker;
               token_ =  KeywordChecker::Detect(lexer_.Buffer(), true);
               break;
             }
