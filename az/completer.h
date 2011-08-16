@@ -9,7 +9,8 @@ class Completer {
   Completer()
     : has_completion_point_(false),
       base_(NULL),
-      function_(NULL) {
+      function_(NULL),
+      already_() {
   }
 
   bool HasCompletionPoint() const {
@@ -40,9 +41,12 @@ class Completer {
   }
 
   void Notify(Symbol name) {
-    iv::core::UString target = GetSymbolString(name);
-    iv::core::unicode::FPutsUTF16(stdout, target.begin(), target.end());
-    std::cout << std::endl;
+    if (already_.find(name) == already_.end()) {
+      already_.insert(name);
+      iv::core::UString target = GetSymbolString(name);
+      iv::core::unicode::FPutsUTF16(stdout, target.begin(), target.end());
+      std::cout << std::endl;
+    }
   }
 
  private:
@@ -53,6 +57,7 @@ class Completer {
   bool has_completion_point_;
   Expression* base_;
   FunctionLiteral* function_;
+  std::unordered_set<Symbol> already_;
 };
 
 }  // namespace az
