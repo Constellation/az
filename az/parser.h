@@ -148,10 +148,10 @@ static const iv::core::UString kSet = iv::core::ToUString("set");
 
 }  // namespace detail
 
-template<typename Source, typename Lexer, typename Reporter>
+template<typename Source, typename Lexer, typename Reporter, typename Completer>
 class Parser : private iv::core::Noncopyable<> {
  public:
-  typedef Parser<Source, Lexer, Reporter> this_type;
+  typedef Parser<Source, Lexer, Reporter, Completer> this_type;
   typedef this_type parser_type;
   typedef Lexer lexer_type;
   typedef BasicSkip<lexer_type> Skip;
@@ -239,6 +239,7 @@ class Parser : private iv::core::Noncopyable<> {
          const Source& source,
          lexer_type* lexer,
          Reporter* reporter,
+         Completer* completer,
          const StructuredSource& structured)
     : lexer_(lexer),
       error_(),
@@ -246,6 +247,7 @@ class Parser : private iv::core::Noncopyable<> {
       error_state_(0),
       factory_(factory),
       reporter_(reporter),
+      completer_(completer),
       structured_(structured),
       scope_(NULL),
       target_(NULL),
@@ -2178,8 +2180,9 @@ class Parser : private iv::core::Noncopyable<> {
           Next<iv::core::IgnoreReservedWords>();  // IDENTIFIERNAME
           // completion hook
           if (lexer_->IsCompletionPoint()) {
-            std::cout << "COMPLETION" << std::endl;
-            Next<iv::core::IgnoreReservedWords>();
+            if (completer_) {
+              completer_->SetCompletionPoint();
+            }
           }
           IS(Token::TK_IDENTIFIER);
           Identifier* const ident = ParseIdentifier(lexer_->Buffer());
@@ -3080,6 +3083,7 @@ class Parser : private iv::core::Noncopyable<> {
   int error_state_;
   AstFactory* factory_;
   Reporter* reporter_;
+  Completer* completer_;
   const StructuredSource& structured_;
   Scope* scope_;
   Target* target_;

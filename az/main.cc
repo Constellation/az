@@ -12,6 +12,7 @@
 #include <az/factory.h>
 #include <az/analyzer.h>
 #include <az/reporter.h>
+#include <az/completer.h>
 #include <az/parser.h>
 #include <az/symbol.h>
 #include <az/cfa2.h>
@@ -40,7 +41,10 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  typedef az::Parser<iv::core::UString, az::CompleteLexer, az::Reporter> Parser;
+  typedef az::Parser<iv::core::UString,
+                     az::CompleteLexer,
+                     az::Reporter,
+                     az::Completer> Parser;
 
   iv::cmdline::Parser cmd("az");
   cmd.Add("help",
@@ -90,6 +94,7 @@ int main(int argc, char** argv) {
   az::StructuredSource structured(src);
   az::Reporter reporter(structured);
   az::AstFactory factory;
+  az::Completer completer;
   if (cmd.Exist("pulse")) {
     // pulse mode
     const std::size_t len = cmd.Get<std::size_t>("pulse");
@@ -98,15 +103,20 @@ int main(int argc, char** argv) {
       return EXIT_FAILURE;
     }
     az::CompleteLexer lexer(src, len);
-    Parser parser(&factory, src, &lexer, &reporter, structured);
+    Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
     az::FunctionLiteral* const global = parser.ParseProgram();
     assert(global);
-    az::cfa2::Completer completer;
-    az::cfa2::Complete(global, src, &factory, &reporter, &completer);
+    if (completer.HasCompletionPoint()) {
+      std::cout << "COMPLETION POINT" << std::endl;
+    }
+    {
+      az::cfa2::Completer completer;
+      az::cfa2::Complete(global, src, &factory, &reporter, &completer);
+    }
   } else {
     // normal analysis
     az::CompleteLexer lexer(src);
-    Parser parser(&factory, src, &lexer, &reporter, structured);
+    Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
     az::FunctionLiteral* const global = parser.ParseProgram();
     assert(global);
     az::Analyze(global, src, &reporter);

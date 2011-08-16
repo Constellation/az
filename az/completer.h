@@ -4,6 +4,21 @@
 namespace az {
 
 class Completer {
+ public:
+  Completer()
+    : has_completion_point_(false) {
+  }
+
+  void SetCompletionPoint() {
+    has_completion_point_ = true;
+  }
+
+  bool HasCompletionPoint() const {
+    return has_completion_point_;
+  }
+
+ private:
+  bool has_completion_point_;
 };
 
 }  // namespace az
