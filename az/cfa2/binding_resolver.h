@@ -499,7 +499,7 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   }
   MarkStatements(literal->body());
 
-  // fix up
+  // for completion phase
 
   // shrink outer scope to previous size (remove added inner scope bindings)
   outer_scope_.resize(previous_size);

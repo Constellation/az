@@ -54,7 +54,6 @@
 #include <az/cfa2/aval.h>
 #include <az/cfa2/binding_resolver.h>
 #include <az/cfa2/interpreter.h>
-#include <az/cfa2/completer.h>
 namespace az {
 namespace cfa2 {
 

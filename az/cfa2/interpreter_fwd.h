@@ -10,7 +10,6 @@
 #include <az/jstype.h>
 #include <az/cfa2/heap.h>
 #include <az/cfa2/binding.h>
-#include <az/cfa2/completer.h>
 #include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {

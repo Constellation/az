@@ -25,6 +25,14 @@ class Completer {
     SetCompletionPoint();
   }
 
+  FunctionLiteral* GetTargetFunction() const {
+    return function_;
+  }
+
+  Expression* GetTargetExpression() const {
+    return base_;
+  }
+
   // register target function that has completion target expr node
   void RegisterTargetFunction(FunctionLiteral* function) {
     assert(HasCompletionPoint() && !HasTargetFunction());

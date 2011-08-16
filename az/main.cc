@@ -109,10 +109,7 @@ int main(int argc, char** argv) {
     if (completer.HasCompletionPoint()) {
       std::cout << "COMPLETION POINT" << std::endl;
     }
-    {
-      az::cfa2::Completer completer;
-      az::cfa2::Complete(global, src, &factory, &reporter, &completer);
-    }
+    az::cfa2::Complete(global, src, &factory, &reporter, &completer);
   } else {
     // normal analysis
     az::CompleteLexer lexer(src);
