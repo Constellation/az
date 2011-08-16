@@ -27,6 +27,17 @@ def Plugin(context):
     exports='context root_dir'
   )
 
+def Test(context):
+  test = context.SConscript(
+    join(root_dir, 'test', 'SConscript'),
+    variant_dir=join(root_dir, 'obj', 'test'),
+    src=join(root_dir, 'test'),
+    duplicate=False,
+    exports="context"
+  )
+  context.AlwaysBuild(test)
+  return test
+
 def Build():
   options = {}
   var = GetVariables()
@@ -92,6 +103,8 @@ def Build():
 
   env.Alias('az', Az(env))
   env.Alias('plugin', Plugin(env))
+  test = Test(env)
+  env.Alias('test', test, test[0].abspath)
   env.Default('az')
 
 Build()
