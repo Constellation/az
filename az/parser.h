@@ -152,7 +152,7 @@ class Parser : private iv::core::Noncopyable<> {
  public:
   typedef Parser<Source, Reporter> this_type;
   typedef this_type parser_type;
-  typedef iv::core::Lexer<Source> lexer_type;
+  typedef iv::core::Lexer<Source, true, true> lexer_type;
   typedef BasicSkip<lexer_type> Skip;
 
   enum ErrorState {
