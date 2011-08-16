@@ -94,14 +94,14 @@ int main(int argc, char** argv) {
   az::StructuredSource structured(src);
   az::Reporter reporter(structured);
   az::AstFactory factory;
-  az::Completer completer;
   if (cmd.Exist("pulse")) {
     // pulse mode
     const std::size_t len = cmd.Get<std::size_t>("pulse");
     if (len > src.size()) {
-      std::fprintf(stderr, "%s\n", "pulse position is out of range");
+      std::fprintf(stderr, "%s %lu %s\n", "pulse position", len, "is out of range");
       return EXIT_FAILURE;
     }
+    az::Completer completer;
     az::CompleteLexer lexer(src, len);
     Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
     az::FunctionLiteral* const global = parser.ParseProgram();
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
   } else {
     // normal analysis
     az::CompleteLexer lexer(src);
-    Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
+    Parser parser(&factory, src, &lexer, &reporter, NULL, structured);
     az::FunctionLiteral* const global = parser.ParseProgram();
     assert(global);
     az::Analyze(global, src, &reporter);

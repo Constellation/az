@@ -2181,7 +2181,7 @@ class Parser : private iv::core::Noncopyable<> {
           // completion hook
           if (lexer_->IsCompletionPoint()) {
             if (completer_) {
-              completer_->SetCompletionPoint();
+              completer_->RegisterPropertyCompletion(expr);
             }
           }
           IS(Token::TK_IDENTIFIER);
