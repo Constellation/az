@@ -121,6 +121,9 @@ class Interpreter
 
   inline void Interpret(FunctionLiteral* literal);
 
+  inline void GainCompletion(Completer* completer);
+  inline void EvaluateCompletionTargetFunction(Completer* completer);
+
   inline Result Assign(Assignment* assign, Result res, AVal old);
   Heap* heap_;
   Result result_;  // result value

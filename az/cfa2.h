@@ -75,7 +75,7 @@ inline void Complete(FunctionLiteral* global,
     Interpreter interp(&heap);
     interp.Run(global);
   }
-  heap.ShowSummaries();  // for debug...
+  // heap.ShowSummaries();  // for debug...
 }
 
 } }  // namespace az::cfa2

@@ -10,6 +10,9 @@
 #include <iv/ustringpiece.h>
 #include <az/cfa2/fwd.h>
 namespace az {
+
+class Completer;
+
 namespace cfa2 {
 
 enum BaseType {
@@ -126,6 +129,8 @@ class AVal {
 
   inline bool IsTrue() const;
   inline bool IsFalse() const;
+
+  inline void Complete(Heap* heap, Completer* completer) const;
 
   // join rhs aval to this
   void Join(const AVal& rhs) {

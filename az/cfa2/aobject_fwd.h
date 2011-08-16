@@ -7,6 +7,9 @@
 #include <az/cfa2/result.h>
 #include <az/cfa2/builtins_fwd.h>
 namespace az {
+
+class Completer;
+
 namespace cfa2 {
 
 namespace A {
@@ -185,6 +188,8 @@ class AObject
   inline AVal GetStringPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;
   inline void MergeStringProperty(Heap* heap);
   inline void UpdateStringProperty(Heap* heap, const AVal& val);
+
+  inline void Complete(Heap* heap, Completer* completer) const;
 
  private:
   AVal proto_;

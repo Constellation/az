@@ -23,6 +23,12 @@ void HeapInitializer::Initialize(FunctionLiteral* global) {
        last = global->body().end(); it != last; ++it) {
     (*it)->Accept(this);
   }
+
+  // for completion phase
+  if (global == heap_->completer()->GetTargetFunction()) {
+    // this is target function
+    heap_->completer()->GetTargetExpression()->Accept(this);
+  }
 }
 
 // Statements
@@ -282,6 +288,12 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
   for (Statements::const_iterator it = literal->body().begin(),
        last = literal->body().end(); it != last; ++it) {
     (*it)->Accept(this);
+  }
+
+  // for completion phase
+  if (literal == heap_->completer()->GetTargetFunction()) {
+    // this is target function
+    heap_->completer()->GetTargetExpression()->Accept(this);
   }
 }
 

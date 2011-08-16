@@ -63,6 +63,12 @@ void Interpreter::Run(FunctionLiteral* global) {
                        false);
     }
   }
+
+  // for completion, interpret it once more
+  if (heap_->completer() &&
+      heap_->completer()->GetTargetFunction()) {
+    EvaluateCompletionTargetFunction(heap_->completer());
+  }
 }
 
 // Statements
@@ -633,6 +639,10 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
       }
     }
   }
+  if (heap_->completer() &&
+      literal == heap_->completer()->GetTargetFunction()) {
+    GainCompletion(heap_->completer());
+  }
   result_ = Result(result, error, error_found);
 }
 
@@ -967,6 +977,137 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
     }
   }
   return res;
+}
+
+void Interpreter::GainCompletion(Completer* completer) {
+  completer->GetTargetExpression()->Accept(this);
+  result_.result().ToObject(heap_).Complete(heap_, completer);
+}
+
+void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
+  FunctionLiteral* literal = completer->GetTargetFunction();
+  const std::vector<AVal> args(literal->params().size(), AVal(AVAL_NOBASE));
+  const AVal this_binding(heap_->MakeObject());
+  const bool IsConstructorCalled = false;
+
+  std::shared_ptr<Heap::Execution> current;
+  while (true) {
+    try {
+      std::shared_ptr<Heap::Execution> prev = heap_->SearchWaitingResults(literal, this_binding, args);
+      if (!prev) {
+        // this is first time call
+        // so, add it to execution queue
+        current = heap_->AddWaitingResults(literal, this_binding, args, false);
+      } else if (std::get<2>(*prev) == heap_->state()) {
+        // state is not changed
+        // first time, through it.
+        // second time, shut out this path and return NOBASE
+        if (std::get<3>(*prev)) {
+          return;
+        } else {
+          current = heap_->AddWaitingResults(literal, this_binding, args, true);
+        }
+      } else {
+        // waiting result is too old...
+        throw UnwindStack(literal, this_binding, args);
+      }
+
+      Frame frame(this);
+
+      CurrentFrame()->SetThis(this_binding);
+      const FunctionLiteral::DeclType type = literal->type();
+      if (type == FunctionLiteral::STATEMENT ||
+          (type == FunctionLiteral::EXPRESSION && literal->name())) {
+        // in scope, so set to the frame
+        Identifier* name = literal->name().Address();
+        Binding* binding = name->refer();
+        assert(binding);
+        CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(literal)));
+      }
+
+      // parameter binding initialization
+      std::size_t index = 0;
+      const std::size_t args_size = args.size();
+      for (Identifiers::const_iterator it = literal->params().begin(),
+           last = literal->params().end(); it != last; ++it, ++index) {
+        Binding* binding = (*it)->refer();
+        assert(binding);
+        const AVal target(args_size > index ? args[index] : AVal(AVAL_UNDEFINED));
+        if (binding->type() == Binding::HEAP) {
+          heap_->UpdateHeap(binding, target);
+        }
+        CurrentFrame()->Set(heap_, binding, target);
+      }
+
+      if (index < args_size) {
+        AVal result(AVAL_NOBASE);
+        for (;index < args_size; ++index) {
+          result.Join(args[index]);
+        }
+        CurrentFrame()->SetRest(result);
+      }
+
+      const Scope& scope = literal->scope();
+      for (Scope::Variables::const_iterator it = scope.variables().begin(),
+           last = scope.variables().end(); it != last; ++it) {
+        const Scope::Variable& var = *it;
+        Identifier* ident = var.first;
+        Binding* binding = ident->refer();
+        assert(binding);
+        CurrentFrame()->Set(heap_, binding, AVal(AVAL_NOBASE));
+      }
+
+      for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
+           last = scope.function_declarations().end(); it != last; ++it) {
+        Identifier* ident = (*it)->name().Address();
+        Binding* binding = ident->refer();
+        assert(binding);
+        CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
+      }
+
+      // then, interpret
+      Interpret(literal);
+
+      if (IsConstructorCalled) {
+        if (result_.result() == AVal(AVAL_NOBASE)) {
+          // not nobase => no return statement found
+          result_.set_result(this_binding);
+        } else {
+          // return statement enabled
+          // but, if no object found, use this value
+          if (result_.result().objects().empty()) {
+            result_.set_result(this_binding);
+          }
+        }
+      } else {
+        // return only
+        // if result value is NOBASE (no return statement),
+        // add undefined
+        if (result_.result() == AVal(AVAL_NOBASE)) {
+          result_.set_result(AVal(AVAL_UNDEFINED));
+        }
+      }
+
+      heap_->RemoveWaitingResults(literal);
+      return;
+    } catch (const UnwindStack& ex) {
+      if (!current) {
+        // first case
+        throw ex;
+      }
+      if (ex.literal() == literal &&
+          ex.this_binding() == this_binding &&
+          ex.args().size() == args.size() &&
+          std::equal(args.begin(), args.end(), ex.args().begin())) {
+        if (std::get<3>(*heap_->RemoveWaitingResults(literal))) {
+          throw ex;
+        }
+      } else {
+        heap_->RemoveWaitingResults(literal);
+        throw ex;
+      }
+    }
+  }
 }
 
 } }  // namespace az::cfa2

@@ -106,9 +106,8 @@ int main(int argc, char** argv) {
     Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
     az::FunctionLiteral* const global = parser.ParseProgram();
     assert(global);
-    if (completer.HasCompletionPoint()) {
-      std::cout << "COMPLETION POINT" << std::endl;
-    }
+//    if (completer.HasCompletionPoint()) {
+//    }
     az::cfa2::Complete(global, src, &factory, &reporter, &completer);
   } else {
     // normal analysis

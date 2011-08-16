@@ -214,5 +214,12 @@ bool AVal::IsFalse() const {
       objects_.empty() && base_ != 0 && (((base_ == AVAL_NULL || base_ == AVAL_UNDEFINED || base_ == AVAL_FALSE)) || (base_ == AVAL_STRING && str_ && str_->empty()));
 }
 
+void AVal::Complete(Heap* heap, Completer* completer) const {
+  for (ObjectSet::const_iterator it = objects_.begin(),
+       last = objects_.end(); it != last; ++it) {
+    (*it)->Complete(heap, completer);
+  }
+}
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_AVAL_H_

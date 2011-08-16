@@ -501,8 +501,7 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
 
   // for completion phase
   if (literal == heap_->completer()->GetTargetFunction()) {
-    // target function!
-    std::cout << "COMPLETE THIS FUNCTION" << std::endl;
+    // this is target function
     heap_->completer()->GetTargetExpression()->Accept(this);
   }
 

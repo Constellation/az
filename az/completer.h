@@ -39,6 +39,12 @@ class Completer {
     function_ = function;
   }
 
+  void Notify(Symbol name) {
+    iv::core::UString target = GetSymbolString(name);
+    iv::core::unicode::FPutsUTF16(stdout, target.begin(), target.end());
+    std::cout << std::endl;
+  }
+
  private:
   void SetCompletionPoint() {
     has_completion_point_ = true;
