@@ -51,10 +51,8 @@ class Interpreter
     const std::vector<AVal> args_;
   };
 
-  explicit Interpreter(Heap* heap,
-                       Completer* completer)
+  explicit Interpreter(Heap* heap)
     : heap_(heap),
-      completer_(completer),
       result_(AVal(AVAL_NOBASE)),
       base_(AVAL_NOBASE),
       frame_(NULL) {
@@ -125,7 +123,6 @@ class Interpreter
 
   inline Result Assign(Assignment* assign, Result res, AVal old);
   Heap* heap_;
-  Completer* completer_;
   Result result_;  // result value
   AVal base_;  // only use in FunctionCall / ConstructorCall this binding
   Frame* frame_;

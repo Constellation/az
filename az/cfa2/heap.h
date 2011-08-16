@@ -5,6 +5,7 @@
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/deleter.h>
+#include <az/completer.h>
 #include <az/cfa2/builtins_fwd.h>
 #include <az/cfa2/binding.h>
 #include <az/cfa2/aobject_factory.h>
@@ -20,7 +21,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   typedef std::unordered_set<Binding*> HeapSet;
   typedef std::tuple<AVal, std::vector<AVal>, State, bool> Execution;
 
-  Heap(AstFactory* ast_factory)
+  Heap(AstFactory* ast_factory, Completer* completer)
     : heap_(),
       declared_heap_bindings_(),
       decls_(),
@@ -28,8 +29,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
       summaries_(),
       factory_(),
       ast_factory_(ast_factory),
-      state_(kInitialState),
-      call_count_(0) {
+      completer_(completer),
+      state_(kInitialState) {
 
     const std::vector<AVal> empty;
     // initialize builtin objects
@@ -999,10 +1000,6 @@ class Heap : private iv::core::Noncopyable<Heap> {
     ++state_;
   }
 
-  void CountUpCall() {
-    ++call_count_;
-  }
-
   void InitWaitingResults(FunctionLiteral* lit) {
     assert(waiting_result_.find(lit) == waiting_result_.end());
     waiting_result_.insert(
@@ -1120,8 +1117,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
   Summaries summaries_;
   AObjectFactory factory_;
   AstFactory* ast_factory_;
+  Completer* completer_;
   State state_;
-  uint64_t call_count_;
 
   AVal global_;
   AVal object_prototype_;

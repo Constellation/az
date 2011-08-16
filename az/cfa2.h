@@ -50,6 +50,7 @@
  * ***** END LICENSE BLOCK ***** */
 #ifndef _AZ_CFA2_H_
 #define _AZ_CFA2_H_
+#include <az/completer.h>
 #include <az/cfa2/heap.h>
 #include <az/cfa2/aval.h>
 #include <az/cfa2/binding_resolver.h>
@@ -57,13 +58,13 @@
 namespace az {
 namespace cfa2 {
 
-template<typename Source, typename Reporter, typename Completer>
+template<typename Source, typename Reporter>
 inline void Complete(FunctionLiteral* global,
                      const Source& src,
                      AstFactory* factory,
                      Reporter* reporter, Completer* completer) {
   // initialize heap
-  Heap heap(factory);
+  Heap heap(factory, completer);
   {
     // resolve binding type
     BindingResolver resolver(&heap);
@@ -71,7 +72,7 @@ inline void Complete(FunctionLiteral* global,
   }
   {
     // execute abstract interpreter
-    Interpreter interp(&heap, completer);
+    Interpreter interp(&heap);
     interp.Run(global);
   }
   heap.ShowSummaries();  // for debug...
