@@ -500,6 +500,11 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   MarkStatements(literal->body());
 
   // for completion phase
+  if (literal == heap_->completer()->GetTargetFunction()) {
+    // target function!
+    std::cout << "COMPLETE THIS FUNCTION" << std::endl;
+    heap_->completer()->GetTargetExpression()->Accept(this);
+  }
 
   // shrink outer scope to previous size (remove added inner scope bindings)
   outer_scope_.resize(previous_size);

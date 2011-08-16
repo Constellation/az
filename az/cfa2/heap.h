@@ -988,6 +988,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
     }
   }
 
+  Completer* completer() {
+    return completer_;
+  }
+
   const Summaries& summaries() const {
     return summaries_;
   }
