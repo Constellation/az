@@ -148,12 +148,12 @@ static const iv::core::UString kSet = iv::core::ToUString("set");
 
 }  // namespace detail
 
-template<typename Source, typename Reporter>
+template<typename Source, typename Lexer, typename Reporter>
 class Parser : private iv::core::Noncopyable<> {
  public:
-  typedef Parser<Source, Reporter> this_type;
+  typedef Parser<Source, Lexer, Reporter> this_type;
   typedef this_type parser_type;
-  typedef iv::core::Lexer<Source, true, true> lexer_type;
+  typedef Lexer lexer_type;
   typedef BasicSkip<lexer_type> Skip;
 
   enum ErrorState {
@@ -237,9 +237,10 @@ class Parser : private iv::core::Noncopyable<> {
 
   Parser(AstFactory* factory,
          const Source& source,
+         lexer_type* lexer,
          Reporter* reporter,
          const StructuredSource& structured)
-    : lexer_(new lexer_type(source)),
+    : lexer_(lexer),
       error_(),
       strict_(false),
       error_state_(0),
@@ -481,7 +482,7 @@ class Parser : private iv::core::Noncopyable<> {
           // invalid token...
           UNEXPECT_STATEMENT(token_);
           reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
-          Skip skip(lexer_.get(), strict_);
+          Skip skip(lexer_, strict_);
           token_ = skip.SkipUntilSemicolonOrLineTerminator();
           *res = true;  // recovery
           Statement* stmt = factory_->NewEmptyStatement(lexer_->begin_position(), lexer_->previous_end_position());
@@ -524,7 +525,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!*res) {
       // TODO(Constellation) searching } is better ?
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -581,7 +582,7 @@ class Parser : private iv::core::Noncopyable<> {
     ParseVariableDeclarations(decls, token_ == Token::TK_CONST, true, res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
     }
@@ -591,7 +592,7 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       failed = true;
@@ -694,7 +695,7 @@ class Parser : private iv::core::Noncopyable<> {
       // through this error and parse WithStatement body
       reporter_->ReportSyntaxError(errors_.back(), begin);
       if (token_ != Token::TK_RPAREN) {
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
       }
       *res = true;  // recovery
@@ -749,7 +750,7 @@ class Parser : private iv::core::Noncopyable<> {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       *res = true;  // recovery
       if (body->IsFailed()) {
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
       }
       return ReturnFailedStatement(begin);
@@ -771,7 +772,7 @@ class Parser : private iv::core::Noncopyable<> {
       // through this error and parse WithStatement body
       reporter_->ReportSyntaxError(errors_.back(), begin);
       if (token_ != Token::TK_RPAREN) {
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
       }
       *res = true;  // recovery
@@ -823,7 +824,7 @@ class Parser : private iv::core::Noncopyable<> {
       // through this error and parse WithStatement body
       reporter_->ReportSyntaxError(errors_.back(), begin);
       if (token_ != Token::TK_RPAREN) {
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
       }
       *res = true;  // recovery
@@ -908,7 +909,7 @@ class Parser : private iv::core::Noncopyable<> {
           if (!*res) {
             reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
             if (token_ != Token::TK_RPAREN) {
-              Skip skip(lexer_.get(), strict_);
+              Skip skip(lexer_, strict_);
               token_ = skip.SkipUntilSemicolonOrLineTerminator();
             }
             *res = true;  // recovery
@@ -968,7 +969,7 @@ class Parser : private iv::core::Noncopyable<> {
           if (!*res) {
             reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
             if (token_ != Token::TK_RPAREN) {
-              Skip skip(lexer_.get(), strict_);
+              Skip skip(lexer_, strict_);
               token_ = skip.SkipUntilSemicolonOrLineTerminator();
             }
             *res = true;  // recovery
@@ -1006,7 +1007,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!ConsumeOrRecovery<Token::TK_SEMICOLON>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
       if (token_ != Token::TK_RPAREN) {
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
       }
       *res = true;  // recovery
@@ -1022,7 +1023,7 @@ class Parser : private iv::core::Noncopyable<> {
       if (!*res) {
         reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
         if (token_ != Token::TK_RPAREN) {
-          Skip skip(lexer_.get(), strict_);
+          Skip skip(lexer_, strict_);
           token_ = skip.SkipUntil(Token::TK_RPAREN);
         }
         *res = true;  // recovery
@@ -1044,7 +1045,7 @@ class Parser : private iv::core::Noncopyable<> {
       if (!*res) {
         reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
         if (token_ != Token::TK_RPAREN) {
-          Skip skip(lexer_.get(), strict_);
+          Skip skip(lexer_, strict_);
           token_ = skip.SkipUntil(Token::TK_RPAREN);
         }
         *res = true;  // recovery
@@ -1097,7 +1098,7 @@ class Parser : private iv::core::Noncopyable<> {
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
-          Skip skip(lexer_.get(), strict_);
+          Skip skip(lexer_, strict_);
           token_ = skip.SkipUntilSemicolonOrLineTerminator();
           *res = true;  // recovery
           return ReturnFailedStatement(begin);
@@ -1115,7 +1116,7 @@ class Parser : private iv::core::Noncopyable<> {
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
-          Skip skip(lexer_.get(), strict_);
+          Skip skip(lexer_, strict_);
           token_ = skip.SkipUntilSemicolonOrLineTerminator();
           *res = true;  // recovery
 //          Statement* stmt = factory_->NewContinueStatement(label, target, begin, lexer_->previous_end_position());
@@ -1127,7 +1128,7 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       Statement* stmt = factory_->NewContinueStatement(label, target, begin, lexer_->previous_end_position());
@@ -1178,7 +1179,7 @@ class Parser : private iv::core::Noncopyable<> {
           ExpectSemicolon(res);
           if (!*res) {
             reporter_->ReportSyntaxError(errors_.back(), begin);
-            Skip skip(lexer_.get(), strict_);
+            Skip skip(lexer_, strict_);
             token_ = skip.SkipUntilSemicolonOrLineTerminator();
             *res = true;  // recovery
             return ReturnFailedStatement(begin);
@@ -1197,7 +1198,7 @@ class Parser : private iv::core::Noncopyable<> {
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
-          Skip skip(lexer_.get(), strict_);
+          Skip skip(lexer_, strict_);
           token_ = skip.SkipUntilSemicolonOrLineTerminator();
           *res = true;  // recovery
         }
@@ -1207,7 +1208,7 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       Statement* stmt = factory_->NewBreakStatement(label, target, begin, lexer_->previous_end_position());
@@ -1254,7 +1255,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!*res) {
       // expression error occurred
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1262,7 +1263,7 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1301,7 +1302,7 @@ class Parser : private iv::core::Noncopyable<> {
       // through this error and parse WithStatement body
       reporter_->ReportSyntaxError(errors_.back(), begin);
       if (token_ != Token::TK_RPAREN) {
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
       }
       *res = true;  // recovery
@@ -1345,7 +1346,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       if (token_ != Token::TK_RPAREN) {
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
       }
       *res = true;  // recovery
@@ -1374,7 +1375,7 @@ class Parser : private iv::core::Noncopyable<> {
         if (!*res) {
           // case clause recovery
           reporter_->ReportSyntaxError(errors_.back(), begin);
-          Skip skip(lexer_.get(), strict_);
+          Skip skip(lexer_, strict_);
           token_ = skip.SkipUntil(Token::TK_RBRACE);
           if (token_ == Token::TK_RBRACE) {
             Next();
@@ -1391,7 +1392,7 @@ class Parser : private iv::core::Noncopyable<> {
         // skip until }
         UNEXPECT_STATEMENT(token_);
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntil(Token::TK_RBRACE);
         if (token_ == Token::TK_RBRACE) {
           Next();
@@ -1503,7 +1504,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!*res) {
       // expr is invalid
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1511,7 +1512,7 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       Statement* stmt = factory_->NewThrowStatement(expr, begin, lexer_->previous_end_position());
@@ -1598,7 +1599,7 @@ class Parser : private iv::core::Noncopyable<> {
       Next();
       IS_STATEMENT(Token::TK_LBRACE) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
         *res = true;  // recovery
         return ReturnFailedStatement(begin);
@@ -1612,7 +1613,7 @@ class Parser : private iv::core::Noncopyable<> {
       Next();
       IS_STATEMENT(Token::TK_LBRACE) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(lexer_.get(), strict_);
+        Skip skip(lexer_, strict_);
         token_ = skip.SkipUntilSemicolonOrLineTerminator();
         *res = true;  // recovery
         return ReturnFailedStatement(begin);
@@ -1648,7 +1649,7 @@ class Parser : private iv::core::Noncopyable<> {
       // debugger TOKEN    ....;  <= SKIP UNTIL THIS
       //
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       Statement* stmt = factory_->NewDebuggerStatement(begin, lexer_->previous_end_position());
@@ -1666,7 +1667,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!*res) {
       // expr is invalid
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1674,7 +1675,7 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1696,7 +1697,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!*res) {
       // expr is invalid
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1732,7 +1733,7 @@ class Parser : private iv::core::Noncopyable<> {
     ExpectSemicolon(res);
     if (!*res) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       Statement* stmt = factory_->NewExpressionStatement(expr, lexer_->previous_end_position());
@@ -1761,7 +1762,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (!*res) {
       // TODO(Constellation) searching } is better ?
       reporter_->ReportSyntaxError(errors_.back(), begin);
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -2175,6 +2176,11 @@ class Parser : private iv::core::Noncopyable<> {
 
         case Token::TK_PERIOD: {
           Next<iv::core::IgnoreReservedWords>();  // IDENTIFIERNAME
+          // completion hook
+          if (lexer_->IsCompletionPoint()) {
+            std::cout << "COMPLETION" << std::endl;
+            Next<iv::core::IgnoreReservedWords>();
+          }
           IS(Token::TK_IDENTIFIER);
           Identifier* const ident = ParseIdentifier(lexer_->Buffer());
           assert(expr && ident);
@@ -2906,7 +2912,7 @@ class Parser : private iv::core::Noncopyable<> {
   }
 
   inline lexer_type* lexer() const {
-    return lexer_.get();
+    return lexer_;
   }
   template<typename LexType>
   inline Token::Type Next() {
@@ -3044,7 +3050,7 @@ class Parser : private iv::core::Noncopyable<> {
   template<iv::core::Token::Type token>
   bool CheckOrRecovery(bool* res) {
     IS_STATEMENT(token) {
-      Skip skip(lexer_.get(), strict_);
+      Skip skip(lexer_, strict_);
       token_ = skip.SkipUntilSemicolonOrLineTerminator();
       *res = true;  // recovery
       return false;
@@ -3066,7 +3072,7 @@ class Parser : private iv::core::Noncopyable<> {
     return factory_->NewTrueLiteral(0, 0);
   }
 
-  std::shared_ptr<lexer_type> lexer_;
+  lexer_type* lexer_;
   Token::Type token_;
   std::string error_;
   std::vector<std::string> errors_;

@@ -40,7 +40,7 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  typedef az::Parser<iv::core::UString, az::Reporter> Parser;
+  typedef az::Parser<iv::core::UString, az::CompleteLexer, az::Reporter> Parser;
 
   iv::cmdline::Parser cmd("az");
   cmd.Add("help",
@@ -49,9 +49,10 @@ int main(int argc, char** argv) {
   cmd.Add("version",
           "version",
           'v', "print the version");
-  cmd.Add("pulse",
-          "pulse",
-          0, "pulse option");
+  cmd.Add<std::size_t>(
+      "pulse",
+      "pulse",
+      0, "pulse option", false, 0);
   cmd.set_footer("[program_file] [arguments]");
 
   const bool cmd_parse_success = cmd.Parse(argc, argv);
@@ -89,15 +90,25 @@ int main(int argc, char** argv) {
   az::StructuredSource structured(src);
   az::Reporter reporter(structured);
   az::AstFactory factory;
-  Parser parser(&factory, src, &reporter, structured);
-  az::FunctionLiteral* const global = parser.ParseProgram();
-  assert(global);
   if (cmd.Exist("pulse")) {
     // pulse mode
+    const std::size_t len = cmd.Get<std::size_t>("pulse");
+    if (len > src.size()) {
+      std::fprintf(stderr, "%s\n", "pulse position is out of range");
+      return EXIT_FAILURE;
+    }
+    az::CompleteLexer lexer(src, len);
+    Parser parser(&factory, src, &lexer, &reporter, structured);
+    az::FunctionLiteral* const global = parser.ParseProgram();
+    assert(global);
     az::cfa2::Completer completer;
     az::cfa2::Complete(global, src, &factory, &reporter, &completer);
   } else {
     // normal analysis
+    az::CompleteLexer lexer(src);
+    Parser parser(&factory, src, &lexer, &reporter, structured);
+    az::FunctionLiteral* const global = parser.ParseProgram();
+    assert(global);
     az::Analyze(global, src, &reporter);
   }
   return 0;
