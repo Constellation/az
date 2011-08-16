@@ -268,16 +268,23 @@ class Parser : private iv::core::Noncopyable<> {
     const bool strict = ParseSourceElements(Token::TK_EOS, body, res);
     assert(error_flag);  // always true. because, end token is Token::TK_EOS
     const std::size_t end_position = lexer_->end_position();
-    return factory_->NewFunctionLiteral(FunctionLiteral::GLOBAL,
-                                        NULL,
-                                        params,
-                                        body,
-                                        scope,
-                                        strict,
-                                        0,
-                                        end_position,
-                                        0,
-                                        end_position);
+    FunctionLiteral* global =
+        factory_->NewFunctionLiteral(FunctionLiteral::GLOBAL,
+                                     NULL,
+                                     params,
+                                     body,
+                                     scope,
+                                     strict,
+                                     0,
+                                     end_position,
+                                     0,
+                                     end_position);
+    if (completer_ &&
+        completer_->HasCompletionPoint() &&
+        !completer_->HasTargetFunction()) {
+      completer_->RegisterTargetFunction(global);
+    }
+    return global;
   }
 
 // SourceElements
@@ -2733,16 +2740,25 @@ class Parser : private iv::core::Noncopyable<> {
     Next();
     const std::size_t end_block_position = lexer_->previous_end_position();
     assert(params && body && scope);
-    return factory_->NewFunctionLiteral(decl_type,
-                                        name,
-                                        params,
-                                        body,
-                                        scope,
-                                        function_is_strict,
-                                        begin_block_position,
-                                        end_block_position,
-                                        begin_position,
-                                        end_block_position);
+
+    FunctionLiteral* function =
+        factory_->NewFunctionLiteral(decl_type,
+                                     name,
+                                     params,
+                                     body,
+                                     scope,
+                                     function_is_strict,
+                                     begin_block_position,
+                                     end_block_position,
+                                     begin_position,
+                                     end_block_position);
+
+    if (completer_ &&
+        completer_->HasCompletionPoint() &&
+        !completer_->HasTargetFunction()) {
+      completer_->RegisterTargetFunction(function);
+    }
+    return function;
   }
 
   Identifier* ParseIdentifierNumber(bool* res) {

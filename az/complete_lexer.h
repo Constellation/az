@@ -4,10 +4,12 @@
 #include <iv/lexer.h>
 namespace az {
 
-class CompleteLexer : public iv::core::Lexer<iv::core::UStringPiece, true, true> {
+class CompleteLexer
+  : public iv::core::Lexer<iv::core::UStringPiece, false, true> {
  public:
-  typedef iv::core::Lexer<iv::core::UStringPiece, true, true> super_type;
+  typedef iv::core::Lexer<iv::core::UStringPiece, false, true> super_type;
 
+  // complete lexer constructor
   CompleteLexer(const iv::core::UString& src, std::size_t len)
     : super_type(),
       original_(src),
@@ -18,7 +20,8 @@ class CompleteLexer : public iv::core::Lexer<iv::core::UStringPiece, true, true>
     super_type::Initialize(&piece_);
   }
 
-  CompleteLexer(const iv::core::UString& src)
+  // normal lexer constructor
+  explicit CompleteLexer(const iv::core::UString& src)
     : super_type(),
       original_(src),
       piece_(src),
@@ -62,4 +65,4 @@ class CompleteLexer : public iv::core::Lexer<iv::core::UStringPiece, true, true>
 };
 
 }  // namespace az
-#endif  //_AZ_COMPLETER_LEXER_H_
+#endif  // _AZ_COMPLETER_LEXER_H_

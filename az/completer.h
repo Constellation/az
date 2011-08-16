@@ -8,16 +8,27 @@ class Completer {
  public:
   Completer()
     : has_completion_point_(false),
-      base_(NULL) {
+      base_(NULL),
+      function_(NULL) {
   }
 
   bool HasCompletionPoint() const {
     return has_completion_point_;
   }
 
+  bool HasTargetFunction() const {
+    return function_;
+  }
+
   void RegisterPropertyCompletion(Expression* base) {
     base_ = base;
     SetCompletionPoint();
+  }
+
+  // register target function that has completion target expr node
+  void RegisterTargetFunction(FunctionLiteral* function) {
+    assert(HasCompletionPoint() && !HasTargetFunction());
+    function_ = function;
   }
 
  private:
@@ -27,6 +38,7 @@ class Completer {
 
   bool has_completion_point_;
   Expression* base_;
+  FunctionLiteral* function_;
 };
 
 }  // namespace az
