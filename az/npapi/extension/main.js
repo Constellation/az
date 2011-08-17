@@ -29,8 +29,9 @@ var onInput = _.debounce(function onInput(ev) {
 
 function onKeyup(ev) {
   if ('PERIOD' === keyString(ev)) {
-    // console.log("COMPLETION FIRED " + area.value + " " + area.selectionStart);
-    analyzer.complete(area.value, area.selectionStart);
+    var res = analyzer.complete(area.value, area.selectionStart);
+    console.log(res);
+    var obj = JSON.parse(res);
   }
 }
 
