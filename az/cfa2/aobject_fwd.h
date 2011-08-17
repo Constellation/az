@@ -32,16 +32,12 @@ class AProp {
  public:
   explicit AProp(const AVal& val)
     : value_(val),
-      writable_(true),
-      enumerable_(true),
-      configurable_(true) {
+      attributes_(A::W | A::E | A::C) {
   }
 
   explicit AProp(const AVal& val, int type)
     : value_(val),
-      writable_(type & A::W),
-      enumerable_(type & A::E),
-      configurable_(type & A::C) {
+      attributes_(type & (A::W | A::E | A::C)) {
   }
 
   const AVal& value() const {
@@ -53,23 +49,20 @@ class AProp {
   }
 
   bool IsWritable() const {
-    return writable_;
+    return attributes_ & A::W;
   }
 
   bool IsEnumerable() const {
-    return enumerable_;
+    return attributes_ & A::E;
   }
 
   bool IsConfigurable() const {
-    return configurable_;
+    return attributes_ & A::C;
   }
 
  private:
-  // TODO(Constellation) use bitset
   AVal value_;
-  bool writable_;
-  bool enumerable_;
-  bool configurable_;
+  int attributes_;
 };
 
 // abstract object
