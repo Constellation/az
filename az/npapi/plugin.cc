@@ -30,7 +30,7 @@ bool NPAPI::HasMethod(NPObject *obj, NPIdentifier methodName) {
   NPUTF8* name = npnfuncs->utf8fromidentifier(methodName);
   const std::string target(name);
   npnfuncs->memfree(name);
-  if (target == "analyze" || target == "completion") {
+  if (target == "analyze" || target == "complete") {
     return true;
   }
   return false;
@@ -49,7 +49,7 @@ bool NPAPI::Invoke(NPObject *obj, NPIdentifier methodName,
     }
     npnfuncs->setexception(obj, "invaid analyze call");
     return false;
-  } else if (target == "completion") {
+  } else if (target == "complete") {
     StringToNPVariant(npnfuncs, "TEST", result);
     return Complete(
         npnfuncs,
