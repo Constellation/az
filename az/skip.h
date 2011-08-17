@@ -16,9 +16,8 @@ class BasicSkip {
   iv::core::Token::Type SkipUntil(iv::core::Token::Type last) {
     using iv::core::Token;
     // skip until this token or semicolon or LineTerminator
+    Token::Type token = lexer_->Peek();
     while (true) {
-      const Token::Type token =
-          lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
       if (token == last) {
         // not consume it
         return token;
@@ -32,6 +31,8 @@ class BasicSkip {
           return token;
         }
       }
+      token =
+          lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
     }
   }
 

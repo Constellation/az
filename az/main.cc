@@ -12,6 +12,7 @@
 #include <az/factory.h>
 #include <az/analyzer.h>
 #include <az/reporter.h>
+#include <az/empty_reporter.h>
 #include <az/completer.h>
 #include <az/parser.h>
 #include <az/symbol.h>
@@ -36,6 +37,25 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
     std::perror(err.c_str());
     return false;
   }
+}
+
+inline int Pulse(const iv::core::UString& src, std::size_t len) {
+  typedef az::Parser<iv::core::UString,
+                     az::CompleteLexer,
+                     az::EmptyReporter,
+                     az::Completer> Parser;
+  az::StructuredSource structured(src);
+  az::EmptyReporter reporter;
+  az::AstFactory factory;
+  az::Completer completer;
+  az::CompleteLexer lexer(src, len);
+  Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
+  az::FunctionLiteral* const global = parser.ParseProgram();
+  assert(global);
+  if (completer.HasCompletionPoint()) {
+    az::cfa2::Complete(global, src, &factory, &reporter, &completer);
+  }
+  return EXIT_SUCCESS;
 }
 
 }  // namespace
@@ -91,9 +111,6 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
     return EXIT_FAILURE;
   }
-  az::StructuredSource structured(src);
-  az::Reporter reporter(structured);
-  az::AstFactory factory;
   if (cmd.Exist("pulse")) {
     // pulse mode
     const std::size_t len = cmd.Get<std::size_t>("pulse");
@@ -101,16 +118,12 @@ int main(int argc, char** argv) {
       std::fprintf(stderr, "%s %lu %s\n", "pulse position", len, "is out of range");
       return EXIT_FAILURE;
     }
-    az::Completer completer;
-    az::CompleteLexer lexer(src, len);
-    Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
-    az::FunctionLiteral* const global = parser.ParseProgram();
-    assert(global);
-//    if (completer.HasCompletionPoint()) {
-//    }
-    az::cfa2::Complete(global, src, &factory, &reporter, &completer);
+    return Pulse(src, len);
   } else {
     // normal analysis
+    az::StructuredSource structured(src);
+    az::Reporter reporter(structured);
+    az::AstFactory factory;
     az::CompleteLexer lexer(src);
     Parser parser(&factory, src, &lexer, &reporter, NULL, structured);
     az::FunctionLiteral* const global = parser.ParseProgram();
