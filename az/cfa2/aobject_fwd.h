@@ -52,6 +52,18 @@ class AProp {
     value_ |= val;
   }
 
+  bool IsWritable() const {
+    return writable_;
+  }
+
+  bool IsEnumerable() const {
+    return enumerable_;
+  }
+
+  bool IsConfigurable() const {
+    return configurable_;
+  }
+
  private:
   // TODO(Constellation) use bitset
   AVal value_;

@@ -67,8 +67,14 @@ AVal AObject::GetStringProperty(Heap* heap) {
   if (string_) {
     return *string_;
   } else {
-    // TODO(Constellation) implement it
-    return AVal(AVAL_NOBASE);
+    AVal result(AVAL_NOBASE);
+    for (Properties::const_iterator it = properties_.begin(),
+         last = properties_.end(); it != last; ++it) {
+      if (it->second.IsEnumerable()) {
+        result |= it->second.value();
+      }
+    }
+    return result;
   }
 }
 
@@ -77,7 +83,15 @@ AVal AObject::GetStringPropertyImpl(std::unordered_set<const AObject*>* already_
   if (string_) {
     return *string_;
   } else {
-    return proto_.GetStringPropertyImpl(already_searched);
+    AVal result(AVAL_NOBASE);
+    for (Properties::const_iterator it = properties_.begin(),
+         last = properties_.end(); it != last; ++it) {
+      if (it->second.IsEnumerable()) {
+        result |= it->second.value();
+      }
+    }
+    const AVal res = proto_.GetStringPropertyImpl(already_searched);
+    return result | res;
   }
 }
 
