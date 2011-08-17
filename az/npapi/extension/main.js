@@ -9,7 +9,7 @@ var line = doc.createElement('div');
 line.setAttribute('class', 'line');
 var lineElements = [];
 var analyzer = doc.getElementById('az');
-var onInput = _.debounce(function onInput() {
+var onInput = _.debounce(function onInput(ev) {
   var res = analyzer.analyze(area.value);
   console.log(res);
   var obj = JSON.parse(res);
@@ -26,6 +26,13 @@ var onInput = _.debounce(function onInput() {
     }
   }
 }, 0);
+
+function onKeyup(ev) {
+  if ('PERIOD' === keyString(ev)) {
+    // console.log("COMPLETION FIRED " + area.value + " " + area.selectionStart);
+    analyzer.complete(area.value, area.selectionStart);
+  }
+}
 
 function addLines(height, top) {
   var n = Math.ceil(height / 16);
@@ -50,6 +57,7 @@ function onScroll(ev) {
 addLines(300, 0);
 
 area.addEventListener('input', onInput, false);
+area.addEventListener('keyup', onKeyup, false);
 area.addEventListener('scroll', onScroll, false);
 
 }
