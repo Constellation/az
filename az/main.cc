@@ -116,10 +116,12 @@ int main(int argc, char** argv) {
     const std::size_t len = cmd.Get<std::size_t>("pulse");
     if (len > src.size()) {
       std::fprintf(stderr,
-                   "%s %lld %s\n",
+                   "%s %lld %s %lld%s\n",
                    "pulse position",
                    static_cast<long long>(len),
-                   "is out of range");
+                   "is out of range (size",
+                   static_cast<long long>(src.size()),
+                   ")");
       return EXIT_FAILURE;
     }
     return Pulse(src, len);
