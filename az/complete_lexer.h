@@ -14,7 +14,7 @@ class CompleteLexer
     : super_type(),
       original_(src),
       piece_(src.data(), len),
-      previous_of_complete_(true),
+      before_complete_(true),
       completion_point_(false) {
     assert(original_.size() >= len);
     super_type::Initialize(&piece_);
@@ -25,7 +25,7 @@ class CompleteLexer
     : super_type(),
       original_(src),
       piece_(src),
-      previous_of_complete_(false),
+      before_complete_(false),
       completion_point_(false) {
     super_type::Initialize(&piece_);
   }
@@ -36,8 +36,8 @@ class CompleteLexer
     const typename Token::Type token =
         super_type::template Next<LexType>(strict);
     if (token == Token::TK_EOS) {
-      if (previous_of_complete()) {
-        previous_of_complete_ = false;
+      if (before_complete()) {
+        before_complete_ = false;
         completion_point_ = true;
         piece_ = original_;
         Initialize(&piece_);
@@ -48,8 +48,8 @@ class CompleteLexer
     return token;
   }
 
-  bool previous_of_complete() const {
-    return previous_of_complete_;
+  bool before_complete() const {
+    return before_complete_;
   }
 
   bool IsCompletionPoint() const {
@@ -60,7 +60,7 @@ class CompleteLexer
 
   const iv::core::UString& original_;
   iv::core::UStringPiece piece_;
-  bool previous_of_complete_;
+  bool before_complete_;
   bool completion_point_;
 };
 
