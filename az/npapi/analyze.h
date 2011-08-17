@@ -12,7 +12,7 @@ bool Analyze(NPNetscapeFuncs* np,
              NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result);
 
 bool Complete(NPNetscapeFuncs* np,
-              NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result);
+              NPObject* receiver, const iv::core::StringPiece& piece, std::size_t len, NPVariant* result);
 
 } }  // namespace az::npapi
 #endif  // _AZ_NPAPI_ANALYZE_H_

@@ -50,13 +50,26 @@ bool NPAPI::Invoke(NPObject *obj, NPIdentifier methodName,
     npnfuncs->setexception(obj, "invaid analyze call");
     return false;
   } else if (target == "complete") {
-    StringToNPVariant(npnfuncs, "TEST", result);
-    return Complete(
-        npnfuncs,
-        obj,
-        iv::core::StringPiece(str.UTF8Characters, str.UTF8Length),
-        100u,
-        result);
+    if (argCount == 2 &&
+        NPVARIANT_IS_STRING(args[0]) &&
+        (NPVARIANT_IS_INT32(args[1]) || NPVARIANT_IS_DOUBLE(args[1]))) {
+      const NPString str = NPVARIANT_TO_STRING(args[0]);
+      std::size_t val;
+      if (NPVARIANT_IS_INT32(args[1])) {
+        val = static_cast<std::size_t>(NPVARIANT_TO_INT32(args[1]));
+      } else {
+        assert(NPVARIANT_IS_DOUBLE(args[1]));
+        val = static_cast<std::size_t>(NPVARIANT_TO_DOUBLE(args[1]));
+      }
+      return Complete(
+          npnfuncs,
+          obj,
+          iv::core::StringPiece(str.UTF8Characters, str.UTF8Length),
+          val,
+          result);
+    }
+    npnfuncs->setexception(obj, "invaid complete call");
+    return false;
   } else {
     npnfuncs->setexception(obj, "no such method");
   }
