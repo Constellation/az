@@ -106,7 +106,7 @@ void Interpreter::Visit(VariableStatement* var) {
       error |= result_.exception();
     }
     if (binding->type() == Binding::HEAP) {
-      heap_->UpdateHeap(binding, AVal(AVAL_NUMBER));
+      heap_->UpdateHeap(binding, result_.result());
     } else if (binding->type() == Binding::STACK) {
       const AVal val(CurrentFrame()->Get(heap_, binding) | result_.result());
       CurrentFrame()->Set(heap_, binding, val);

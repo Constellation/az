@@ -58,6 +58,22 @@ inline int Pulse(const iv::core::UString& src, std::size_t len) {
   return EXIT_SUCCESS;
 }
 
+inline int Tag(const iv::core::UString& src) {
+  typedef az::Parser<iv::core::UString,
+                     az::CompleteLexer,
+                     az::EmptyReporter,
+                     az::Completer> Parser;
+  az::StructuredSource structured(src);
+  az::EmptyReporter reporter;
+  az::AstFactory factory;
+  az::CompleteLexer lexer(src);
+  Parser parser(&factory, src, &lexer, &reporter, NULL, structured);
+  az::FunctionLiteral* const global = parser.ParseProgram();
+  assert(global);
+  az::cfa2::Complete(global, src, &factory, &reporter, NULL);
+  return EXIT_SUCCESS;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -77,6 +93,10 @@ int main(int argc, char** argv) {
       "pulse",
       "pulse",
       0, "pulse option", false, 0);
+  cmd.Add(
+      "tag",
+      "tag",
+      't', "tag option");
   cmd.set_footer("[program_file] [arguments]");
 
   const bool cmd_parse_success = cmd.Parse(argc, argv);
@@ -125,6 +145,8 @@ int main(int argc, char** argv) {
       return EXIT_FAILURE;
     }
     return Pulse(src, len);
+  } else if (cmd.Exist("tag")) {
+    return Tag(src);
   } else {
     // normal analysis
     az::StructuredSource structured(src);

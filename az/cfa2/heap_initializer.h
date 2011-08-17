@@ -25,9 +25,11 @@ void HeapInitializer::Initialize(FunctionLiteral* global) {
   }
 
   // for completion phase
-  if (global == heap_->completer()->GetTargetFunction()) {
-    // this is target function
-    heap_->completer()->GetTargetExpression()->Accept(this);
+  if (heap_->completer()) {
+    if (global == heap_->completer()->GetTargetFunction()) {
+      // this is target function
+      heap_->completer()->GetTargetExpression()->Accept(this);
+    }
   }
 }
 
@@ -291,9 +293,11 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
   }
 
   // for completion phase
-  if (literal == heap_->completer()->GetTargetFunction()) {
-    // this is target function
-    heap_->completer()->GetTargetExpression()->Accept(this);
+  if (heap_->completer()) {
+    if (literal == heap_->completer()->GetTargetFunction()) {
+      // this is target function
+      heap_->completer()->GetTargetExpression()->Accept(this);
+    }
   }
 }
 
