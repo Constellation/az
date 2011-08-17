@@ -51,7 +51,18 @@ void AObject::MergeNumberProperty(Heap* heap) {
   if (number_) {
     return;
   }
-  number_ = std::shared_ptr<AVal>(new AVal(AVAL_NOBASE));
+  AVal result(AVAL_NOBASE);
+  // too tricky...
+  for (Properties::const_iterator it = properties_.begin(),
+       last = properties_.end(); it != last;) {
+    if (IsArrayIndexSymbol(it->first)) {
+      result |= it->second.value();
+      properties_.erase(it++);  // post increment
+    } else {
+      ++it;
+    }
+  }
+  number_ = std::shared_ptr<AVal>(new AVal(result));
   heap->UpdateState();
 }
 
@@ -100,7 +111,18 @@ void AObject::MergeStringProperty(Heap* heap) {
     return;
   }
   MergeNumberProperty(heap);
-  string_ = std::shared_ptr<AVal>(new AVal(AVAL_NOBASE));
+  AVal result(AVAL_NOBASE);
+  // too tricky...
+  for (Properties::const_iterator it = properties_.begin(),
+       last = properties_.end(); it != last;) {
+    if (it->second.IsEnumerable()) {
+      result |= it->second.value();
+      properties_.erase(it++);  // post increment
+    } else {
+      ++it;
+    }
+  }
+  string_ = std::shared_ptr<AVal>(new AVal(result));
   heap->UpdateState();
 }
 
