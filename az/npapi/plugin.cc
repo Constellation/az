@@ -51,8 +51,12 @@ bool NPAPI::Invoke(NPObject *obj, NPIdentifier methodName,
     return false;
   } else if (target == "completion") {
     StringToNPVariant(npnfuncs, "TEST", result);
-    // BOOLEAN_TO_NPVARIANT(false, *result);
-    return true;
+    return Complete(
+        npnfuncs,
+        obj,
+        iv::core::StringPiece(str.UTF8Characters, str.UTF8Length),
+        100u,
+        result);
   } else {
     npnfuncs->setexception(obj, "no such method");
   }
