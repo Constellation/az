@@ -10,10 +10,9 @@
 #include <iv/ustringpiece.h>
 #include <az/cfa2/fwd.h>
 namespace az {
+namespace cfa2 {
 
 class Completer;
-
-namespace cfa2 {
 
 enum BaseType {
   AVAL_NOBASE = 0,

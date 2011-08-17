@@ -1,19 +1,18 @@
-// mark complete tokens
-#ifndef _AZ_COMPLETER_H_
-#define _AZ_COMPLETER_H_
+#ifndef _AZ_BASIC_COMPLETER_H_
+#define _AZ_BASIC_COMPLETER_H_
+#include <az/cfa2/aval_fwd.h>
 #include <az/ast_fwd.h>
 namespace az {
 
-class Completer {
+class BasicCompleter {
  public:
-  Completer()
+  BasicCompleter()
     : has_completion_point_(false),
       base_(NULL),
-      function_(NULL),
-      already_() {
+      function_(NULL) {
   }
 
-  virtual ~Completer() { }
+  virtual ~BasicCompleter() { }
 
   bool HasCompletionPoint() const {
     return has_completion_point_;
@@ -42,15 +41,6 @@ class Completer {
     function_ = function;
   }
 
-  virtual void Notify(Symbol name) {
-    if (already_.find(name) == already_.end()) {
-      already_.insert(name);
-      iv::core::UString target = GetSymbolString(name);
-      iv::core::unicode::FPutsUTF16(stdout, target.begin(), target.end());
-      std::cout << std::endl;
-    }
-  }
-
  private:
   void SetCompletionPoint() {
     has_completion_point_ = true;
@@ -59,7 +49,6 @@ class Completer {
   bool has_completion_point_;
   Expression* base_;
   FunctionLiteral* function_;
-  std::unordered_set<Symbol> already_;
 };
 
 }  // namespace az

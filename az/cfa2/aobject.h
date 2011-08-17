@@ -140,7 +140,7 @@ void AObject::UpdateStringProperty(Heap* heap, const AVal& val) {
 void AObject::Complete(Heap* heap, Completer* completer) const {
   for (Properties::const_iterator it = properties_.begin(),
        last = properties_.end(); it != last; ++it) {
-    completer->Notify(it->first);
+    completer->Notify(it->first, it->second.value());
   }
   proto_.ToObject(heap).Complete(heap, completer);
 }

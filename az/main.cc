@@ -13,7 +13,7 @@
 #include <az/analyzer.h>
 #include <az/reporter.h>
 #include <az/empty_reporter.h>
-#include <az/completer.h>
+#include <az/basic_completer.h>
 #include <az/parser.h>
 #include <az/symbol.h>
 #include <az/cfa2.h>
@@ -43,17 +43,18 @@ inline int Pulse(const iv::core::UString& src, std::size_t len) {
   typedef az::Parser<iv::core::UString,
                      az::CompleteLexer,
                      az::EmptyReporter,
-                     az::Completer> Parser;
+                     az::BasicCompleter> Parser;
   az::StructuredSource structured(src);
   az::EmptyReporter reporter;
   az::AstFactory factory;
-  az::Completer completer;
+  az::cfa2::CLICompleter completer;
   az::CompleteLexer lexer(src, len);
   Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
     az::cfa2::Complete(global, src, &factory, &reporter, &completer);
+    completer.Output();
   }
   return EXIT_SUCCESS;
 }
@@ -62,7 +63,7 @@ inline int Tag(const iv::core::UString& src) {
   typedef az::Parser<iv::core::UString,
                      az::CompleteLexer,
                      az::EmptyReporter,
-                     az::Completer> Parser;
+                     az::BasicCompleter> Parser;
   az::StructuredSource structured(src);
   az::EmptyReporter reporter;
   az::AstFactory factory;
@@ -80,7 +81,7 @@ int main(int argc, char** argv) {
   typedef az::Parser<iv::core::UString,
                      az::CompleteLexer,
                      az::Reporter,
-                     az::Completer> Parser;
+                     az::BasicCompleter> Parser;
 
   iv::cmdline::Parser cmd("az");
   cmd.Add("help",

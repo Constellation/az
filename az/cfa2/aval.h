@@ -1,6 +1,7 @@
 #ifndef _AZ_CFA2_AVAL_H_
 #define _AZ_CFA2_AVAL_H_
 #include <az/cfa2/aval_fwd.h>
+#include <az/cfa2/completer.h>
 #include <az/cfa2/interpreter_fwd.h>
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/result.h>

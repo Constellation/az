@@ -52,9 +52,11 @@ function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
   endif
 
   let l:list = []
-  for l:target in l:output
+  for l:line in l:output
     " TODO(Constellation) more effective proto
-    let l:proto - l:target
+    let l:idx = stridx(l:line, "#")
+    let l:target = l:line[:l:idx - 1]
+    let l:proto = l:line[l:idx + 1:]
     let l:item = {
                 \ "word": l:target,
                 \ "menu": '[az] '. l:proto,

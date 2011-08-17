@@ -10,9 +10,9 @@
 namespace az {
 namespace npapi {
 
-class JSONCompleter : public Completer {
+class JSONCompleter : public BasicCompleter {
  public:
-  void Notify(Symbol name) {
+  void Notify(Symbol name, const AVal& target) {
     if (names_.find(name) == names_.end()) {
       names_.insert(name);
     }

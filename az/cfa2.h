@@ -50,7 +50,8 @@
  * ***** END LICENSE BLOCK ***** */
 #ifndef _AZ_CFA2_H_
 #define _AZ_CFA2_H_
-#include <az/completer.h>
+#include <az/cfa2/completer.h>
+#include <az/cfa2/cli_completer.h>
 #include <az/cfa2/heap.h>
 #include <az/cfa2/aval.h>
 #include <az/cfa2/binding_resolver.h>

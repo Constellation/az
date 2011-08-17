@@ -5,7 +5,7 @@
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/deleter.h>
-#include <az/completer.h>
+#include <az/basic_completer.h>
 #include <az/cfa2/builtins_fwd.h>
 #include <az/cfa2/binding.h>
 #include <az/cfa2/aobject_factory.h>
