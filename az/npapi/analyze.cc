@@ -5,6 +5,8 @@
 #include <az/reporter.h>
 #include <az/parser.h>
 #include <az/symbol.h>
+#include <az/completer.h>
+#include <az/complete_lexer.h>
 #include "analyze.h"
 #include "json_reporter.h"
 #include "utils.h"
@@ -13,6 +15,10 @@ namespace az {
 
 bool Analyze(NPNetscapeFuncs* np,
              NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result) {
+  typedef az::Parser<iv::core::UString,
+                     az::CompleteLexer,
+                     az::JSONReporter,
+                     az::Completer> Parser;
   iv::core::UString src;
   src.reserve(piece.size());
   if (iv::core::unicode::UTF8ToUTF16(
@@ -26,7 +32,8 @@ bool Analyze(NPNetscapeFuncs* np,
   StructuredSource structured(src);
   JSONReporter reporter(structured);
   AstFactory factory;
-  Parser<iv::core::UString, JSONReporter> parser(&factory, src, &reporter, structured);
+  CompleteLexer lexer(src);
+  Parser parser(&factory, src, &lexer, &reporter, NULL, structured);
   FunctionLiteral* const global = parser.ParseProgram();
   if (!global) {
     // syntax error occurred
