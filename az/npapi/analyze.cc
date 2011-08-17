@@ -3,22 +3,24 @@
 #include <az/factory.h>
 #include <az/analyzer.h>
 #include <az/reporter.h>
+#include <az/empty_reporter.h>
 #include <az/parser.h>
 #include <az/symbol.h>
 #include <az/completer.h>
 #include <az/complete_lexer.h>
-#include "analyze.h"
-#include "json_reporter.h"
-#include "utils.h"
-#include "debug.h"
+#include <az/npapi/analyze.h>
+#include <az/npapi/json_reporter.h>
+#include <az/npapi/utils.h>
+#include <az/npapi/debug.h>
 namespace az {
+namespace npapi {
 
 bool Analyze(NPNetscapeFuncs* np,
              NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result) {
   typedef az::Parser<iv::core::UString,
-                     az::CompleteLexer,
-                     az::JSONReporter,
-                     az::Completer> Parser;
+                     CompleteLexer,
+                     JSONReporter,
+                     Completer> Parser;
   iv::core::UString src;
   src.reserve(piece.size());
   if (iv::core::unicode::UTF8ToUTF16(
@@ -45,4 +47,13 @@ bool Analyze(NPNetscapeFuncs* np,
   return true;
 }
 
-}  // namespace az
+bool Complete(NPNetscapeFuncs* np,
+              NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result) {
+  typedef az::Parser<iv::core::UString,
+                     CompleteLexer,
+                     EmptyReporter,
+                     Completer> Parser;
+  return true;
+}
+
+} }  // namespace az::npapi

@@ -6,9 +6,13 @@
 #include <npapi/npruntime.h>
 #include <npapi/npfunctions.h>
 namespace az {
+namespace npapi {
 
 bool Analyze(NPNetscapeFuncs* np,
              NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result);
 
-}  // namespace az
+bool Complete(NPNetscapeFuncs* np,
+              NPObject* receiver, const iv::core::StringPiece& piece, NPVariant* result);
+
+} }  // namespace az::npapi
 #endif  // _AZ_NPAPI_ANALYZE_H_

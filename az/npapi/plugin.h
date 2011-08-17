@@ -3,10 +3,11 @@
 #include <vector>
 #include <string>
 namespace az {
+namespace npapi {
 
 class NPAPI;
 
-NPAPI* npapi = NULL;
+NPAPI* instance = NULL;
 NPNetscapeFuncs* npnfuncs = NULL;
 
 class NPAPI {
@@ -52,5 +53,5 @@ struct NPClass NPAPI::kNpcRefObject = {
   NULL
 };
 
-}  // namespace az
+} }  // namespace az::npapi
 #endif  // _AZ_NPAPI_PLUGIN_H_

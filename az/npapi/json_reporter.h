@@ -8,6 +8,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <iv/detail/tuple.h>
 namespace az {
+namespace npapi {
 
 class JSONReporter : public BasicReporter {
  public:
@@ -107,5 +108,5 @@ class JSONReporter : public BasicReporter {
   const StructuredSource& structured_;
 };
 
-}  // namespace az
+} }  // namespace az::npapi
 #endif  // _AZ_NPAPI_JSON_REPORTER_H_
