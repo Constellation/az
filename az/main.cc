@@ -115,7 +115,11 @@ int main(int argc, char** argv) {
     // pulse mode
     const std::size_t len = cmd.Get<std::size_t>("pulse");
     if (len > src.size()) {
-      std::fprintf(stderr, "%s %lu %s\n", "pulse position", len, "is out of range");
+      std::fprintf(stderr,
+                   "%s %lld %s\n",
+                   "pulse position",
+                   static_cast<long long>(len),
+                   "is out of range");
       return EXIT_FAILURE;
     }
     return Pulse(src, len);
