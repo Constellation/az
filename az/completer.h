@@ -13,6 +13,8 @@ class Completer {
       already_() {
   }
 
+  virtual ~Completer() { }
+
   bool HasCompletionPoint() const {
     return has_completion_point_;
   }
@@ -40,7 +42,7 @@ class Completer {
     function_ = function;
   }
 
-  void Notify(Symbol name) {
+  virtual void Notify(Symbol name) {
     if (already_.find(name) == already_.end()) {
       already_.insert(name);
       iv::core::UString target = GetSymbolString(name);
