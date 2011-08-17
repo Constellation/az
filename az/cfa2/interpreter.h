@@ -67,7 +67,12 @@ void Interpreter::Run(FunctionLiteral* global) {
   // for completion, interpret it once more
   if (heap_->completer() &&
       heap_->completer()->GetTargetFunction()) {
-    EvaluateCompletionTargetFunction(heap_->completer());
+    if (heap_->completer()->GetTargetFunction() == global) {
+      // global evaluation
+      Interpret(global);
+    } else {
+      EvaluateCompletionTargetFunction(heap_->completer());
+    }
   }
 }
 
