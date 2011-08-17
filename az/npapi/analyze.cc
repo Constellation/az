@@ -11,6 +11,7 @@
 #include <az/cfa2.h>
 #include <az/npapi/analyze.h>
 #include <az/npapi/json_reporter.h>
+#include <az/npapi/json_completer.h>
 #include <az/npapi/utils.h>
 #include <az/npapi/debug.h>
 namespace az {
@@ -76,16 +77,19 @@ bool Complete(NPNetscapeFuncs* np,
     np->setexception(receiver, "invaid completion position");
     return false;
   }
-  az::StructuredSource structured(src);
-  az::EmptyReporter reporter;
-  az::AstFactory factory;
-  az::Completer completer;
-  az::CompleteLexer lexer(src, len);
+  StructuredSource structured(src);
+  EmptyReporter reporter;
+  AstFactory factory;
+  JSONCompleter completer;
+  CompleteLexer lexer(src, len);
   Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
-  az::FunctionLiteral* const global = parser.ParseProgram();
+  FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
-    az::cfa2::Complete(global, src, &factory, &reporter, &completer);
+    cfa2::Complete(global, src, &factory, &reporter, &completer);
+    StringToNPVariant(np, completer.Output(), result);
+  } else {
+    StringToNPVariant(np, "null", result);
   }
   return true;
 }
