@@ -6,9 +6,11 @@ var last = 0;
 var area = doc.getElementById('main');
 var lines = doc.getElementById('lines');
 var line = doc.createElement('div');
+
 line.setAttribute('class', 'line');
 var lineElements = [];
 var analyzer = doc.getElementById('az');
+
 var onInput = _.debounce(function onInput(ev) {
   var res = analyzer.analyze(area.value);
   console.log(res);
@@ -27,11 +29,22 @@ var onInput = _.debounce(function onInput(ev) {
   }
 }, 0);
 
+var logs_list = doc.getElementById('logs_list');
+var log_element = doc.createElement('li');
+
 function onKeyup(ev) {
   if ('PERIOD' === keyString(ev)) {
     var res = analyzer.complete(area.value, area.selectionStart);
-    console.log(res);
     var obj = JSON.parse(res);
+    $D(logs_list);
+    var df = doc.createDocumentFragment();
+    for (var k in obj) {
+      console.log(obj[k]);
+      var current = log_element.cloneNode(false);
+      current.appendChild(doc.createTextNode(obj[k]));
+      df.appendChild(current);
+    }
+    logs_list.appendChild(df);
   }
 }
 
@@ -61,6 +74,13 @@ area.addEventListener('input', onInput, false);
 area.addEventListener('keyup', onKeyup, false);
 area.addEventListener('scroll', onScroll, false);
 
+}
+
+function $D(elm){
+  var range = document.createRange();
+  range.selectNodeContents(elm);
+  range.deleteContents();
+  range.detach();
 }
 
 doc.addEventListener('DOMContentLoaded', ready, false);
