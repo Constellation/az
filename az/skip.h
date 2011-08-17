@@ -15,9 +15,27 @@ class BasicSkip {
 
   iv::core::Token::Type SkipUntil(iv::core::Token::Type last) {
     using iv::core::Token;
+    const Token::Type start = lexer_->Peek();
+    // first check
+    if (start == last) {
+      // not consume it
+      return start;
+    } else if (start == Token::TK_EOS ||
+               start == Token::TK_SEMICOLON) {
+      return lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
+    } else {
+      // see LineTerminator (not ILLEGAL)
+      if (start != Token::TK_ILLEGAL &&
+          lexer_->has_line_terminator_before_next()) {
+        // LineTerminator found
+        return start;
+      }
+    }
+
     // skip until this token or semicolon or LineTerminator
-    Token::Type token = lexer_->Peek();
     while (true) {
+      const Token::Type token =
+          lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
       if (token == last) {
         // not consume it
         return token;
@@ -31,8 +49,6 @@ class BasicSkip {
           return token;
         }
       }
-      token =
-          lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
     }
   }
 
