@@ -118,13 +118,14 @@ var KeyEvent = {
 };
 
 function keyString(e){
-  // 初回呼び出し時にキーテーブルを作成する
   var table = [];
-  for(var name in KeyEvent)
-    if(name.indexOf('DOM_VK_')===0)
+  for (var name in KeyEvent) {
+    if (name.indexOf('DOM_VK_') === 0) {
       table[KeyEvent[name]] = name.substring(7);
+    }
+  }
 
-  return (keyString = function(e){
+  return (keyString = function keyString(e) {
     var code = e.keyCode;
     var res = [];
     (e.metaKey  || code===KeyEvent.DOM_VK_META)    && res.push('META');
@@ -132,8 +133,10 @@ function keyString(e){
     (e.shiftKey || code===KeyEvent.DOM_VK_SHIFT)   && res.push('SHIFT');
     (e.altKey   || code===KeyEvent.DOM_VK_ALT)     && res.push('ALT');
 
-    if((code < KeyEvent.DOM_VK_SHIFT || KeyEvent.DOM_VK_ALT < code) && code != KeyEvent.DOM_VK_META)
+    if ((code < KeyEvent.DOM_VK_SHIFT || KeyEvent.DOM_VK_ALT < code) &&
+        code != KeyEvent.DOM_VK_META) {
       res.push(table[code]);
+    }
 
     return res.join(' + ');
   })(e);
