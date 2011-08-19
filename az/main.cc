@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
                      az::CompleteLexer,
                      az::Reporter,
                      az::BasicCompleter> Parser;
-
   iv::cmdline::Parser cmd("az");
   cmd.Add("help",
           "help",
