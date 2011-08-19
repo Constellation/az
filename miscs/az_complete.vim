@@ -13,6 +13,9 @@ let s:source = {
       \ }
 
 function! s:source.initialize() "{{{
+  if !exists('g:az_complete_auto')
+    let g:az_complete_auto = 0
+  endif
 endfunction "}}}
 
 function! s:source.finalize() "{{{
@@ -27,12 +30,11 @@ function! s:source.get_keyword_pos(cur_text) "{{{
   while l:start > 0 && l:line[l:start - 1] =~ '\i'
     let l:start -= 1
   endwhile
-  " echo l:start
   return l:start
 endfunction "}}}
 
 function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
-  if neocomplcache#is_auto_complete()
+  if neocomplcache#is_auto_complete() && g:az_complete_auto == 0
     return []
   endif
 
@@ -42,10 +44,8 @@ function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
   let l:escaped_tempfile = shellescape(l:tempfile)
 
   let l:offset = line2byte('.') + a:cur_keyword_pos - 1
-  " echo l:offset
   let l:command = 'az ' . l:escaped_tempfile . ' --pulse=' . l:offset
   let l:output = split(neocomplcache#system(l:command), "\n")
-  " echo l:output
   call delete(l:tempfile)
   if v:shell_error
     return []
@@ -53,7 +53,6 @@ function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
 
   let l:list = []
   for l:line in l:output
-    " TODO(Constellation) more effective proto
     let l:idx = stridx(l:line, "#")
     let l:target = l:line[:l:idx - 1]
     let l:proto = l:line[l:idx + 1:]
