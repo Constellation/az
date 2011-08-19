@@ -2514,12 +2514,20 @@ class Parser : private iv::core::Noncopyable<> {
           map.insert(std::make_pair(ident, ObjectLiteral::DATA));
         } else {
           if (it->second != ObjectLiteral::DATA) {
-            RAISE("accessor property and data property "
-                  "exist with the same name");
+            // TODO:(Constellation)
+            // check this node is failed
+            RAISE_STATEMENT("accessor property and data property "
+                            "exist with the same name");
+            reporter_->ReportSyntaxError(errors_.back(), begin);
+            *res = true;  // recovery
           } else {
             if (strict_) {
-              RAISE("multiple data property assignments "
-                    "with the same name not allowed in strict code");
+              // TODO:(Constellation)
+              // check this node is failed
+              RAISE_STATEMENT("multiple data property assignments "
+                              "with the same name not allowed in strict code");
+              reporter_->ReportSyntaxError(errors_.back(), begin);
+              *res = true;  // recovery
             }
           }
         }
