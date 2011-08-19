@@ -13,6 +13,25 @@ namespace core {
 namespace ast {
 
 template<>
+class ScopeBase<az::AstFactory>
+  : public Inherit<az::AstFactory, kScope> {
+ public:
+  friend class az::AstFactory;
+  typedef typename SpaceVector<az::AstFactory, FunctionLiteral<az::AstFactory>* >::type FunctionLiterals;
+
+  void RegisterFunctionLiteral(FunctionLiteral<az::AstFactory>* literal) {
+    literals_->push_back(literal);
+  }
+
+  const FunctionLiterals& GetFunctionLiteralsUnderThis() const {
+    return *literals_;
+  }
+
+ private:
+  FunctionLiterals* literals_;
+};
+
+template<>
 class AstNodeBase<az::AstFactory>
   : public Inherit<az::AstFactory, kAstNode> {
  public:
@@ -126,6 +145,7 @@ class FunctionLiteralBase<az::AstFactory>
  private:
   StatementType* normal_;
   StatementType* raised_;
+  bool reachable_;
 };
 
 template<>

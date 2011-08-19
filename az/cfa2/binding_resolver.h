@@ -495,6 +495,9 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
     // first Statement
     literal->set_normal(literal->body().front());
   }
+
+  heap_->InitWaitingResults(literal);
+
   MarkStatements(literal->body());
 
   // for completion phase
@@ -502,6 +505,15 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
     if (literal == heap_->completer()->GetTargetFunction()) {
       // this is target function
       heap_->completer()->GetTargetExpression()->Accept(this);
+    }
+  }
+
+  for (Scope::FunctionLiterals::const_iterator it = scope.GetFunctionLiteralsUnderThis().begin(),
+       last = scope.GetFunctionLiteralsUnderThis().end(); it != last; ++it) {
+    if (!heap_->IsWaited(*it)) {
+      // not reachable function
+      heap_->RegisterNotReachable(*it);
+      Visit(*it);
     }
   }
 

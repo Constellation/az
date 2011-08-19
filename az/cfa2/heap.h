@@ -30,8 +30,9 @@ class Heap : private iv::core::Noncopyable<Heap> {
       factory_(),
       ast_factory_(ast_factory),
       completer_(completer),
-      state_(kInitialState) {
-
+      state_(kInitialState),
+      waiting_result_(),
+      not_reachable_functions_() {
     const std::vector<AVal> empty;
     // initialize builtin objects
 
@@ -1057,6 +1058,14 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return std::shared_ptr<Execution>();
   }
 
+  void RegisterNotReachable(FunctionLiteral* literal) {
+    not_reachable_functions_.insert(literal);
+  }
+
+  bool IsNotReachable(FunctionLiteral* literal) {
+    return not_reachable_functions_.find(literal) != not_reachable_functions_.end();
+  }
+
   // prototype getters
 
   const AVal& GetArrayPrototype() const {
@@ -1153,6 +1162,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
   WaitingMap waiting_result_;
+  std::unordered_set<FunctionLiteral*> not_reachable_functions_;
 };
 
 } }  // namespace az::cfa2

@@ -2524,7 +2524,14 @@ class Parser : private iv::core::Noncopyable<> {
           }
         }
       } else {
-        RAISE_RECOVERVABLE("invalid property name");
+        // FIXME:(Constellation) more effective method
+//        const std::size_t end = lexer_->begin_position();
+//        Next();
+//        RAISE_STATEMENT("invalid property name");
+//        reporter_->ReportSyntaxError(errors_.back(), begin);
+//        *res = true;  // recovery
+//        return factory_->NewObjectLiteral(prop, begin, end);
+        RAISE("invalid property name");
       }
 
       if (token_ != Token::TK_RBRACE) {
@@ -2754,7 +2761,8 @@ class Parser : private iv::core::Noncopyable<> {
                                      end_block_position,
                                      begin_position,
                                      end_block_position);
-
+    // register function literal to upper scope
+    scope_->GetUpperScope()->RegisterFunctionLiteral(function);
     if (completer_ &&
         completer_->HasCompletionPoint() &&
         !completer_->HasTargetFunction()) {

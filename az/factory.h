@@ -20,7 +20,9 @@ class AstFactory
   }
 
   Scope* NewScope(FunctionLiteral::DeclType type) {
-    return new (this) Scope(this, type == FunctionLiteral::GLOBAL);
+    Scope* scope = new (this) Scope(this, type == FunctionLiteral::GLOBAL);
+    scope->literals_ = NewVector<FunctionLiteral*>();
+    return scope;
   }
 
   template<typename Range>

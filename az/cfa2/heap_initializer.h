@@ -19,8 +19,6 @@ void HeapInitializer::Initialize(FunctionLiteral* global) {
     }
   }
 
-  heap_->InitWaitingResults(global);
-
   for (Statements::const_iterator it = global->body().begin(),
        last = global->body().end(); it != last; ++it) {
     (*it)->Accept(this);
@@ -31,6 +29,14 @@ void HeapInitializer::Initialize(FunctionLiteral* global) {
     if (global == heap_->completer()->GetTargetFunction()) {
       // this is target function
       heap_->completer()->GetTargetExpression()->Accept(this);
+    }
+  }
+
+  for (Scope::FunctionLiterals::const_iterator it = scope.GetFunctionLiteralsUnderThis().begin(),
+       last = scope.GetFunctionLiteralsUnderThis().end(); it != last; ++it) {
+    if (heap_->IsNotReachable(*it)) {
+      // not reachable function
+      Visit(*it);
     }
   }
 }
@@ -285,7 +291,6 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
 
   // insert current function summary
   heap_->InitSummary(literal, obj);
-  heap_->InitWaitingResults(literal);
 
   for (Statements::const_iterator it = literal->body().begin(),
        last = literal->body().end(); it != last; ++it) {
@@ -297,6 +302,16 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
     if (literal == heap_->completer()->GetTargetFunction()) {
       // this is target function
       heap_->completer()->GetTargetExpression()->Accept(this);
+    }
+  }
+
+  const Scope& scope = literal->scope();
+
+  for (Scope::FunctionLiterals::const_iterator it = scope.GetFunctionLiteralsUnderThis().begin(),
+       last = scope.GetFunctionLiteralsUnderThis().end(); it != last; ++it) {
+    if (heap_->IsNotReachable(*it)) {
+      // not reachable function
+      Visit(*it);
     }
   }
 }
