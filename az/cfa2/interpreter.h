@@ -57,8 +57,7 @@ void Interpreter::Run(FunctionLiteral* global) {
   }
 
   // for completion, interpret it once more
-  if (heap_->completer() &&
-      heap_->completer()->GetTargetFunction()) {
+  if (heap_->completer() && heap_->completer()->GetTargetFunction()) {
     if (heap_->completer()->GetTargetFunction() == global) {
       // global evaluation
       Interpret(global);
@@ -380,7 +379,7 @@ void Interpreter::Visit(ConditionalExpression* cond) {
   cond->left()->Accept(this);
   const Result lr = result_;  // left result
   cond->right()->Accept(this);
-  const Result rr = result_;  // right result 
+  const Result rr = result_;  // right result
   // aggregate error and result values
   AVal err(AVAL_NOBASE);
   bool error_found = false;
@@ -770,7 +769,8 @@ Result Interpreter::EvaluateFunction(AObject* function,
   while (true) {
     try {
       State start_state = heap_->state();
-      std::shared_ptr<Heap::Execution> prev = heap_->SearchWaitingResults(literal, this_binding, args);
+      std::shared_ptr<Heap::Execution> prev =
+          heap_->SearchWaitingResults(literal, this_binding, args);
       if (!prev) {
         // this is first time call
         // so, add it to execution queue
@@ -799,7 +799,8 @@ Result Interpreter::EvaluateFunction(AObject* function,
         Identifier* name = literal->name().Address();
         Binding* binding = name->refer();
         assert(binding);
-        CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(literal)));
+        CurrentFrame()->Set(heap_, binding,
+                            AVal(heap_->GetDeclObject(literal)));
       }
 
       // parameter binding initialization
@@ -809,7 +810,8 @@ Result Interpreter::EvaluateFunction(AObject* function,
            last = literal->params().end(); it != last; ++it, ++index) {
         Binding* binding = (*it)->refer();
         assert(binding);
-        const AVal target(args_size > index ? args[index] : AVal(AVAL_UNDEFINED));
+        const AVal target((args_size > index) ?
+                          args[index] : AVal(AVAL_UNDEFINED));
         if (binding->type() == Binding::HEAP) {
           heap_->UpdateHeap(binding, target);
         }
@@ -990,7 +992,8 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
   std::shared_ptr<Heap::Execution> current;
   while (true) {
     try {
-      std::shared_ptr<Heap::Execution> prev = heap_->SearchWaitingResults(literal, this_binding, args);
+      std::shared_ptr<Heap::Execution> prev =
+          heap_->SearchWaitingResults(literal, this_binding, args);
       if (!prev) {
         // this is first time call
         // so, add it to execution queue
@@ -1019,7 +1022,8 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
         Identifier* name = literal->name().Address();
         Binding* binding = name->refer();
         assert(binding);
-        CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(literal)));
+        CurrentFrame()->Set(heap_,
+                            binding, AVal(heap_->GetDeclObject(literal)));
       }
 
       // parameter binding initialization
@@ -1029,7 +1033,8 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
            last = literal->params().end(); it != last; ++it, ++index) {
         Binding* binding = (*it)->refer();
         assert(binding);
-        const AVal target(args_size > index ? args[index] : AVal(AVAL_UNDEFINED));
+        const AVal target((args_size > index) ?
+                          args[index] : AVal(AVAL_UNDEFINED));
         if (binding->type() == Binding::HEAP) {
           heap_->UpdateHeap(binding, target);
         }

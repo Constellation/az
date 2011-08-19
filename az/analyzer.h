@@ -2,7 +2,6 @@
 // rewrite AST and analyze stack and heap variables status
 #ifndef _AZ_ANALYZER_H_
 #define _AZ_ANALYZER_H_
-#include <iostream>
 #include <iv/ast_visitor.h>
 #include <iv/utils.h>
 #include <iv/maybe.h>
@@ -79,7 +78,7 @@ class ContinuationStatus : private iv::core::Noncopyable<ContinuationStatus> {
 
 class StatusSetRAII : private iv::core::Noncopyable<StatusSetRAII> {
  public:
-  StatusSetRAII(ContinuationStatus* status)
+  explicit StatusSetRAII(ContinuationStatus* status)
     : status_(status),
       previous_(status->current()),
       set_() {
@@ -114,7 +113,8 @@ class Analyzer
   void Analyze(FunctionLiteral* global) {
     // Global Settings
     normal_ = NULL;
-    std::shared_ptr<ExecutionContext> ctx = ExecutionContext::CreateGlobal(global);
+    std::shared_ptr<ExecutionContext> ctx =
+        ExecutionContext::CreateGlobal(global);
     AnalyzeFunctionLiteral(global, ctx);
   }
 
@@ -327,7 +327,8 @@ class Analyzer
 
     stmt->set_normal(stmt->body());
     if (stmt->init()) {
-      if (VariableStatement* var = stmt->init().Address()->AsVariableStatement()) {
+      if (VariableStatement* var =
+          stmt->init().Address()->AsVariableStatement()) {
         Visit(var->decls().front());
         const Symbol name = Intern(var->decls().front()->name()->value());
         Var& ref = context_->GetVariableEnvironment()->Get(name);
@@ -409,7 +410,8 @@ class Analyzer
       stmt->expr().Address()->Accept(this);
       if (!context_->InsertReturnType(type_)) {
         if (!type_.IsVacantType()) {
-          reporter_->ReportTypeConflict(*stmt, context_->GetReturnType(), type_);
+          reporter_->ReportTypeConflict(*stmt,
+                                        context_->GetReturnType(), type_);
         }
       }
     } else {
@@ -1169,7 +1171,8 @@ class Analyzer
   void Visit(IdentifierAccess* prop) {
     prop->target()->Accept(this);
     if (!type_.IsVacantType() &&
-        (type_.IsPrimaryTyped(TYPE_UNDEFINED) || type_.IsPrimaryTyped(TYPE_NULL))) {
+        (type_.IsPrimaryTyped(TYPE_UNDEFINED) ||
+         type_.IsPrimaryTyped(TYPE_NULL))) {
       reporter_->ReportIdentifierAccessToNotObjectType(*prop, type_);
     }
     // TODO(Constellation) fix
@@ -1179,12 +1182,14 @@ class Analyzer
   void Visit(IndexAccess* prop) {
     prop->target()->Accept(this);
     if (!type_.IsVacantType() &&
-        (type_.IsPrimaryTyped(TYPE_UNDEFINED) || type_.IsPrimaryTyped(TYPE_NULL))) {
+        (type_.IsPrimaryTyped(TYPE_UNDEFINED) ||
+         type_.IsPrimaryTyped(TYPE_NULL))) {
       reporter_->ReportIndexAccessToNotObjectType(*prop, type_);
     }
     prop->key()->Accept(this);
     if (!type_.IsVacantType() &&
-        (!type_.IsPrimaryTyped(TYPE_STRING) && !type_.IsPrimaryTyped(TYPE_NUMBER))) {
+        (!type_.IsPrimaryTyped(TYPE_STRING) &&
+         !type_.IsPrimaryTyped(TYPE_NUMBER))) {
       reporter_->ReportIndexKeyIsNotStringOrNumber(*prop, type_);
     }
     // TODO(Constellation) fix
@@ -1243,8 +1248,10 @@ class Analyzer
   }
 
   // remember this variable is located at this function stack
-  bool InstantiateVariable(Identifier* ident, VariableType type = VARIABLE_STACK) {
-    return context_->GetVariableEnvironment()->Instantiate(Intern(ident->value()));
+  bool InstantiateVariable(Identifier* ident,
+                           VariableType type = VARIABLE_STACK) {
+    return
+        context_->GetVariableEnvironment()->Instantiate(Intern(ident->value()));
   }
 
   bool CheckDeadStatement(const Statement* stmt) {
@@ -1276,7 +1283,8 @@ class Analyzer
 };
 
 template<typename Source, typename Reporter>
-inline void Analyze(FunctionLiteral* global, const Source& src, Reporter* reporter) {
+inline void Analyze(FunctionLiteral* global,
+                    const Source& src, Reporter* reporter) {
   Analyzer<Source, Reporter> analyzer(src, reporter);
   analyzer.Analyze(global);
 }
