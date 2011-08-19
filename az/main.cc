@@ -16,6 +16,7 @@
 #include <az/basic_completer.h>
 #include <az/parser.h>
 #include <az/symbol.h>
+#include <az/debug_log.h>
 #include <az/cfa2.h>
 namespace {
 
@@ -82,6 +83,7 @@ int main(int argc, char** argv) {
                      az::CompleteLexer,
                      az::Reporter,
                      az::BasicCompleter> Parser;
+  az::DebugLog("PROGRAM START");
   iv::cmdline::Parser cmd("az");
   cmd.Add("help",
           "help",

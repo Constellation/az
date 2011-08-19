@@ -27,7 +27,8 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
   typedef std::vector<Line> Lines;
 
   explicit StructuredSource(const iv::core::UStringPiece& str)
-    : source_() {
+    : source_(),
+      original_(str) {
     std::size_t pos = 0;
     std::size_t line_start_pos = pos;
     iv::core::UStringPiece::const_iterator line_start_it = str.begin();
@@ -67,6 +68,10 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
     return source_;
   }
 
+  const iv::core::UStringPiece& original() const {
+    return original_;
+  }
+
   struct UpperBoundFinder {
     bool operator()(const Line& lhs, std::size_t rhs) const {
       return std::get<0>(lhs) < rhs;
@@ -97,6 +102,7 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
 
  private:
   Lines source_;
+  iv::core::UStringPiece original_;
 };
 
 }  // namespace az

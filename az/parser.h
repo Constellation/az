@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <iostream>
 #include <iv/detail/unordered_map.h>
 #include <iv/detail/unordered_set.h>
 #include <iv/detail/type_traits.h>
@@ -24,6 +25,7 @@
 #include <az/ast_fwd.h>
 #include <az/token.h>
 #include <az/skip.h>
+#include <az/debug_log.h>
 #include <az/complete_lexer.h>
 namespace az {
 
@@ -2949,28 +2951,53 @@ class Parser : private iv::core::Noncopyable<> {
   inline lexer_type* lexer() const {
     return lexer_;
   }
+
   template<typename LexType>
   inline Token::Type Next() {
-    do {
+    while (true) {
       token_ = lexer_->Next<LexType>(strict_);
-    } while (token_ == Token::TK_SINGLE_LINE_COMMENT ||
-             token_ == Token::TK_MULTI_LINE_COMMENT);
-    return token_;
+      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+          token_ == Token::TK_MULTI_LINE_COMMENT) {
+        HandleComment(token_);
+      } else {
+        return token_;
+      }
+    }
   }
+
   inline Token::Type Next() {
-    do {
-      token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict_);
-    } while (token_ == Token::TK_SINGLE_LINE_COMMENT ||
-             token_ == Token::TK_MULTI_LINE_COMMENT);
-    return token_;
+    return Next<iv::core::IdentifyReservedWords>();
   }
+
   inline Token::Type Next(bool strict) {
-    do {
+    while (true) {
       token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict);
-    } while (token_ == Token::TK_SINGLE_LINE_COMMENT ||
-             token_ == Token::TK_MULTI_LINE_COMMENT);
-    return token_;
+      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+          token_ == Token::TK_MULTI_LINE_COMMENT) {
+        HandleComment(token_);
+      } else {
+        return token_;
+      }
+    }
   }
+
+  void HandleComment(Token::Type token) {
+    DebugLog("COMMENT");
+    const std::size_t begin = lexer_->begin_position();
+    const std::size_t end = lexer_->end_position();
+    const iv::core::UStringPiece comment =
+        structured_.original().substr(begin, end - begin);
+    DebugLog(comment);
+    if (comment.size() >= 5 &&  // target comment is more than "/***/"
+        token == Token::TK_MULTI_LINE_COMMENT) {
+      if (comment[0] == '/' && comment[1] == '*' && comment[2] == '*') {
+        // this is JSDoc start mark
+        // so, parse JSDoc
+        DebugLog("JSDOC");
+      }
+    }
+  }
+
   inline Token::Type Peek() const {
     return token_;
   }
