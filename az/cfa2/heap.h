@@ -25,14 +25,15 @@ class Heap : private iv::core::Noncopyable<Heap> {
     : heap_(),
       declared_heap_bindings_(),
       decls_(),
-      binding_heap_(),
       summaries_(),
       factory_(),
       ast_factory_(ast_factory),
       completer_(completer),
       state_(kInitialState),
       waiting_result_(),
-      not_reachable_functions_() {
+      not_reachable_functions_(),
+      object_literal_member_(),
+      prototype_member_() {
     const std::vector<AVal> empty;
     // initialize builtin objects
 
@@ -902,6 +903,18 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return decls_.find(node)->second;
   }
 
+  void DeclObjectLiteralMember(FunctionLiteral* literal, AObject* obj) {
+    object_literal_member_[literal] = obj;
+  }
+
+  AObject* GetLiteralMemberBase(FunctionLiteral* literal) const {
+    std::unordered_map<FunctionLiteral*, AObject*>::const_iterator it = object_literal_member_.find(literal);
+    if (it != object_literal_member_.end()) {
+      return it->second;
+    }
+    return NULL;
+  }
+
   void UpdateHeap(Binding* binding, const AVal& val) {
     AVal old(binding->value());
     if (!(val < old)) {
@@ -1130,7 +1143,6 @@ class Heap : private iv::core::Noncopyable<Heap> {
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
   std::unordered_map<AstNode*, AObject*> decls_;
-  std::unordered_map<Binding*, AVal> binding_heap_;
   Summaries summaries_;
   AObjectFactory factory_;
   AstFactory* ast_factory_;
@@ -1163,6 +1175,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
   WaitingMap waiting_result_;
   std::unordered_set<FunctionLiteral*> not_reachable_functions_;
+  std::unordered_map<FunctionLiteral*, AObject*> object_literal_member_;
+  std::unordered_map<FunctionLiteral*, AObject*> prototype_member_;
 };
 
 } }  // namespace az::cfa2

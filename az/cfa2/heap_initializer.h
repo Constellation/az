@@ -257,7 +257,12 @@ void HeapInitializer::Visit(ObjectLiteral* literal) {
   for (ObjectLiteral::Properties::const_iterator it = literal->properties().begin(),
        last = literal->properties().end(); it != last; ++it) {
     const ObjectLiteral::Property& prop = *it;
-    std::get<2>(prop)->Accept(this);
+    Expression* expr = std::get<2>(prop);
+    if (FunctionLiteral* literal = expr->AsFunctionLiteral()) {
+      // specialized path
+      heap_->DeclObjectLiteralMember(literal, obj);
+    }
+    expr->Accept(this);
   }
 }
 

@@ -47,10 +47,12 @@ void Interpreter::Run(FunctionLiteral* global) {
     if (!it->second->IsExists()) {
       // not summarized yet
       const std::vector<AVal> vec(it->first->params().size(), AVal(AVAL_NOBASE));
-      EvaluateFunction(it->second->target(),
-                       AVal(heap_->MakeObject()),
-                       vec,
-                       false);
+      if (AObject* obj = heap_->GetLiteralMemberBase(it->first)) {
+        EvaluateFunction(it->second->target(), AVal(obj), vec, false);
+      } else {
+        EvaluateFunction(it->second->target(),
+                         AVal(heap_->MakeObject()), vec, false);
+      }
     }
   }
 
