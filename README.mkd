@@ -2,14 +2,14 @@
 
 Az is ECMAScript Analyzing tools
 
-# Az / CFA2 algorithm License
+# Az/CFA2 License
 
 az/cfa2 is highly inspired from Doctor.JS.
 
 in Az, newly created source code is under New BSD License
 and, Doctor.JS source code is under MPL 1.1/GPL 2.0/LGPL 2.1
 
-see az/cfa2.h
+see az/cfa2.h and az/cfa2/README.mkd
 
 # BUILD
 
