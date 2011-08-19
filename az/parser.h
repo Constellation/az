@@ -2951,13 +2951,25 @@ class Parser : private iv::core::Noncopyable<> {
   }
   template<typename LexType>
   inline Token::Type Next() {
-    return token_ = lexer_->Next<LexType>(strict_);
+    do {
+      token_ = lexer_->Next<LexType>(strict_);
+    } while (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+             token_ == Token::TK_MULTI_LINE_COMMENT);
+    return token_;
   }
   inline Token::Type Next() {
-    return token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict_);
+    do {
+      token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict_);
+    } while (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+             token_ == Token::TK_MULTI_LINE_COMMENT);
+    return token_;
   }
   inline Token::Type Next(bool strict) {
-    return token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict);
+    do {
+      token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict);
+    } while (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+             token_ == Token::TK_MULTI_LINE_COMMENT);
+    return token_;
   }
   inline Token::Type Peek() const {
     return token_;

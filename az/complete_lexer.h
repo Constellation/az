@@ -5,9 +5,9 @@
 namespace az {
 
 class CompleteLexer
-  : public iv::core::Lexer<iv::core::UStringPiece, false, true> {
+  : public iv::core::Lexer<iv::core::UStringPiece, true, true> {
  public:
-  typedef iv::core::Lexer<iv::core::UStringPiece, false, true> super_type;
+  typedef iv::core::Lexer<iv::core::UStringPiece, true, true> super_type;
 
   // complete lexer constructor
   CompleteLexer(const iv::core::UString& src, std::size_t len)

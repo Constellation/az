@@ -12,7 +12,6 @@
 #include <az/factory.h>
 #include <az/environment.h>
 #include <az/execution_context.h>
-
 namespace az {
 namespace detail {
 
