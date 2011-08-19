@@ -2524,14 +2524,12 @@ class Parser : private iv::core::Noncopyable<> {
           }
         }
       } else {
-        // FIXME:(Constellation) more effective method
-//        const std::size_t end = lexer_->begin_position();
-//        Next();
-//        RAISE_STATEMENT("invalid property name");
-//        reporter_->ReportSyntaxError(errors_.back(), begin);
-//        *res = true;  // recovery
-//        return factory_->NewObjectLiteral(prop, begin, end);
-        RAISE("invalid property name");
+        const std::size_t end = lexer_->begin_position();
+        Next();
+        RAISE_STATEMENT("invalid property name");
+        reporter_->ReportSyntaxError(errors_.back(), begin);
+        *res = true;  // recovery
+        return factory_->NewObjectLiteral(prop, begin, end);
       }
 
       if (token_ != Token::TK_RBRACE) {

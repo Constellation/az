@@ -936,17 +936,17 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
     //
     // this is not invalid code,
     // but generally raise ReferenceError
+    //
+    // TODO(Constellation) ReferenceError AVal required
     lhs->Accept(this);
     return res;
   } else {
     assert(lhs->AsPropertyAccess());
     if (IdentifierAccess* identac = lhs->AsIdentifierAccess()) {
+      const Symbol key = Intern(identac->key()->value());
       identac->target()->Accept(this);
       const Result target(result_);
-      target.result().UpdateProperty(
-          heap_,
-          Intern(identac->key()->value()),
-          res.result());
+      target.result().UpdateProperty(heap_, key, res.result());
       res.MergeException(target);
       return res;
     } else {
