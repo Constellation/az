@@ -424,9 +424,7 @@ void BindingResolver::Visit(ObjectLiteral* literal) {
   for (ObjectLiteral::Properties::const_iterator it = literal->properties().begin(),
        last = literal->properties().end(); it != last; ++it) {
     const ObjectLiteral::Property& prop = *it;
-    if (std::get<0>(prop) == ObjectLiteral::DATA) {
-      std::get<2>(prop)->Accept(this);
-    }
+    std::get<2>(prop)->Accept(this);
   }
 }
 
