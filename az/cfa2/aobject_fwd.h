@@ -70,7 +70,7 @@ class AObject
   : private iv::core::Noncopyable<AObject>,
     public iv::core::SpaceObject {
  public:
-  typedef std::unordered_map<Symbol, AProp> Properties;
+  typedef std::map<Symbol, AProp> Properties;
   AObject()
     : proto_(AVAL_NOBASE),
       number_(),
