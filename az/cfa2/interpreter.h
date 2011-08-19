@@ -14,16 +14,6 @@ namespace cfa2 {
 class Work { };
 
 void Interpreter::Run(FunctionLiteral* global) {
-  {
-    // initialize heap
-    //
-    // initialize summaries and heap static objects declaration
-    // static objects are bound to heap by AstNode address and
-    // summaries are bound to heap by FunctionLiteral address
-    HeapInitializer initializer(heap_);
-    initializer.Initialize(global);
-  }
-
   Frame frame(this);
   frame.SetThis(heap_->GetGlobal());
   const Scope& scope = global->scope();

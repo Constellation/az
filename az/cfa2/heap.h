@@ -1010,6 +1010,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
         std::make_pair(lit, std::shared_ptr<ExecutionQueue>(new ExecutionQueue())));
   }
 
+  bool IsWaited(FunctionLiteral* lit) const {
+    return waiting_result_.find(lit) != waiting_result_.end();
+  }
+
   std::shared_ptr<Execution> AddWaitingResults(
       FunctionLiteral* lit,
       const AVal& this_binding,

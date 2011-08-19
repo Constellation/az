@@ -19,6 +19,8 @@ void HeapInitializer::Initialize(FunctionLiteral* global) {
     }
   }
 
+  heap_->InitWaitingResults(global);
+
   for (Statements::const_iterator it = global->body().begin(),
        last = global->body().end(); it != last; ++it) {
     (*it)->Accept(this);

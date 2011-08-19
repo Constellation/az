@@ -72,6 +72,18 @@ inline void Complete(FunctionLiteral* global,
     resolver.Resolve(global);
   }
   {
+    // initialize heap
+    //
+    // initialize summaries and heap static objects declaration
+    // static objects are bound to heap by AstNode address and
+    // summaries are bound to heap by FunctionLiteral address
+    HeapInitializer initializer(&heap);
+    initializer.Initialize(global);
+  }
+  if (completer && !heap.IsWaited(completer->GetTargetFunction())) {
+    return;
+  }
+  {
     // execute abstract interpreter
     Interpreter interp(&heap);
     interp.Run(global);
