@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_LEXER_H_
-#define _AZ_JSDOC_LEXER_H_
+#ifndef _AZ_JSDOC_PARSER_H_
+#define _AZ_JSDOC_PARSER_H_
 #include <iterator>
 #include <iv/noncopyable.h>
 #include <az/debug_log.h>
@@ -8,17 +8,20 @@
 namespace az {
 namespace jsdoc {
 
-class Lexer : private iv::core::Noncopyable<Lexer> {
+class Parser : private iv::core::Noncopyable<Parser> {
  public:
-  explicit Lexer(const iv::core::UStringPiece& src)
+  explicit Parser(const iv::core::UStringPiece& src)
     : source_(),
       c_(-1),
-      title_(),
       content_(),
+      title_(),
+      type_(),
+      name_(),
+      desc_(),
       pos_(0),
       end_() {
     source_.reserve(src.size() - 5);
-    Lexer::UnwrapComment(src, std::back_inserter(source_));
+    Parser::UnwrapComment(src, std::back_inserter(source_));
     end_ = source_.size();
     Advance();
   }
@@ -106,6 +109,43 @@ class Lexer : private iv::core::Noncopyable<Lexer> {
       content_.push_back(c_);
       Advance();
     }
+    std::size_t i = ScanType(content_);
+    i = ScanName(content_, i);
+    ScanDesc(content_, i);
+  }
+
+  std::size_t ScanType(const std::vector<uint16_t>& content) {
+    bool in_type_brace = false;
+    for (std::vector<uint16_t>::const_iterator it = content.begin(),
+         last = content.end(); it != last; ++it) {
+      if (!in_type_brace) {
+        if (iv::core::character::IsWhiteSpace(*it)) {
+          // through it
+        } else if (*it == '{') {
+          // left brace found
+          in_type_brace = true;
+        } else {
+          // type specifier is not found
+          return 0;
+        }
+      } else {
+        if (*it == '}') {
+          // right brace found
+          return std::distance(content.begin(), ++it);
+        } else {
+          type_.push_back(*it);
+        }
+      }
+    }
+    return 0; // type speficier parsing is failed
+  }
+
+  std::size_t ScanName(const std::vector<uint16_t>& content, std::size_t i) {
+    return i;
+  }
+
+  std::size_t ScanDesc(const std::vector<uint16_t>& content, std::size_t i) {
+    return i;
   }
 
   template<typename OutputIter>
@@ -158,15 +198,46 @@ class Lexer : private iv::core::Noncopyable<Lexer> {
     }
   }
 
+  Token::Type token() const {
+    return token_;
+  }
+
+  const std::vector<uint16_t>& source() const {
+    return source_;
+  }
+
+  const std::vector<uint16_t>& content() const {
+    return content_;
+  }
+
+  const std::vector<uint16_t>& title() const {
+    return title_;
+  }
+
+  const std::vector<uint16_t>& type() const {
+    return type_;
+  }
+
+  const std::vector<uint16_t>& name() const {
+    return name_;
+  }
+
+  const std::vector<uint16_t>& desc() const {
+    return desc_;
+  }
+
  private:
   std::vector<uint16_t> source_;
   int c_;
   Token::Type token_;
-  std::vector<char> title_;
   std::vector<uint16_t> content_;
+  std::vector<uint16_t> title_;
+  std::vector<uint16_t> type_;
+  std::vector<uint16_t> name_;
+  std::vector<uint16_t> desc_;
   std::size_t pos_;
   std::size_t end_;
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_LEXER_H_
+#endif  // _AZ_JSDOC_PARSER_H_
