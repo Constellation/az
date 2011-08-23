@@ -3183,16 +3183,13 @@ class Parser : private iv::core::Noncopyable<> {
 
   void SkipComment(Token::Type token) {
     token_ = token;
-    while (true) {
-      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
-          token_ == Token::TK_MULTI_LINE_COMMENT) {
-        HandleComment(token_);
-      } else {
-        assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
-               token_ != Token::TK_MULTI_LINE_COMMENT);
-        return;
-      }
-      token_ = lexer_->template Next<iv::core::IdentifyReservedWords>(strict_);
+    if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+        token_ == Token::TK_MULTI_LINE_COMMENT) {
+      HandleComment(token_);
+      Next();
+    } else {
+      assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
+             token_ != Token::TK_MULTI_LINE_COMMENT);
     }
   }
 
