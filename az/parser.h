@@ -246,7 +246,8 @@ class Parser : private iv::core::Noncopyable<> {
          Reporter* reporter,
          Completer* completer,
          const StructuredSource& structured)
-    : lexer_(lexer),
+    : ctx_(ctx),
+      lexer_(lexer),
       error_(),
       strict_(false),
       error_state_(0),
@@ -646,6 +647,9 @@ class Parser : private iv::core::Noncopyable<> {
       std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo();
       IS(Token::TK_IDENTIFIER);
       name = ParseIdentifier(lexer_->Buffer());
+      if (info) {
+        ctx_->Tag(name, info);
+      }
       // section 12.2.1
       // within the strict code, Identifier must not be "eval" or "arguments"
       if (strict_) {
@@ -1559,6 +1563,8 @@ class Parser : private iv::core::Noncopyable<> {
 
     Next();
 
+    std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo();
+
     if (!CheckOrRecovery<Token::TK_LBRACE>(res)) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
@@ -1647,7 +1653,10 @@ class Parser : private iv::core::Noncopyable<> {
     Statement* const stmt = factory_->NewTryStatement(try_block,
                                                       name, catch_block,
                                                       finally_block, begin);
-    stmt->set_is_failed_node(true);
+    stmt->set_is_failed_node(false);
+    if (info) {
+      ctx_->Tag(stmt, info);
+    }
     return stmt;
   }
 
@@ -1830,10 +1839,15 @@ class Parser : private iv::core::Noncopyable<> {
       }
     }
     const Token::Type op = token_;
+    std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo();
     Next();
     Expression* const right = ParseAssignmentExpression(contains_in, CHECK);
     assert(result && right);
-    return factory_->NewAssignment(op, result, right);
+    Assignment* assign = factory_->NewAssignment(op, result, right);
+    if (info) {
+      ctx_->Tag(assign, info);
+    }
+    return assign;
   }
 
 //  ConditionalExpression
@@ -2623,6 +2637,8 @@ class Parser : private iv::core::Noncopyable<> {
     IS(Token::TK_LPAREN);
     Next(true);  // preparing for strict directive
 
+    std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo();
+
     if (arg_type == FunctionLiteral::GETTER) {
       // if getter, parameter count is 0
       EXPECT(Token::TK_RPAREN);
@@ -2779,6 +2795,9 @@ class Parser : private iv::core::Noncopyable<> {
         completer_->HasCompletionPoint() &&
         !completer_->HasTargetFunction()) {
       completer_->RegisterTargetFunction(function);
+    }
+    if (info) {
+      ctx_->Tag(function, info);
     }
     return function;
   }
@@ -3170,6 +3189,7 @@ class Parser : private iv::core::Noncopyable<> {
     return doc;
   }
 
+  Context* ctx_;
   lexer_type* lexer_;
   Token::Type token_;
   std::string error_;
