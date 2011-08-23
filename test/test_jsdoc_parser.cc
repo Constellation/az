@@ -55,15 +55,13 @@ TEST(JSDocParser, TagParseTest) {
   {
     const iv::core::UString str = iv::core::ToUString("/** @const */");
     az::jsdoc::Parser parser(str);
-    const std::array<Token::Type, 2> expected = { {
-      Token::TK_CONST,
-      Token::TK_EOS
+    const std::array<Token::Type, 1> expected = { {
+      Token::TK_CONST
     } };
-    std::array<Token::Type, 2>::const_iterator ex = expected.begin();
-    for (Token::Type token = parser.Next();
-         token != Token::TK_EOS;
-         token = parser.Next(), ++ex) {
-      EXPECT_EQ(*ex, token);
+    std::array<Token::Type, 1>::const_iterator ex = expected.begin();
+    for (std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
+         tag; tag = parser.Next(), ++ex) {
+      EXPECT_EQ(*ex, tag->token());
     }
   }
 
@@ -71,16 +69,14 @@ TEST(JSDocParser, TagParseTest) {
     const iv::core::UString str =
         iv::core::ToUString("/**@const\n @const*/");
     az::jsdoc::Parser parser(str);
-    const std::array<Token::Type, 3> expected = { {
+    const std::array<Token::Type, 2> expected = { {
       Token::TK_CONST,
-      Token::TK_CONST,
-      Token::TK_EOS
+      Token::TK_CONST
     } };
-    std::array<Token::Type, 3>::const_iterator ex = expected.begin();
-    for (Token::Type token = parser.Next();
-         token != Token::TK_EOS;
-         token = parser.Next(), ++ex) {
-      EXPECT_EQ(*ex, token);
+    std::array<Token::Type, 2>::const_iterator ex = expected.begin();
+    for (std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
+         tag; tag = parser.Next(), ++ex) {
+      EXPECT_EQ(*ex, tag->token());
     }
   }
 
@@ -93,17 +89,15 @@ TEST(JSDocParser, TagParseTest) {
             " * @const @const\n"
             " */");
     az::jsdoc::Parser parser(str);
-    const std::array<Token::Type, 4> expected = { {
+    const std::array<Token::Type, 3> expected = { {
       Token::TK_CONST,
       Token::TK_CONST,
-      Token::TK_CONST,
-      Token::TK_EOS
+      Token::TK_CONST
     } };
     std::array<Token::Type, 3>::const_iterator ex = expected.begin();
-    for (Token::Type token = parser.Next();
-         token != Token::TK_EOS;
-         token = parser.Next(), ++ex) {
-      EXPECT_EQ(*ex, token);
+    for (std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
+         tag; tag = parser.Next(), ++ex) {
+      EXPECT_EQ(*ex, tag->token());
     }
   }
 }
@@ -118,15 +112,15 @@ TEST(JSDocParser, TypeParseTest) {
         "*/");
     az::jsdoc::Parser parser(str);
     {
-      const Token::Type token = parser.Next();
-      EXPECT_EQ(Token::TK_PARAM, token);
+      const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
+      EXPECT_EQ(Token::TK_PARAM, tag->token());
       ASSERT_EQ(std::strlen("String"), parser.type().size());
       EXPECT_TRUE(std::equal(parser.type().begin(),
                              parser.type().end(), "String"));
     }
     {
-      const Token::Type token = parser.Next();
-      EXPECT_EQ(Token::TK_PARAM, token);
+      const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
+      EXPECT_EQ(Token::TK_PARAM, tag->token());
       EXPECT_TRUE(parser.type().empty());
     }
   }

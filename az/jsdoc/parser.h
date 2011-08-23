@@ -1,10 +1,12 @@
 #ifndef _AZ_JSDOC_PARSER_H_
 #define _AZ_JSDOC_PARSER_H_
 #include <iterator>
+#include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/debug_log.h>
 #include <az/jsdoc/token.h>
 #include <az/jsdoc/tag.h>
+#include <az/jsdoc/info.h>
 namespace az {
 namespace jsdoc {
 
@@ -34,27 +36,17 @@ class Parser : private iv::core::Noncopyable<Parser> {
     }
   }
 
-  Token::Type Next() {
-    Token::Type token = Token::TK_NOT_FOUND;
-    do {
-      // skip to tag
-      while (c_ >= 0 && c_ != '@') {
-        Advance();
-      }
-      switch (c_) {
-        case '@': {
-          token = ScanTag();
-          break;
-        }
-
-        default: {
-          if (c_ < 0) {
-            token = Token::TK_EOS;
-          }
-        }
-      }
-    } while (token == Token::TK_NOT_FOUND);
-    return token;
+  std::shared_ptr<Tag> Next() {
+    // skip to tag
+    while (c_ >= 0 && c_ != '@') {
+      Advance();
+    }
+    assert(c_ < 0 || c_ == '@');
+    if (c_ == '@') {
+      return ScanTag();
+    } else {
+      return std::shared_ptr<Tag>();
+    }
   }
 
   template<typename OutputIter>
@@ -136,11 +128,20 @@ class Parser : private iv::core::Noncopyable<Parser> {
   }
 
  private:
-  Token::Type ScanTag() {
+  std::shared_ptr<Tag> ScanTag() {
     assert(c_ == '@');
     ScanTitle();
     ScanContent();
-    return token_;
+    std::shared_ptr<Tag> info(new Tag(token_));
+    info->set_title(title_);
+    if (!type_.empty()) {
+      info->set_type(type_);
+    }
+    if (IsNameScanToken()) {
+      info->set_name(name_);
+    }
+    info->set_description(desc_);
+    return info;
   }
 
   void ScanTitle() {
@@ -189,7 +190,9 @@ class Parser : private iv::core::Noncopyable<Parser> {
       Advance();
     }
     std::size_t i = ScanType(content_);
-    i = ScanName(content_, i);
+    if (IsNameScanToken()) {
+      i = ScanName(content_, i);
+    }
     ScanDesc(content_, i);
   }
 
@@ -247,6 +250,10 @@ class Parser : private iv::core::Noncopyable<Parser> {
 
   void ScanDesc(const std::vector<uint16_t>& content, std::size_t i) {
     desc_.assign(content.begin() + i, content.end());
+  }
+
+  bool IsNameScanToken() const {
+    return token_ == Token::TK_PARAM;
   }
 
   std::vector<uint16_t> source_;
