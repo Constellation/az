@@ -125,3 +125,22 @@ TEST(JSDocParser, TypeParseTest) {
     }
   }
 }
+
+TEST(JSDocParser, ParamParseTest) {
+  using az::jsdoc::Token;
+  {
+    const iv::core::UString str = iv::core::ToUString(
+        "/**\n"
+        " * @param {String} userName\n"
+        "*/");
+    az::jsdoc::Parser parser(str);
+    const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
+    EXPECT_EQ(Token::TK_PARAM, tag->token());
+    ASSERT_EQ(std::strlen("String"), tag->type().size());
+    EXPECT_TRUE(std::equal(tag->type().begin(),
+                           tag->type().end(), "String"));
+    ASSERT_EQ(std::strlen("userName"), tag->name().size());
+    EXPECT_TRUE(std::equal(tag->name().begin(),
+                           tag->name().end(), "userName"));
+  }
+}

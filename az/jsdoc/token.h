@@ -25,7 +25,7 @@ class Token {
     TK_RETURN,
     TK_THIS,
     TK_TYPE,
-    TK_TYPEOF,
+    TK_TYPEDEF,
     TK_TAG,  // not known tags
     TK_EOS,
     TK_NOT_FOUND

@@ -132,16 +132,16 @@ class Parser : private iv::core::Noncopyable<Parser> {
     assert(c_ == '@');
     ScanTitle();
     ScanContent();
-    std::shared_ptr<Tag> info(new Tag(token_));
-    info->set_title(title_);
+    std::shared_ptr<Tag> tag(new Tag(token_));
+    tag->set_title(title_);
     if (!type_.empty()) {
-      info->set_type(type_);
+      tag->set_type(type_);
     }
-    if (IsNameScanToken()) {
-      info->set_name(name_);
+    if (IsNameRequiredToken()) {
+      tag->set_name(name_);
     }
-    info->set_description(desc_);
-    return info;
+    tag->set_description(desc_);
+    return tag;
   }
 
   void ScanTitle() {
@@ -189,8 +189,11 @@ class Parser : private iv::core::Noncopyable<Parser> {
       content_.push_back(c_);
       Advance();
     }
-    std::size_t i = ScanType(content_);
-    if (IsNameScanToken()) {
+    std::size_t i = 0;
+    if (IsTypeRequiredToken()) {
+      i = ScanType(content_);
+    }
+    if (IsNameRequiredToken()) {
       i = ScanName(content_, i);
     }
     ScanDesc(content_, i);
@@ -209,10 +212,12 @@ class Parser : private iv::core::Noncopyable<Parser> {
           in_type_brace = true;
         } else {
           // type specifier is not found
-          return 0;
+          break;
         }
       } else {
-        if (*it == '}') {
+        if (iv::core::character::IsLineTerminator(*it)) {
+          break;
+        } else if (*it == '}') {
           // right brace found
           return std::distance(content.begin(), ++it);
         } else {
@@ -230,14 +235,16 @@ class Parser : private iv::core::Noncopyable<Parser> {
     for (std::vector<uint16_t>::const_iterator it = content.begin() + i,
          last = content.end(); it != last; ++it) {
       if (!in_name) {
-        if (iv::core::character::IsWhiteSpace(*it)) {
+        if (iv::core::character::IsWhiteSpace(*it) ||
+            iv::core::character::IsLineTerminator(*it)) {
           // through it
         } else {
           in_name = true;
           name_.push_back(*it);
         }
       } else {
-        if (iv::core::character::IsWhiteSpace(*it)) {
+        if (iv::core::character::IsWhiteSpace(*it) ||
+            iv::core::character::IsLineTerminator(*it)) {
           return std::distance(content.begin(), ++it);
         } else {
           name_.push_back(*it);
@@ -252,7 +259,20 @@ class Parser : private iv::core::Noncopyable<Parser> {
     desc_.assign(content.begin() + i, content.end());
   }
 
-  bool IsNameScanToken() const {
+  bool IsTypeRequiredToken() const {
+    return
+        token_ == Token::TK_DEFINE ||
+        token_ == Token::TK_ENUM ||
+        token_ == Token::TK_EXTENDS ||
+        token_ == Token::TK_IMPLEMENTS ||
+        token_ == Token::TK_PARAM ||
+        token_ == Token::TK_RETURN ||
+        token_ == Token::TK_THIS ||
+        token_ == Token::TK_TYPE ||
+        token_ == Token::TK_TYPEDEF;
+  }
+
+  bool IsNameRequiredToken() const {
     return token_ == Token::TK_PARAM;
   }
 
