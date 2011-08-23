@@ -71,10 +71,14 @@ class Parser : private iv::core::Noncopyable<Parser> {
     // mode indicates
     //      * 
     //   0 |1| 2
-    int mode = 0;
+    enum {
+      BEFORE_STAR = 0,
+      STAR,
+      AFTER_STAR
+    } mode = BEFORE_STAR;
     for (iv::core::UStringPiece::const_iterator it = target.begin(),
          last = target.end(); it != last; ++it) {
-      if (mode == 0) {
+      if (mode == BEFORE_STAR) {
         if (iv::core::character::IsLineTerminator(*it)) {
           // waste
           *result++ = *it;
@@ -82,22 +86,22 @@ class Parser : private iv::core::Noncopyable<Parser> {
           // waste
         } else if (*it == '*') {
           // waste and change mode 1
-          mode = 1;
+          mode = STAR;
         } else {
           // get and change mode 2
-          mode = 2;
+          mode = AFTER_STAR;
           *result++ = *it;
         }
-      } else if (mode == 1) {
+      } else if (mode == STAR) {
         if (!iv::core::character::IsWhiteSpace(*it)) {
           *result++ = *it;
         }
-        mode = 2;
+        mode = AFTER_STAR;
       } else {
-        assert(mode == 2);
+        assert(mode == AFTER_STAR);
         *result++ = *it;
         if (iv::core::character::IsLineTerminator(*it)) {
-          mode = 0;
+          mode = BEFORE_STAR;
         }
       }
     }
@@ -154,6 +158,15 @@ class Parser : private iv::core::Noncopyable<Parser> {
     if (IsNameRequiredToken()) {
       if (name_.empty()) {
         return std::shared_ptr<Tag>();
+      }
+      if (!iv::core::character::IsIdentifierStart(name_[0])) {
+        return std::shared_ptr<Tag>();
+      }
+      for (std::vector<uint16_t>::const_iterator it = name_.begin() + 1,
+           last = name_.end(); it != last; ++it) {
+        if (!iv::core::character::IsIdentifierPart(*it)) {
+          return std::shared_ptr<Tag>();
+        }
       }
       tag->set_name(name_);
     }
