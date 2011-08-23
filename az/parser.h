@@ -248,6 +248,7 @@ class Parser : private iv::core::Noncopyable<> {
          const StructuredSource& structured)
     : ctx_(ctx),
       lexer_(lexer),
+      completion_point_(false),
       error_(),
       strict_(false),
       error_state_(0),
@@ -2216,7 +2217,7 @@ class Parser : private iv::core::Noncopyable<> {
         case Token::TK_PERIOD: {
           Next<iv::core::IgnoreReservedWords>();  // IDENTIFIERNAME
           // completion hook
-          if (lexer_->IsCompletionPoint()) {
+          if (IsCompletionPoint()) {
             if (completer_) {
               // this expression is invalid, so shut up this expression
               completer_->RegisterPropertyCompletion(expr);
@@ -2995,55 +2996,61 @@ class Parser : private iv::core::Noncopyable<> {
 
   template<typename LexType>
   inline Token::Type Next() {
+    bool completion = false;
     while (true) {
       token_ = lexer_->Next<LexType>(strict_);
+      if (lexer_->IsCompletionPoint()) {
+        completion = true;
+      }
       if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
           token_ == Token::TK_MULTI_LINE_COMMENT) {
         HandleComment(token_);
       } else {
         assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
                token_ != Token::TK_MULTI_LINE_COMMENT);
+        completion_point_ = completion;
         return token_;
       }
     }
   }
 
   inline Token::Type Next() {
-    return token_ = Next<iv::core::IdentifyReservedWords>();
+    return Next<iv::core::IdentifyReservedWords>();
   }
 
   inline Token::Type Next(bool strict) {
+    bool completion = false;
     while (true) {
       token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict);
+      if (lexer_->IsCompletionPoint()) {
+        completion = true;
+      }
       if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
           token_ == Token::TK_MULTI_LINE_COMMENT) {
         HandleComment(token_);
       } else {
         assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
                token_ != Token::TK_MULTI_LINE_COMMENT);
+        completion_point_ = completion;
         return token_;
       }
     }
   }
 
   void HandleComment(Token::Type token) {
-    DebugLog("COMMENT");
     const std::size_t begin = lexer_->begin_position();
     const std::size_t end = lexer_->end_position();
     const iv::core::UStringPiece comment =
         structured_.original().substr(begin, end - begin + 1);
-    DebugLog(comment);
     if (comment.size() >= 5 &&  // target comment is more than "/***/"
         token == Token::TK_MULTI_LINE_COMMENT) {
       if (comment[0] == '/' && comment[1] == '*' && comment[2] == '*') {
         // this is JSDoc start mark
         // so, parse JSDoc
-        DebugLog("JSDOC START");
-        DebugLog(comment);
+        // DebugLog(comment);
         jsdoc::Provider provider;
         provider.Parse(comment);
         doc_ = provider.GetInfo();
-        DebugLog("JSDOC END");
       }
     }
   }
@@ -3193,13 +3200,21 @@ class Parser : private iv::core::Noncopyable<> {
 
   void SkipComment(Token::Type token) {
     token_ = token;
-    if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
-        token_ == Token::TK_MULTI_LINE_COMMENT) {
-      HandleComment(token_);
-      Next();
-    } else {
-      assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
-             token_ != Token::TK_MULTI_LINE_COMMENT);
+    bool completion = lexer_->IsCompletionPoint();
+    while (true) {
+      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+          token_ == Token::TK_MULTI_LINE_COMMENT) {
+        HandleComment(token_);
+      } else {
+        assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
+               token_ != Token::TK_MULTI_LINE_COMMENT);
+        completion_point_ = completion;
+        return;
+      }
+      token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict_);
+      if (lexer_->IsCompletionPoint()) {
+        completion = true;
+      }
     }
   }
 
@@ -3223,9 +3238,14 @@ class Parser : private iv::core::Noncopyable<> {
     return doc;
   }
 
+  bool IsCompletionPoint() const {
+    return completion_point_;
+  }
+
   Context* ctx_;
   lexer_type* lexer_;
   Token::Type token_;
+  bool completion_point_;
   std::string error_;
   std::vector<std::string> errors_;
   bool strict_;
