@@ -4,6 +4,8 @@
 #include <iv/detail/memory.h>
 #include <iv/ustringpiece.h>
 #include <az/jsdoc/fwd.h>
+#include <az/jsdoc/tag.h>
+#include <az/jsdoc/token.h>
 namespace az {
 namespace jsdoc {
 
@@ -20,6 +22,19 @@ class Info {
   const std::vector<std::shared_ptr<Tag> > tags() const {
     return tags_;
   }
+
+  // TODO:(Constellation)
+  // more efficiency info structure
+  bool HasType() const {
+    for (std::vector<std::shared_ptr<Tag> >::const_iterator it = tags_.begin(),
+         last = tags_.end(); it != last; ++it) {
+      if ((*it)->token() == Token::TK_TYPE) {
+        return true;
+      }
+    }
+    return false;
+  }
+
  private:
   std::vector<std::shared_ptr<Tag> > tags_;
 };

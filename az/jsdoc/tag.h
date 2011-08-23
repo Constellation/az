@@ -3,6 +3,7 @@
 #include <iv/stringpiece.h>
 #include <iv/ustringpiece.h>
 #include <az/jsdoc/fwd.h>
+#include <az/jsdoc/token.h>
 namespace az {
 namespace jsdoc {
 

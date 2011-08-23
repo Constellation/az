@@ -2325,11 +2325,19 @@ class Parser : private iv::core::Noncopyable<> {
         result = ParseObjectLiteral(CHECK);
         break;
 
-      case Token::TK_LPAREN:
+      case Token::TK_LPAREN: {
+        std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo();
         Next();
         result = ParseExpression(true, CHECK);
+        if (!info) {
+          info = GetAndResetJSDocInfo();
+        }
+        if (info && info->HasType()) {
+          ctx_->Tag(result, info);
+        }
         EXPECT(Token::TK_RPAREN);
         break;
+      }
 
       default:
         UNEXPECT(token_);
