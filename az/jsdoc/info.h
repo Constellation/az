@@ -20,6 +20,22 @@ class Info {
       description_(desc) {
   }
 
+  Token::Type token() const {
+    return token_;
+  }
+
+  const iv::core::UString& type() const {
+    return type_;
+  }
+
+  const iv::core::UString& name() const {
+    return name_;
+  }
+
+  const iv::core::UString& description() const {
+    return description_;
+  }
+
  private:
   Token::Type token_;
   iv::core::UString type_;
