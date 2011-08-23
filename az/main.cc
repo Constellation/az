@@ -15,6 +15,7 @@
 #include <az/empty_reporter.h>
 #include <az/basic_completer.h>
 #include <az/parser.h>
+#include <az/context.h>
 #include <az/symbol.h>
 #include <az/debug_log.h>
 #include <az/cfa2.h>
@@ -45,12 +46,13 @@ inline int Pulse(const iv::core::UString& src, std::size_t len) {
                      az::CompleteLexer,
                      az::EmptyReporter,
                      az::BasicCompleter> Parser;
+  az::Context ctx;
   az::StructuredSource structured(src);
   az::EmptyReporter reporter;
   az::AstFactory factory;
   az::cfa2::CLICompleter completer;
   az::CompleteLexer lexer(src, len);
-  Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
+  Parser parser(&ctx, &factory, src, &lexer, &reporter, &completer, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
@@ -65,11 +67,12 @@ inline int Tag(const iv::core::UString& src) {
                      az::CompleteLexer,
                      az::EmptyReporter,
                      az::BasicCompleter> Parser;
+  az::Context ctx;
   az::StructuredSource structured(src);
   az::EmptyReporter reporter;
   az::AstFactory factory;
   az::CompleteLexer lexer(src);
-  Parser parser(&factory, src, &lexer, &reporter, NULL, structured);
+  Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   az::cfa2::Complete(global, src, &factory, &reporter, NULL);
@@ -79,10 +82,6 @@ inline int Tag(const iv::core::UString& src) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  typedef az::Parser<iv::core::UString,
-                     az::CompleteLexer,
-                     az::Reporter,
-                     az::BasicCompleter> Parser;
   az::DebugLog("PROGRAM START");
   iv::cmdline::Parser cmd("az");
   cmd.Add("help",
@@ -150,12 +149,17 @@ int main(int argc, char** argv) {
   } else if (cmd.Exist("tag")) {
     return Tag(src);
   } else {
+    typedef az::Parser<iv::core::UString,
+                       az::CompleteLexer,
+                       az::Reporter,
+                       az::BasicCompleter> Parser;
     // normal analysis
+    az::Context ctx;
     az::StructuredSource structured(src);
     az::Reporter reporter(structured);
     az::AstFactory factory;
     az::CompleteLexer lexer(src);
-    Parser parser(&factory, src, &lexer, &reporter, NULL, structured);
+    Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
     az::FunctionLiteral* const global = parser.ParseProgram();
     assert(global);
     az::Analyze(global, src, &reporter);

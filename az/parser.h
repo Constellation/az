@@ -25,6 +25,7 @@
 #include <az/ast_fwd.h>
 #include <az/token.h>
 #include <az/skip.h>
+#include <az/context.h>
 #include <az/debug_log.h>
 #include <az/complete_lexer.h>
 #include <az/jsdoc/provider.h>
@@ -238,7 +239,8 @@ class Parser : private iv::core::Noncopyable<> {
     Identifiers* labels_;
   };
 
-  Parser(AstFactory* factory,
+  Parser(Context* ctx,
+         AstFactory* factory,
          const Source& source,
          lexer_type* lexer,
          Reporter* reporter,
@@ -641,6 +643,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     do {
       Next();
+      std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo();
       IS(Token::TK_IDENTIFIER);
       name = ParseIdentifier(lexer_->Buffer());
       // section 12.2.1
