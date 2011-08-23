@@ -1821,6 +1821,14 @@ class Parser : private iv::core::Noncopyable<> {
   Expression* ParseAssignmentExpression(bool contains_in, bool *res) {
     Expression* const result = ParseConditionalExpression(contains_in, CHECK);
     if (!Token::IsAssignOp(token_)) {
+      // such as:
+      //
+      //   /** @const */
+      //   Test.prototype.test;
+      //
+      if (token_ == Token::TK_SEMICOLON && result->AsIdentifierAccess()) {
+        ctx_->Tag(result, GetAndResetJSDocInfo());
+      }
       return result;
     }
     if (!result->IsValidLeftHandSide()) {
