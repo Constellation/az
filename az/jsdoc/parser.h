@@ -29,7 +29,7 @@ class Parser : private iv::core::Noncopyable<Parser> {
   }
 
   void Advance() {
-    if (pos_ == end_) {
+    if (IsEOS()) {
       c_ = -1;
     } else {
       c_ = source_[pos_++];
@@ -47,6 +47,10 @@ class Parser : private iv::core::Noncopyable<Parser> {
     } else {
       return std::shared_ptr<Tag>();
     }
+  }
+
+  bool IsEOS() const {
+    return pos_ == end_;
   }
 
   template<typename OutputIter>
@@ -132,14 +136,28 @@ class Parser : private iv::core::Noncopyable<Parser> {
     assert(c_ == '@');
     ScanTitle();
     ScanContent();
+
     std::shared_ptr<Tag> tag(new Tag(token_));
+
+    if (title_.empty()) {
+      return std::shared_ptr<Tag>();
+    }
     tag->set_title(title_);
-    if (!type_.empty()) {
+
+    if (IsTypeRequiredToken()) {
+      if (type_.empty()) {
+        return std::shared_ptr<Tag>();
+      }
       tag->set_type(type_);
     }
+
     if (IsNameRequiredToken()) {
+      if (name_.empty()) {
+        return std::shared_ptr<Tag>();
+      }
       tag->set_name(name_);
     }
+
     tag->set_description(desc_);
     return tag;
   }
