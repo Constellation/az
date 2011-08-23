@@ -16,6 +16,10 @@ class Info {
   void Register(const std::shared_ptr<Tag>& tag) {
     tags_.push_back(tag);
   }
+
+  const std::vector<std::shared_ptr<Tag> > tags() const {
+    return tags_;
+  }
  private:
   std::vector<std::shared_ptr<Tag> > tags_;
 };

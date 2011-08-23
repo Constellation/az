@@ -27,6 +27,7 @@
 #include <az/skip.h>
 #include <az/debug_log.h>
 #include <az/complete_lexer.h>
+#include <az/jsdoc/provider.h>
 namespace az {
 
 using iv::core::Token;
@@ -2986,14 +2987,19 @@ class Parser : private iv::core::Noncopyable<> {
     const std::size_t begin = lexer_->begin_position();
     const std::size_t end = lexer_->end_position();
     const iv::core::UStringPiece comment =
-        structured_.original().substr(begin, end - begin);
+        structured_.original().substr(begin, end - begin + 1);
     DebugLog(comment);
     if (comment.size() >= 5 &&  // target comment is more than "/***/"
         token == Token::TK_MULTI_LINE_COMMENT) {
       if (comment[0] == '/' && comment[1] == '*' && comment[2] == '*') {
         // this is JSDoc start mark
         // so, parse JSDoc
-        DebugLog("JSDOC");
+        DebugLog("JSDOC START");
+        DebugLog(comment);
+        jsdoc::Provider provider;
+        provider.Parse(comment);
+        doc_ = provider.GetInfo();
+        DebugLog("JSDOC END");
       }
     }
   }
@@ -3001,9 +3007,11 @@ class Parser : private iv::core::Noncopyable<> {
   inline Token::Type Peek() const {
     return token_;
   }
+
   inline Scope* scope() const {
     return scope_;
   }
+
   inline void set_scope(Scope* scope) {
     scope_ = scope;
   }
@@ -3019,24 +3027,31 @@ class Parser : private iv::core::Noncopyable<> {
   inline Target* target() const {
     return target_;
   }
+
   inline void set_target(Target* target) {
     target_ = target;
   }
+
   inline AstFactory* factory() const {
     return factory_;
   }
+
   inline Identifiers* labels() const {
     return labels_;
   }
+
   inline void set_labels(Identifiers* labels) {
     labels_ = labels;
   }
+
   inline bool strict() const {
     return strict_;
   }
+
   inline void set_strict(bool strict) {
     strict_ = strict;
   }
+
   inline bool RecoverableError() const {
     return (!(error_state_ & kNotRecoverable)) && token_ == Token::TK_EOS;
   }
@@ -3146,6 +3161,12 @@ class Parser : private iv::core::Noncopyable<> {
     return factory_->NewTrueLiteral(0, 0);
   }
 
+  std::shared_ptr<jsdoc::Info> GetAndResetJSDocInfo() {
+    std::shared_ptr<jsdoc::Info> doc = doc_;
+    doc_.reset();
+    return doc;
+  }
+
   lexer_type* lexer_;
   Token::Type token_;
   std::string error_;
@@ -3159,6 +3180,7 @@ class Parser : private iv::core::Noncopyable<> {
   Scope* scope_;
   Target* target_;
   Identifiers* labels_;
+  std::shared_ptr<jsdoc::Info> doc_;
 };
 #undef IS
 #undef EXPECT

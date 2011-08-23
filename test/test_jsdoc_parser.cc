@@ -114,14 +114,12 @@ TEST(JSDocParser, TypeParseTest) {
     {
       const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
       EXPECT_EQ(Token::TK_PARAM, tag->token());
-      ASSERT_EQ(std::strlen("String"), parser.type().size());
-      EXPECT_TRUE(std::equal(parser.type().begin(),
-                             parser.type().end(), "String"));
+      EXPECT_TRUE(iv::core::ToUString("String") == tag->type());
     }
     {
+      // this tag is failed
       const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
-      EXPECT_EQ(Token::TK_PARAM, tag->token());
-      EXPECT_TRUE(parser.type().empty());
+      EXPECT_FALSE(tag);
     }
   }
 }
@@ -136,11 +134,7 @@ TEST(JSDocParser, ParamParseTest) {
     az::jsdoc::Parser parser(str);
     const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
     EXPECT_EQ(Token::TK_PARAM, tag->token());
-    ASSERT_EQ(std::strlen("String"), tag->type().size());
-    EXPECT_TRUE(std::equal(tag->type().begin(),
-                           tag->type().end(), "String"));
-    ASSERT_EQ(std::strlen("userName"), tag->name().size());
-    EXPECT_TRUE(std::equal(tag->name().begin(),
-                           tag->name().end(), "userName"));
+    EXPECT_TRUE(iv::core::ToUString("String") == tag->type());
+    EXPECT_TRUE(iv::core::ToUString("userName") == tag->name());
   }
 }

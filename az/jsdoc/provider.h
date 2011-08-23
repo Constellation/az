@@ -9,22 +9,22 @@ namespace jsdoc {
 class Provider {
  public:
   Provider()
-    : info_() {
+    : info_(new Info()) {
   }
 
   void Parse(const iv::core::UStringPiece& src) {
     Parser parser(src);
     for (std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
          tag; tag = parser.Next()) {
-      info_.Register(tag);
+      info_->Register(tag);
     }
   }
 
-  const Info& GetInfo() const {
+  std::shared_ptr<Info> GetInfo() {
     return info_;
   }
  private:
-  Info info_;
+  std::shared_ptr<Info> info_;
 };
 
 } }  // namespace az::jsdoc
