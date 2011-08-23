@@ -1,10 +1,30 @@
 #ifndef _AZ_JSDOC_INFO_H_
 #define _AZ_JSDOC_INFO_H_
+#include <iv/ustringpiece.h>
 namespace az {
 namespace jsdoc {
 
 class Info {
-  Info() { }
+ public:
+  explicit Info(Token::Type token)
+    : token_ (token),
+      type_(),
+      name_(),
+      description_() {
+  }
+
+  Info(Token::Type token, const iv::core::UStringPiece& desc)
+    : token_(token),
+      type_(),
+      name_(),
+      description_(desc) {
+  }
+
+ private:
+  Token::Type token_;
+  iv::core::UString type_;
+  iv::core::UString name_;
+  iv::core::UString description_;
 };
 
 } }  // namespace az::jsdoc

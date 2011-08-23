@@ -57,97 +57,6 @@ class Parser : private iv::core::Noncopyable<Parser> {
     return token;
   }
 
-  Token::Type ScanTag() {
-    assert(c_ == '@');
-    ScanTitle();
-    ScanContent();
-    return token_;
-  }
-
-  void ScanTitle() {
-    assert(c_ == '@');
-    title_.clear();
-    // parse title string
-    title_.push_back('@');
-    Advance();
-    while (c_ >= 0 && iv::core::character::IsASCIIAlphanumeric(c_)) {
-      title_.push_back(c_);
-      Advance();
-    }
-    assert(c_ < 0 || !iv::core::character::IsASCIIAlphanumeric(c_));
-
-    std::size_t index = 0;
-    token_ = Token::TK_TAG;
-    for (TagArray::const_iterator it = kKnownTags.begin(),
-         last = kKnownTags.end(); it != last; ++it, ++index) {
-      if (it->size() == title_.size() &&
-          std::equal(it->begin(), it->end(), title_.begin())) {
-        token_ = static_cast<Token::Type>(index);
-        break;
-      }
-    }
-  }
-
-  void ScanContent() {
-    content_.clear();
-    bool waiting_next_tag = false;
-    while (c_ >= 0) {
-      if (iv::core::character::IsLineTerminator(c_)) {
-        // Line Terminator found
-        waiting_next_tag = true;
-      } else {
-        if (waiting_next_tag) {
-          if (c_ == '@') {
-            // next tag found
-            break;
-          }
-          if (!iv::core::character::IsWhiteSpace(c_)) {
-            waiting_next_tag = false;
-          }
-        }
-      }
-      content_.push_back(c_);
-      Advance();
-    }
-    std::size_t i = ScanType(content_);
-    i = ScanName(content_, i);
-    ScanDesc(content_, i);
-  }
-
-  std::size_t ScanType(const std::vector<uint16_t>& content) {
-    bool in_type_brace = false;
-    for (std::vector<uint16_t>::const_iterator it = content.begin(),
-         last = content.end(); it != last; ++it) {
-      if (!in_type_brace) {
-        if (iv::core::character::IsWhiteSpace(*it)) {
-          // through it
-        } else if (*it == '{') {
-          // left brace found
-          in_type_brace = true;
-        } else {
-          // type specifier is not found
-          return 0;
-        }
-      } else {
-        if (*it == '}') {
-          // right brace found
-          return std::distance(content.begin(), ++it);
-        } else {
-          type_.push_back(*it);
-        }
-      }
-    }
-    return 0; // type speficier parsing is failed
-  }
-
-  std::size_t ScanName(const std::vector<uint16_t>& content, std::size_t i) {
-    return i;
-  }
-
-  std::size_t ScanDesc(const std::vector<uint16_t>& content, std::size_t i) {
-    return i;
-  }
-
   template<typename OutputIter>
   static void UnwrapComment(const iv::core::UStringPiece& src,
                             OutputIter result) {
@@ -227,6 +136,119 @@ class Parser : private iv::core::Noncopyable<Parser> {
   }
 
  private:
+  Token::Type ScanTag() {
+    assert(c_ == '@');
+    ScanTitle();
+    ScanContent();
+    return token_;
+  }
+
+  void ScanTitle() {
+    assert(c_ == '@');
+    title_.clear();
+    // parse title string
+    title_.push_back('@');
+    Advance();
+    while (c_ >= 0 && iv::core::character::IsASCIIAlphanumeric(c_)) {
+      title_.push_back(c_);
+      Advance();
+    }
+    assert(c_ < 0 || !iv::core::character::IsASCIIAlphanumeric(c_));
+
+    std::size_t index = 0;
+    token_ = Token::TK_TAG;
+    for (TagArray::const_iterator it = kKnownTags.begin(),
+         last = kKnownTags.end(); it != last; ++it, ++index) {
+      if (it->size() == title_.size() &&
+          std::equal(it->begin(), it->end(), title_.begin())) {
+        token_ = static_cast<Token::Type>(index);
+        break;
+      }
+    }
+  }
+
+  void ScanContent() {
+    content_.clear();
+    bool waiting_next_tag = false;
+    while (c_ >= 0) {
+      if (iv::core::character::IsLineTerminator(c_)) {
+        // Line Terminator found
+        waiting_next_tag = true;
+      } else {
+        if (waiting_next_tag) {
+          if (c_ == '@') {
+            // next tag found
+            break;
+          }
+          if (!iv::core::character::IsWhiteSpace(c_)) {
+            waiting_next_tag = false;
+          }
+        }
+      }
+      content_.push_back(c_);
+      Advance();
+    }
+    std::size_t i = ScanType(content_);
+    i = ScanName(content_, i);
+    ScanDesc(content_, i);
+  }
+
+  std::size_t ScanType(const std::vector<uint16_t>& content) {
+    type_.clear();
+    bool in_type_brace = false;
+    for (std::vector<uint16_t>::const_iterator it = content.begin(),
+         last = content.end(); it != last; ++it) {
+      if (!in_type_brace) {
+        if (iv::core::character::IsWhiteSpace(*it)) {
+          // through it
+        } else if (*it == '{') {
+          // left brace found
+          in_type_brace = true;
+        } else {
+          // type specifier is not found
+          return 0;
+        }
+      } else {
+        if (*it == '}') {
+          // right brace found
+          return std::distance(content.begin(), ++it);
+        } else {
+          type_.push_back(*it);
+        }
+      }
+    }
+    type_.clear();
+    return 0; // type speficier parsing is failed
+  }
+
+  std::size_t ScanName(const std::vector<uint16_t>& content, std::size_t i) {
+    bool in_name = false;
+    name_.clear();
+    for (std::vector<uint16_t>::const_iterator it = content.begin() + i,
+         last = content.end(); it != last; ++it) {
+      if (!in_name) {
+        if (iv::core::character::IsWhiteSpace(*it)) {
+          // through it
+        } else {
+          in_name = true;
+          name_.push_back(*it);
+        }
+      } else {
+        if (iv::core::character::IsWhiteSpace(*it)) {
+          return std::distance(content.begin(), ++it);
+        } else {
+          name_.push_back(*it);
+        }
+      }
+    }
+    // EOS found
+    return content.size();
+  }
+
+  void ScanDesc(const std::vector<uint16_t>& content, std::size_t i) {
+    desc_.assign(content.begin() + i, content.end());
+  }
+
   std::vector<uint16_t> source_;
   int c_;
   Token::Type token_;

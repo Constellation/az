@@ -114,12 +114,20 @@ TEST(JSDocParser, TypeParseTest) {
     const iv::core::UString str = iv::core::ToUString(
         "/**\n"
         " * @param {String} userName\n"
+        " * @param {String userName\n"
         "*/");
     az::jsdoc::Parser parser(str);
-    Token::Type token = parser.Next();
-    EXPECT_EQ(Token::TK_PARAM, token);
-    ASSERT_EQ(std::strlen("String"), parser.type().size());
-    EXPECT_TRUE(std::equal(parser.type().begin(),
-                           parser.type().end(), "String"));
+    {
+      const Token::Type token = parser.Next();
+      EXPECT_EQ(Token::TK_PARAM, token);
+      ASSERT_EQ(std::strlen("String"), parser.type().size());
+      EXPECT_TRUE(std::equal(parser.type().begin(),
+                             parser.type().end(), "String"));
+    }
+    {
+      const Token::Type token = parser.Next();
+      EXPECT_EQ(Token::TK_PARAM, token);
+      EXPECT_TRUE(parser.type().empty());
+    }
   }
 }
