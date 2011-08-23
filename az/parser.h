@@ -2994,67 +2994,6 @@ class Parser : private iv::core::Noncopyable<> {
     return lexer_;
   }
 
-  template<typename LexType>
-  inline Token::Type Next() {
-    bool completion = false;
-    while (true) {
-      token_ = lexer_->Next<LexType>(strict_);
-      if (lexer_->IsCompletionPoint()) {
-        completion = true;
-      }
-      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
-          token_ == Token::TK_MULTI_LINE_COMMENT) {
-        HandleComment(token_);
-      } else {
-        assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
-               token_ != Token::TK_MULTI_LINE_COMMENT);
-        completion_point_ = completion;
-        return token_;
-      }
-    }
-  }
-
-  inline Token::Type Next() {
-    return Next<iv::core::IdentifyReservedWords>();
-  }
-
-  inline Token::Type Next(bool strict) {
-    bool completion = false;
-    while (true) {
-      token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict);
-      if (lexer_->IsCompletionPoint()) {
-        completion = true;
-      }
-      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
-          token_ == Token::TK_MULTI_LINE_COMMENT) {
-        HandleComment(token_);
-      } else {
-        assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
-               token_ != Token::TK_MULTI_LINE_COMMENT);
-        completion_point_ = completion;
-        return token_;
-      }
-    }
-  }
-
-  void HandleComment(Token::Type token) {
-    const std::size_t begin = lexer_->begin_position();
-    const std::size_t end = lexer_->end_position();
-    const iv::core::UStringPiece comment =
-        structured_.original().substr(begin, end - begin + 1);
-    if (comment.size() >= 5 &&  // target comment is more than "/***/"
-        token == Token::TK_MULTI_LINE_COMMENT) {
-      if (comment[0] == '/' && comment[1] == '*' && comment[2] == '*') {
-        // this is JSDoc start mark
-        // so, parse JSDoc
-        // DebugLog(comment);
-        jsdoc::Provider provider;
-        provider.Parse(comment);
-        doc_ = provider.GetInfo();
-      }
-    }
-  }
-
   inline Token::Type Peek() const {
     return token_;
   }
@@ -3198,6 +3137,49 @@ class Parser : private iv::core::Noncopyable<> {
     return true;
   }
 
+  template<typename LexType>
+  inline Token::Type Next() {
+    bool completion = false;
+    while (true) {
+      token_ = lexer_->Next<LexType>(strict_);
+      if (lexer_->IsCompletionPoint()) {
+        completion = true;
+      }
+      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+          token_ == Token::TK_MULTI_LINE_COMMENT) {
+        HandleComment(token_);
+      } else {
+        assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
+               token_ != Token::TK_MULTI_LINE_COMMENT);
+        completion_point_ = completion;
+        return token_;
+      }
+    }
+  }
+
+  inline Token::Type Next() {
+    return Next<iv::core::IdentifyReservedWords>();
+  }
+
+  inline Token::Type Next(bool strict) {
+    bool completion = false;
+    while (true) {
+      token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict);
+      if (lexer_->IsCompletionPoint()) {
+        completion = true;
+      }
+      if (token_ == Token::TK_SINGLE_LINE_COMMENT ||
+          token_ == Token::TK_MULTI_LINE_COMMENT) {
+        HandleComment(token_);
+      } else {
+        assert(token_ != Token::TK_SINGLE_LINE_COMMENT &&
+               token_ != Token::TK_MULTI_LINE_COMMENT);
+        completion_point_ = completion;
+        return token_;
+      }
+    }
+  }
+
   void SkipComment(Token::Type token) {
     token_ = token;
     bool completion = lexer_->IsCompletionPoint();
@@ -3214,6 +3196,24 @@ class Parser : private iv::core::Noncopyable<> {
       token_ = lexer_->Next<iv::core::IdentifyReservedWords>(strict_);
       if (lexer_->IsCompletionPoint()) {
         completion = true;
+      }
+    }
+  }
+
+  void HandleComment(Token::Type token) {
+    const std::size_t begin = lexer_->begin_position();
+    const std::size_t end = lexer_->end_position();
+    const iv::core::UStringPiece comment =
+        structured_.original().substr(begin, end - begin + 1);
+    if (comment.size() >= 5 &&  // target comment is more than "/***/"
+        token == Token::TK_MULTI_LINE_COMMENT) {
+      if (comment[0] == '/' && comment[1] == '*' && comment[2] == '*') {
+        // this is JSDoc start mark
+        // so, parse JSDoc
+        // DebugLog(comment);
+        jsdoc::Provider provider;
+        provider.Parse(comment);
+        doc_ = provider.GetInfo();
       }
     }
   }
