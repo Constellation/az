@@ -40,13 +40,17 @@ function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
 
   let l:buf = getline(1, '$')
   let l:tempfile = expand('%:p:h') . '/' . localtime() . expand('%:t')
-  call writefile(l:buf, l:tempfile)
-  let l:escaped_tempfile = shellescape(l:tempfile)
 
-  let l:offset = line2byte('.') + a:cur_keyword_pos - 1
-  let l:command = 'az ' . l:escaped_tempfile . ' --pulse=' . l:offset
-  let l:output = split(neocomplcache#system(l:command), "\n")
-  call delete(l:tempfile)
+  try
+    call writefile(l:buf, l:tempfile)
+    let l:escaped_tempfile = shellescape(l:tempfile)
+    let l:offset = line2byte('.') + a:cur_keyword_pos - 1
+    let l:command = 'az ' . l:escaped_tempfile . ' --pulse=' . l:offset
+    let l:output = split(neocomplcache#system(l:command), "\n")
+  finally
+    call delete(l:tempfile)
+  endtry
+
   if v:shell_error
     return []
   endif
