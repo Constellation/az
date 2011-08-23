@@ -1827,7 +1827,9 @@ class Parser : private iv::core::Noncopyable<> {
       //   Test.prototype.test;
       //
       if (token_ == Token::TK_SEMICOLON && result->AsIdentifierAccess()) {
-        ctx_->Tag(result, GetAndResetJSDocInfo());
+        if (std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo()) {
+          ctx_->Tag(result, info);
+        }
       }
       return result;
     }
