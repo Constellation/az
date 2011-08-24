@@ -79,8 +79,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
 
   typedef std::vector<std::shared_ptr<Entry> > Entries;
 
-  Summary(FunctionLiteral* function,
-          AObject* obj)
+  Summary(FunctionLiteral* function, AObject* obj)
     : function_(function),
       object_(obj),
       candidates_(),

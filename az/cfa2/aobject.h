@@ -145,5 +145,29 @@ void AObject::Complete(Heap* heap, Completer* completer) const {
   proto_.ToObject(heap).Complete(heap, completer);
 }
 
+iv::core::UString AObject::ToTypeString(
+    Heap* heap,
+    std::unordered_set<const AObject*>* already_searched) const {
+  if (already_searched->find(this) != already_searched->end()) {
+    return iv::core::ToUString("any");
+  } else {
+    already_searched->insert(this);
+  }
+  if (IsFunction()) {
+    if (builtin_) {
+      // this is builtin function
+      return iv::core::ToUString("builtin function");
+    }
+    assert(function_);
+    return iv::core::ToUString("function");
+  }
+  const AVal constructor = GetProperty(Intern("constructor"));
+  if (constructor.IsUndefined()) {
+    // constructor not found
+    return iv::core::ToUString("Global");
+  }
+  return iv::core::ToUString("Object");
+}
+
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_AOBJECT_H_

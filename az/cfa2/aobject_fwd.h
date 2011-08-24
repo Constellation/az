@@ -70,7 +70,7 @@ class AObject
   : private iv::core::Noncopyable<AObject>,
     public iv::core::SpaceObject {
  public:
-  typedef std::map<Symbol, AProp> Properties;
+  typedef std::unordered_map<Symbol, AProp> Properties;
   AObject()
     : proto_(AVAL_NOBASE),
       number_(),
@@ -162,28 +162,11 @@ class AObject
     }
   }
 
-  iv::core::UString ToTypeString(Heap* heap, std::unordered_set<const AObject*>* already_searched) const {
-    if (already_searched->find(this) != already_searched->end()) {
-      return iv::core::ToUString("any");
-    } else {
-      already_searched->insert(this);
-    }
-    if (IsFunction()) {
-      // TODO(Constellation) implement it
-      return iv::core::ToUString("function");
-    }
-    const AVal constructor = GetProperty(Intern("constructor"));
-    if (constructor.IsUndefined()) {
-      // constructor not found
-      return iv::core::ToUString("Global");
-    }
-    return iv::core::ToUString("Object");
-  }
+  inline iv::core::UString ToTypeString(Heap* heap, std::unordered_set<const AObject*>* already_searched) const;
 
   bool IsFunction() const {
     return function_ || builtin_;
   }
-
 
   inline AVal GetNumberProperty(Heap* heap);
   inline AVal GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;

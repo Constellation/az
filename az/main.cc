@@ -56,7 +56,8 @@ inline int Pulse(const iv::core::UString& src, std::size_t len) {
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
-    az::cfa2::Complete(global, src, &factory, &reporter, &completer);
+    az::cfa2::Heap heap(&factory, &completer);
+    az::cfa2::Complete(global, &heap, src, &reporter);
     completer.Output();
   }
   return EXIT_SUCCESS;
@@ -75,7 +76,8 @@ inline int Tag(const iv::core::UString& src) {
   Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
-  az::cfa2::Complete(global, src, &factory, &reporter, NULL);
+  az::cfa2::Heap heap(&factory, NULL);
+  az::cfa2::Complete(global, &heap, src, &reporter);
   return EXIT_SUCCESS;
 }
 

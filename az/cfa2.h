@@ -61,14 +61,12 @@ namespace cfa2 {
 
 template<typename Source, typename Reporter>
 inline void Complete(FunctionLiteral* global,
+                     Heap* heap,
                      const Source& src,
-                     AstFactory* factory,
-                     Reporter* reporter, Completer* completer) {
-  // initialize heap
-  Heap heap(factory, completer);
+                     Reporter* reporter) {
   {
     // resolve binding type
-    BindingResolver resolver(&heap);
+    BindingResolver resolver(heap);
     resolver.Resolve(global);
   }
   {
@@ -77,18 +75,19 @@ inline void Complete(FunctionLiteral* global,
     // initialize summaries and heap static objects declaration
     // static objects are bound to heap by AstNode address and
     // summaries are bound to heap by FunctionLiteral address
-    HeapInitializer initializer(&heap);
+    HeapInitializer initializer(heap);
     initializer.Initialize(global);
   }
-  if (completer && !heap.IsWaited(completer->GetTargetFunction())) {
+  if (heap->completer() &&
+      !heap->IsWaited(heap->completer()->GetTargetFunction())) {
     return;
   }
   {
     // execute abstract interpreter
-    Interpreter interp(&heap);
+    Interpreter interp(heap);
     interp.Run(global);
   }
-  // heap.ShowSummaries();  // for debug...
+  // heap->ShowSummaries();  // for debug...
 }
 
 } }  // namespace az::cfa2
