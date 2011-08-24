@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstring>
 #include <iv/detail/array.h>
 #include <iv/ustring.h>
 #include <az/jsdoc/parser.h>
