@@ -3,6 +3,7 @@
 #define _AZ_JSDOC_TYPE_LEXER_H_
 #include <iv/noncopyable.h>
 #include <iv/ustringpiece.h>
+#include <iv/character.h>
 #include <az/jsdoc/fwd.h>
 #include <az/jsdoc/type_token.h>
 namespace az {
