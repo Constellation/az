@@ -119,11 +119,12 @@ int main(int argc, char** argv) {
   }
 
   const std::vector<std::string>& rest = cmd.rest();
-  if (rest.empty() && !cmd.Exist("file")) {
+  if (rest.empty()) {
     std::fputs(cmd.usage().c_str(), stdout);
     return EXIT_FAILURE;
   }
 
+  // preload files
   std::vector<char> res;
   if (cmd.Exist("file")) {
     const std::vector<std::string>& vec = cmd.GetList<std::string>("file");
@@ -133,10 +134,12 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
       }
     }
-  } else {
-    if (!ReadFile(rest.front(), &res)) {
-      return EXIT_FAILURE;
-    }
+  }
+
+  const std::size_t preloaded_offset = res.size();
+
+  if (!ReadFile(rest.front(), &res)) {
+    return EXIT_FAILURE;
   }
   iv::core::UString src;
   src.reserve(res.size());
@@ -149,7 +152,8 @@ int main(int argc, char** argv) {
   }
   if (cmd.Exist("pulse")) {
     // pulse mode
-    const std::size_t len = cmd.Get<std::size_t>("pulse");
+    const std::size_t len =
+       preloaded_offset + cmd.Get<std::size_t>("pulse");
     if (len > src.size()) {
       std::fprintf(stderr,
                    "%s %lld %s %lld%s\n",
