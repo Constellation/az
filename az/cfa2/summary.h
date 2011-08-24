@@ -124,10 +124,10 @@ class Summary : private iv::core::Noncopyable<Summary> {
     type_.Merge(this_binding, args, result);
   }
 
-  iv::core::UString ToTypeString() const {
+  iv::core::UString ToTypeString(Heap* heap) const {
     assert(IsExists());
     iv::core::UString result;
-    result.append(type_.result().result().ToTypeString());
+    result.append(type_.result().result().ToTypeString(heap));
     return result;
   }
 

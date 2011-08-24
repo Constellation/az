@@ -34,6 +34,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
       not_reachable_functions_(),
       object_literal_member_(),
       prototype_member_() {
+    completer_->set_heap(this);
     const std::vector<AVal> empty;
     // initialize builtin objects
 
@@ -981,7 +982,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
     s->second->UpdateType(this_binding, args, result);
   }
 
-  void ShowSummaries() const {
+  void ShowSummaries() {
     std::vector<uint16_t> res;
     for (Summaries::const_iterator it = summaries().begin(),
          last = summaries().end(); it != last; ++it) {
@@ -994,7 +995,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
         static const std::string prefix("<anonymous> ");
         res.insert(res.end(), prefix.begin(), prefix.end());
       }
-      const iv::core::UString str(it->second->ToTypeString());
+      const iv::core::UString str(it->second->ToTypeString(this));
       res.insert(res.end(), str.begin(), str.end());
       res.push_back('\n');
       iv::core::unicode::FPutsUTF16(stdout, res.begin(), res.end());

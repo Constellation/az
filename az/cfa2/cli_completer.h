@@ -16,10 +16,11 @@ class CLICompleter : public Completer {
   }
 
   void Output() const {
+    assert(heap());
     for (Properties::const_iterator it = properties_.begin(),
          last = properties_.end(); it != last; ++it) {
       const iv::core::UString target = GetSymbolString(it->first);
-      const iv::core::UString type = it->second.ToTypeString();
+      const iv::core::UString type = it->second.ToTypeString(heap());
       iv::core::unicode::FPutsUTF16(stdout, target.begin(), target.end());
       std::fputc('#', stdout);
       iv::core::unicode::FPutsUTF16(stdout, type.begin(), type.end());
@@ -36,6 +37,7 @@ class CLICompleter : public Completer {
   }
 
  private:
+  Heap* heap_;
   Properties properties_;
 };
 

@@ -162,7 +162,7 @@ class AObject
     }
   }
 
-  iv::core::UString ToTypeString(std::unordered_set<const AObject*>* already_searched) const {
+  iv::core::UString ToTypeString(Heap* heap, std::unordered_set<const AObject*>* already_searched) const {
     if (already_searched->find(this) != already_searched->end()) {
       return iv::core::ToUString("any");
     } else {

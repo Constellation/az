@@ -156,7 +156,7 @@ AVal AVal::GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_sea
   return val;
 }
 
-iv::core::UString AVal::ToTypeString() const {
+iv::core::UString AVal::ToTypeString(Heap* heap) const {
   static const std::array<Pair, 7> kBase = { {
     { 1, "number" },
     { 2, "string" },
@@ -180,7 +180,7 @@ iv::core::UString AVal::ToTypeString() const {
   std::unordered_set<const AObject*> already_searched;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
-    types.insert((*it)->ToTypeString(&already_searched));
+    types.insert((*it)->ToTypeString(heap, &already_searched));
   }
 
   if (types.empty()) {

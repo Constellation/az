@@ -245,7 +245,7 @@ class AVal {
     const char* str;
   };
 
-  inline iv::core::UString ToTypeString() const;
+  inline iv::core::UString ToTypeString(Heap* heap) const;
 
  private:
   int base_;
