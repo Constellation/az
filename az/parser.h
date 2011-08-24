@@ -2543,7 +2543,7 @@ class Parser : private iv::core::Noncopyable<> {
       }
 
       if (token_ != Token::TK_RBRACE) {
-        if (!CheckOrRecovery<Token::TK_IDENTIFIER>()) {
+        if (!CheckOrRecovery<Token::TK_COMMA>()) {
           // such as,
           //   {
           //     x: "VAL"
