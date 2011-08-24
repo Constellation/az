@@ -1,5 +1,6 @@
 #ifndef _AZ_CFA2_AOBJECT_H_
 #define _AZ_CFA2_AOBJECT_H_
+#include <az/cfa2/type_utils.h>
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/heap.h>
 namespace az {
@@ -156,10 +157,9 @@ iv::core::UString AObject::ToTypeString(
   if (IsFunction()) {
     if (builtin_) {
       // this is builtin function
-      return iv::core::ToUString("builtin function");
+      return iv::core::ToUString("builtin");
     }
-    assert(function_);
-    return iv::core::ToUString("function");
+    return GetFunctionPrototypeDeclaration(function_);
   }
   const AVal constructor = GetProperty(Intern("constructor"));
   if (constructor.IsUndefined()) {
