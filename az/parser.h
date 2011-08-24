@@ -44,7 +44,7 @@ using iv::core::Token;
     }\
   } while (0)
 
-#define IS_STATEMENT(token)\
+#define IS_NORETURN(token)\
   do {\
     if (token_ != token) {\
       *res = false;\
@@ -69,14 +69,11 @@ using iv::core::Token;
 
 #define UNEXPECT(token)\
   do {\
-    *res = false;\
-    ReportUnexpectedToken(token);\
-    errors_.push_back(error_);\
-    error_.clear();\
+    UNEXPECT_NORETURN(token);\
     return NULL;\
   } while (0)
 
-#define UNEXPECT_STATEMENT(token)\
+#define UNEXPECT_NORETURN(token)\
   do {\
     *res = false;\
     ReportUnexpectedToken(token);\
@@ -86,17 +83,13 @@ using iv::core::Token;
 
 #define RAISE(str)\
   do {\
-    *res = false;\
-    error_state_ |= kNotRecoverable;\
-    error_.append(str);\
-    errors_.push_back(error_);\
-    error_.clear();\
+    RAISE_NORETURN(str);\
     return NULL;\
   } while (0)
 
 // not return
 // provide recovery chance
-#define RAISE_STATEMENT(str)\
+#define RAISE_NORETURN(str)\
   do {\
     *res = false;\
     error_state_ |= kNotRecoverable;\
@@ -107,24 +100,25 @@ using iv::core::Token;
 
 #define RAISE_RECOVERVABLE(str)\
   do {\
+    RAISE_RECOVERVABLE_NORETURN(str);\
+    return NULL;\
+  } while (0)
+
+#define RAISE_RECOVERVABLE_NORETURN(str)\
+  do {\
     *res = false;\
     error_.append(str);\
     errors_.push_back(error_);\
     error_.clear();\
-    return NULL;\
   } while (0)
 
 #define RAISE_WITH_NUMBER(str, line)\
   do {\
-    *res = false;\
-    error_state_ |= kNotRecoverable;\
-    error_.append(str);\
-    errors_.push_back(error_);\
-    error_.clear();\
+    RAISE_WITH_NUMBER_NORETURN(str, line);\
     return NULL;\
   } while (0)
 
-#define RAISE_WITH_NUMBER_NO_RETURN(str, line)\
+#define RAISE_WITH_NUMBER_NORETURN(str, line)\
   do {\
     *res = false;\
     error_state_ |= kNotRecoverable;\
@@ -331,7 +325,7 @@ class Parser : private iv::core::Noncopyable<> {
               expr->AsStringLiteral()->value().compare(detail::kUseStrict.data()) == 0) {
             strict_switcher.SwitchStrictMode();
             if (octal_escaped_directive_found) {
-              RAISE_WITH_NUMBER_NO_RETURN(
+              RAISE_WITH_NUMBER_NORETURN(
                   "octal escape sequence not allowed in strict code",
                   line);
               reporter_->ReportSyntaxError(errors_.back(), lexer_->previous_end_position());
@@ -368,7 +362,7 @@ class Parser : private iv::core::Noncopyable<> {
       }
     }
     if (token_ != end) {
-      UNEXPECT_STATEMENT(token_);
+      UNEXPECT_NORETURN(token_);
       reporter_->ReportSyntaxError(errors_.back(), lexer_->previous_end_position());
       *res = true;  // recovery
     }
@@ -402,7 +396,7 @@ class Parser : private iv::core::Noncopyable<> {
 
       case Token::TK_CONST:
         if (strict_) {
-          RAISE_STATEMENT("\"const\" not allowed in strict code");
+          RAISE_NORETURN("\"const\" not allowed in strict code");
           reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
           *res = true;  // recovery
         }
@@ -496,7 +490,7 @@ class Parser : private iv::core::Noncopyable<> {
           result = ParseExpressionStatement(res);
         } else if (token_ == Token::TK_ILLEGAL) {
           // invalid token...
-          UNEXPECT_STATEMENT(token_);
+          UNEXPECT_NORETURN(token_);
           reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
           Skip skip(lexer_, strict_);
           SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
@@ -506,7 +500,7 @@ class Parser : private iv::core::Noncopyable<> {
           result = stmt;
         } else {
           // not statement start token
-          UNEXPECT_STATEMENT(token_);
+          UNEXPECT_NORETURN(token_);
           reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
           *res = true;  // recovery
           Statement* stmt = factory_->NewEmptyStatement(lexer_->begin_position(),
@@ -572,7 +566,7 @@ class Parser : private iv::core::Noncopyable<> {
     }
     const bool failed = (token_ == Token::TK_EOS);
     if (failed) {
-      UNEXPECT_STATEMENT(token_);
+      UNEXPECT_NORETURN(token_);
       reporter_->ReportSyntaxError(errors_.back(), begin);
       *res = true;  // recovery
     }
@@ -764,7 +758,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     Statement* const body = ParseStatement(res);
 
-    IS_STATEMENT(Token::TK_WHILE) {
+    IS_NORETURN(Token::TK_WHILE) {
       // while is not found
       // if Statement body is valid, skip
       reporter_->ReportSyntaxError(errors_.back(), begin);
@@ -910,7 +904,7 @@ class Parser : private iv::core::Noncopyable<> {
           if (decls->size() != 1) {
             // ForInStatement requests VaraibleDeclarationNoIn (not List),
             // so check declarations' size is 1.
-            RAISE_STATEMENT("invalid for-in left-hand-side");
+            RAISE_NORETURN("invalid for-in left-hand-side");
             reporter_->ReportSyntaxError(errors_.back(), begin);
             *res = true;  // recovery
             failed = true;
@@ -978,7 +972,7 @@ class Parser : private iv::core::Noncopyable<> {
           init = factory_->NewExpressionStatement(init_expr,
                                                   lexer_->previous_end_position());
           if (!init_expr->IsValidLeftHandSide() && !failed) {
-            RAISE_STATEMENT("invalid for-in left-hand-side");
+            RAISE_NORETURN("invalid for-in left-hand-side");
             reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
             *res = true;  // recovery
             failed = true;
@@ -1112,7 +1106,7 @@ class Parser : private iv::core::Noncopyable<> {
       label = ParseIdentifier(lexer_->Buffer());
       target = LookupContinuableTarget(label);
       if (!target) {
-        RAISE_STATEMENT("label not found");
+        RAISE_NORETURN("label not found");
         reporter_->ReportSyntaxError(errors_.back(), begin);
         *res = true;  // recovery
         ExpectSemicolon(res);
@@ -1130,7 +1124,7 @@ class Parser : private iv::core::Noncopyable<> {
     } else {
       target = LookupContinuableTarget();
       if (!target) {
-        RAISE_STATEMENT("label not found");
+        RAISE_NORETURN("label not found");
         reporter_->ReportSyntaxError(errors_.back(), begin);
         *res = true;  // recovery
         ExpectSemicolon(res);
@@ -1193,7 +1187,7 @@ class Parser : private iv::core::Noncopyable<> {
       } else {
         target = LookupBreakableTarget(label);
         if (!target) {
-          RAISE_STATEMENT("label not found");
+          RAISE_NORETURN("label not found");
           reporter_->ReportSyntaxError(errors_.back(), begin);
           *res = true;  // recovery
           ExpectSemicolon(res);
@@ -1212,7 +1206,7 @@ class Parser : private iv::core::Noncopyable<> {
     } else {
       target = LookupBreakableTarget();
       if (!target) {
-        RAISE_STATEMENT("label not found");
+        RAISE_NORETURN("label not found");
         reporter_->ReportSyntaxError(errors_.back(), begin);
         *res = true;  // recovery
         ExpectSemicolon(res);
@@ -1252,7 +1246,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (scope_->IsGlobal()) {
       // return statement found in global
       // SyntaxError
-      RAISE_STATEMENT("\"return\" not in function");
+      RAISE_NORETURN("\"return\" not in function");
       reporter_->ReportSyntaxError(errors_.back(), begin);
       *res = true;  // recovery
       failed = true;
@@ -1303,7 +1297,7 @@ class Parser : private iv::core::Noncopyable<> {
     // section 12.10.1
     // when in strict mode code, WithStatement is not allowed.
     if (strict_) {
-      RAISE_STATEMENT("with statement not allowed in strict code");
+      RAISE_NORETURN("with statement not allowed in strict code");
       reporter_->ReportSyntaxError(errors_.back(), begin);
       *res = true;  // recovery
       failed = true;
@@ -1410,7 +1404,7 @@ class Parser : private iv::core::Noncopyable<> {
         }
       } else {
         // skip until }
-        UNEXPECT_STATEMENT(token_);
+        UNEXPECT_NORETURN(token_);
         reporter_->ReportSyntaxError(errors_.back(), begin);
         Skip skip(lexer_, strict_);
         SkipComment(skip.SkipUntil(Token::TK_RBRACE));
@@ -1428,7 +1422,7 @@ class Parser : private iv::core::Noncopyable<> {
       bool invalid_case_clause = false;
       if (case_clause->IsDefault()) {
         if (default_found) {
-          RAISE_STATEMENT("duplicate default clause in switch");
+          RAISE_NORETURN("duplicate default clause in switch");
           reporter_->ReportSyntaxError(errors_.back(), begin);
           *res = true;  // recovery
           failed = true;
@@ -1443,7 +1437,7 @@ class Parser : private iv::core::Noncopyable<> {
     }
     if (token_ == Token::TK_EOS) {
       failed = true;
-      UNEXPECT_STATEMENT(token_);
+      UNEXPECT_NORETURN(token_);
       reporter_->ReportSyntaxError(errors_.back(), begin);
       *res = true;  // recovery
       SwitchStatement* const stmt =
@@ -1502,7 +1496,7 @@ class Parser : private iv::core::Noncopyable<> {
                                                  expr, body,
                                                  begin, lexer_->previous_end_position());
     if (failed) {
-      UNEXPECT_STATEMENT(Token::TK_EOS);
+      UNEXPECT_NORETURN(Token::TK_EOS);
     }
     return clause;
   }
@@ -1515,7 +1509,7 @@ class Parser : private iv::core::Noncopyable<> {
     Next();
     // Throw requires Expression
     if (lexer_->has_line_terminator_before_next()) {
-      RAISE_STATEMENT("missing expression between throw and newline");
+      RAISE_NORETURN("missing expression between throw and newline");
       reporter_->ReportSyntaxError(errors_.back(), begin);
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1601,10 +1595,10 @@ class Parser : private iv::core::Noncopyable<> {
           const EvalOrArguments val = IsEvalOrArguments(name);
           if (val) {
             if (val == kEval) {
-              RAISE_STATEMENT("catch placeholder \"eval\" not allowed in strict code");
+              RAISE_NORETURN("catch placeholder \"eval\" not allowed in strict code");
             } else {
               assert(val == kArguments);
-              RAISE_STATEMENT(
+              RAISE_NORETURN(
                   "catch placeholder \"arguments\" not allowed in strict code");
             }
             reporter_->ReportSyntaxError(errors_.back(), begin);
@@ -1613,13 +1607,13 @@ class Parser : private iv::core::Noncopyable<> {
           }
         }
       }
-      IS_STATEMENT(Token::TK_RPAREN) {
+      IS_NORETURN(Token::TK_RPAREN) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         *res = true;  // recovery
         return ReturnFailedStatement(begin);
       }
       Next();
-      IS_STATEMENT(Token::TK_LBRACE) {
+      IS_NORETURN(Token::TK_LBRACE) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         Skip skip(lexer_, strict_);
         SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
@@ -1633,7 +1627,7 @@ class Parser : private iv::core::Noncopyable<> {
       // Finally
       has_catch_or_finally= true;
       Next();
-      IS_STATEMENT(Token::TK_LBRACE) {
+      IS_NORETURN(Token::TK_LBRACE) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         Skip skip(lexer_, strict_);
         SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
@@ -1644,7 +1638,7 @@ class Parser : private iv::core::Noncopyable<> {
     }
 
     if (!has_catch_or_finally) {
-      RAISE_STATEMENT("missing catch or finally after try statement");
+      RAISE_NORETURN("missing catch or finally after try statement");
       reporter_->ReportSyntaxError(errors_.back(), begin);
       *res = true;  // recovery
       return ReturnFailedStatement(begin);
@@ -1740,7 +1734,7 @@ class Parser : private iv::core::Noncopyable<> {
       bool failed = false;
       if (ContainsLabel(labels, label) || TargetsContainsLabel(label)) {
         // duplicate label
-        RAISE_STATEMENT("duplicate label");
+        RAISE_NORETURN("duplicate label");
         reporter_->ReportSyntaxError(errors_.back(), begin);
         *res = true;  // recovery
         failed = true;
@@ -1775,7 +1769,7 @@ class Parser : private iv::core::Noncopyable<> {
     assert(token_ == Token::TK_FUNCTION);
     const std::size_t begin = lexer_->begin_position();
     if (strict_) {
-      RAISE_STATEMENT("function statement not allowed in strict code");
+      RAISE_NORETURN("function statement not allowed in strict code");
       reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
       *res = true;  // recovery
       failed = true;
@@ -2489,12 +2483,18 @@ class Parser : private iv::core::Noncopyable<> {
             map.insert(std::make_pair(ident, ObjectLiteral::DATA));
           } else {
             if (it->second != ObjectLiteral::DATA) {
-              RAISE("accessor property and data property "
-                    "exist with the same name");
+              RAISE_NORETURN(
+                  "accessor property and data property "
+                  "exist with the same name");
+              reporter_->ReportSyntaxError(errors_.back(), begin);
+              *res = true;  // recovery
             } else {
               if (strict_) {
-                RAISE("multiple data property assignments "
-                      "with the same name not allowed in strict code");
+                RAISE_NORETURN(
+                    "multiple data property assignments "
+                    "with the same name not allowed in strict code");
+                reporter_->ReportSyntaxError(errors_.back(), begin);
+                *res = true;  // recovery
               }
             }
           }
@@ -2522,17 +2522,25 @@ class Parser : private iv::core::Noncopyable<> {
               map.insert(std::make_pair(ident, type));
             } else if (it->second & (ObjectLiteral::DATA | type)) {
               if (it->second & ObjectLiteral::DATA) {
-                RAISE("data property and accessor property "
-                      "exist with the same name");
+                RAISE_NORETURN(
+                    "data property and accessor property "
+                    "exist with the same name");
+                reporter_->ReportSyntaxError(errors_.back(), begin);
+                *res = true;  // recovery
               } else {
-                RAISE("multiple same accessor properties "
-                      "exist with the same name");
+                RAISE_NORETURN(
+                    "multiple same accessor properties "
+                    "exist with the same name");
+                reporter_->ReportSyntaxError(errors_.back(), begin);
+                *res = true;  // recovery
               }
             } else {
               it->second |= type;
             }
           } else {
-            RAISE_RECOVERVABLE("invalid property name");
+            RAISE_RECOVERVABLE_NORETURN("invalid property name");
+            reporter_->ReportSyntaxError(errors_.back(), begin);
+            *res = true;  // recovery
           }
         }
       } else if (token_ == Token::TK_IDENTIFIER ||
@@ -2555,16 +2563,16 @@ class Parser : private iv::core::Noncopyable<> {
           if (it->second != ObjectLiteral::DATA) {
             // TODO:(Constellation)
             // check this node is failed
-            RAISE_STATEMENT("accessor property and data property "
-                            "exist with the same name");
+            RAISE_NORETURN("accessor property and data property "
+                           "exist with the same name");
             reporter_->ReportSyntaxError(errors_.back(), begin);
             *res = true;  // recovery
           } else {
             if (strict_) {
               // TODO:(Constellation)
               // check this node is failed
-              RAISE_STATEMENT("multiple data property assignments "
-                              "with the same name not allowed in strict code");
+              RAISE_NORETURN("multiple data property assignments "
+                             "with the same name not allowed in strict code");
               reporter_->ReportSyntaxError(errors_.back(), begin);
               *res = true;  // recovery
             }
@@ -2573,7 +2581,7 @@ class Parser : private iv::core::Noncopyable<> {
       } else {
         const std::size_t end = lexer_->begin_position();
         Next();
-        RAISE_STATEMENT("invalid property name");
+        RAISE_NORETURN("invalid property name");
         reporter_->ReportSyntaxError(errors_.back(), begin);
         *res = true;  // recovery
         return factory_->NewObjectLiteral(prop, begin, end);
@@ -2750,42 +2758,42 @@ class Parser : private iv::core::Noncopyable<> {
         case kDetectNone:
           break;
         case kDetectEvalName:
-          RAISE_WITH_NUMBER_NO_RETURN(
+          RAISE_WITH_NUMBER_NORETURN(
               "function name \"eval\" not allowed in strict code",
               throw_error_if_strict_code_line);
           reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
           *res = true;  // recovery
           break;
         case kDetectArgumentsName:
-          RAISE_WITH_NUMBER_NO_RETURN(
+          RAISE_WITH_NUMBER_NORETURN(
               "function name \"arguments\" not allowed in strict code",
               throw_error_if_strict_code_line);
           reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
           *res = true;  // recovery
           break;
         case kDetectEvalParameter:
-          RAISE_WITH_NUMBER_NO_RETURN(
+          RAISE_WITH_NUMBER_NORETURN(
               "parameter \"eval\" not allowed in strict code",
               throw_error_if_strict_code_line);
           reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
           *res = true;  // recovery
           break;
         case kDetectArgumentsParameter:
-          RAISE_WITH_NUMBER_NO_RETURN(
+          RAISE_WITH_NUMBER_NORETURN(
               "parameter \"arguments\" not allowed in strict code",
               throw_error_if_strict_code_line);
           reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
           *res = true;  // recovery
           break;
         case kDetectDuplicateParameter:
-          RAISE_WITH_NUMBER_NO_RETURN(
+          RAISE_WITH_NUMBER_NORETURN(
               "duplicate parameter not allowed in strict code",
               throw_error_if_strict_code_line);
           reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
           *res = true;  // recovery
           break;
         case kDetectFutureReservedWords:
-          RAISE_WITH_NUMBER_NO_RETURN(
+          RAISE_WITH_NUMBER_NORETURN(
               "FutureReservedWords is found in strict code",
               throw_error_if_strict_code_line);
           reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
@@ -3128,7 +3136,7 @@ class Parser : private iv::core::Noncopyable<> {
 
   template<iv::core::Token::Type token>
   bool CheckOrRecovery(bool* res) {
-    IS_STATEMENT(token) {
+    IS_NORETURN(token) {
       Skip skip(lexer_, strict_);
       SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
       *res = true;  // recovery
@@ -3260,11 +3268,16 @@ class Parser : private iv::core::Noncopyable<> {
   std::shared_ptr<jsdoc::Info> doc_;
 };
 #undef IS
+#undef IS_NORETURN
 #undef EXPECT
 #undef UNEXPECT
+#undef UNEXPECT_NORETURN
 #undef RAISE
+#undef RAISE_NORETURN
 #undef RAISE_WITH_NUMBER
+#undef RAISE_WITH_NUMBER_NORETURN
 #undef RAISE_RECOVERVABLE
+#undef RAISE_RECOVERVABLE_NORETURN
 #undef CHECK
 }  // namespace az
 #endif  // _AZ_PARSER_H_
