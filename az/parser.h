@@ -694,7 +694,7 @@ class Parser : private iv::core::Noncopyable<> {
     Statement* else_statement = NULL;
     Next();
 
-    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -718,7 +718,7 @@ class Parser : private iv::core::Noncopyable<> {
       }
     }
 
-    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -771,7 +771,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     Next();
 
-    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -795,7 +795,7 @@ class Parser : private iv::core::Noncopyable<> {
       }
     }
 
-    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -824,7 +824,7 @@ class Parser : private iv::core::Noncopyable<> {
     bool failed = false;
     Next();
 
-    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -845,7 +845,7 @@ class Parser : private iv::core::Noncopyable<> {
     }
     Target target(this, Target::kIterationStatement);
 
-    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -876,7 +876,7 @@ class Parser : private iv::core::Noncopyable<> {
     bool failed = false;
     Next();
 
-    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
       return ReturnFailedStatement(for_stmt_begin);
     }
@@ -930,7 +930,7 @@ class Parser : private iv::core::Noncopyable<> {
             }
           }
 
-          if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+          if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
             reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
             return ReturnFailedStatement(for_stmt_begin);
           }
@@ -988,7 +988,7 @@ class Parser : private iv::core::Noncopyable<> {
             }
           }
 
-          if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+          if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
             reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
             return ReturnFailedStatement(for_stmt_begin);
           }
@@ -1013,7 +1013,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     // not for-in statement
     // ordinary for loop
-    if (!ConsumeOrRecovery<Token::TK_SEMICOLON>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_SEMICOLON>()) {
       reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
       if (token_ != Token::TK_RPAREN) {
         Skip skip(lexer_, strict_);
@@ -1064,7 +1064,7 @@ class Parser : private iv::core::Noncopyable<> {
         }
       }
       assert(next);
-      if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+      if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
         reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
         return ReturnFailedStatement(for_stmt_begin);
       }
@@ -1093,7 +1093,7 @@ class Parser : private iv::core::Noncopyable<> {
         token_ != Token::TK_SEMICOLON &&
         token_ != Token::TK_RBRACE &&
         token_ != Token::TK_EOS) {
-      if (!CheckOrRecovery<Token::TK_IDENTIFIER>(res)) {
+      if (!CheckOrRecovery<Token::TK_IDENTIFIER>()) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         return ReturnFailedStatement(begin);
       }
@@ -1159,7 +1159,7 @@ class Parser : private iv::core::Noncopyable<> {
         token_ != Token::TK_RBRACE &&
         token_ != Token::TK_EOS) {
       // label
-      if (!CheckOrRecovery<Token::TK_IDENTIFIER>(res)) {
+      if (!CheckOrRecovery<Token::TK_IDENTIFIER>()) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         return ReturnFailedStatement(begin);
       }
@@ -1286,7 +1286,7 @@ class Parser : private iv::core::Noncopyable<> {
       failed = true;
     }
 
-    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -1306,7 +1306,7 @@ class Parser : private iv::core::Noncopyable<> {
       failed = true;
     }
 
-    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -1333,7 +1333,7 @@ class Parser : private iv::core::Noncopyable<> {
     CaseClause* case_clause;
     Next();
 
-    if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -1351,7 +1351,7 @@ class Parser : private iv::core::Noncopyable<> {
       expr = MakeFailedExpression();
     }
 
-    if (!ConsumeOrRecovery<Token::TK_RPAREN>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_RPAREN>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -1359,7 +1359,7 @@ class Parser : private iv::core::Noncopyable<> {
     CaseClauses* clauses = factory_->template NewVector<CaseClause*>();
     Target target(this, Target::kSwitchStatement);
 
-    if (!ConsumeOrRecovery<Token::TK_LBRACE>(res)) {
+    if (!ConsumeOrRecovery<Token::TK_LBRACE>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -1539,7 +1539,7 @@ class Parser : private iv::core::Noncopyable<> {
 
     std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo();
 
-    if (!CheckOrRecovery<Token::TK_LBRACE>(res)) {
+    if (!CheckOrRecovery<Token::TK_LBRACE>()) {
       reporter_->ReportSyntaxError(errors_.back(), begin);
       return ReturnFailedStatement(begin);
     }
@@ -1551,7 +1551,7 @@ class Parser : private iv::core::Noncopyable<> {
       has_catch_or_finally = true;
       Next();
 
-      if (!ConsumeOrRecovery<Token::TK_LPAREN>(res)) {
+      if (!ConsumeOrRecovery<Token::TK_LPAREN>()) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
         return ReturnFailedStatement(begin);
       }
@@ -1562,7 +1562,7 @@ class Parser : private iv::core::Noncopyable<> {
         // with () {  <= error occurred, but token RPAREN is found.
         // }
         // through this error and parse WithStatement body
-        if (!CheckOrRecovery<Token::TK_RPAREN>(res)) {
+        if (!CheckOrRecovery<Token::TK_RPAREN>()) {
           *res = true;  // recovery
           failed = true;
         }
@@ -1587,17 +1587,13 @@ class Parser : private iv::core::Noncopyable<> {
           }
         }
       }
-      IS_NORETURN(Token::TK_RPAREN) {
+      if (!CheckOrRecovery<Token::TK_RPAREN>()) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        *res = true;  // recovery
         return ReturnFailedStatement(begin);
       }
       Next();
-      IS_NORETURN(Token::TK_LBRACE) {
+      if (!CheckOrRecovery<Token::TK_LBRACE>()) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(lexer_, strict_);
-        SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
-        *res = true;  // recovery
         return ReturnFailedStatement(begin);
       }
       catch_block = ParseBlock(res);
@@ -1607,11 +1603,8 @@ class Parser : private iv::core::Noncopyable<> {
       // Finally
       has_catch_or_finally= true;
       Next();
-      IS_NORETURN(Token::TK_LBRACE) {
+      if (!CheckOrRecovery<Token::TK_LBRACE>()) {
         reporter_->ReportSyntaxError(errors_.back(), begin);
-        Skip skip(lexer_, strict_);
-        SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
-        *res = true;  // recovery
         return ReturnFailedStatement(begin);
       }
       finally_block = ParseBlock(res);
@@ -2550,15 +2543,15 @@ class Parser : private iv::core::Noncopyable<> {
       }
 
       if (token_ != Token::TK_RBRACE) {
-        IS_NORETURN(Token::TK_COMMA) {
+        if (!CheckOrRecovery<Token::TK_IDENTIFIER>()) {
           // such as,
           //   {
           //     x: "VAL"
           //
           // finish this ObjectLiteral with recovery
+          reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
           Skip skip(lexer_, strict_);
           SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
-          *res = true;  // recovery
           assert(prop);
           return factory_->NewObjectLiteral(prop, begin, lexer_->begin_position());
         }
@@ -3093,8 +3086,8 @@ class Parser : private iv::core::Noncopyable<> {
   }
 
   template<iv::core::Token::Type token>
-  bool ConsumeOrRecovery(bool* res) {
-    if (CheckOrRecovery<token>(res)) {
+  bool ConsumeOrRecovery() {
+    if (CheckOrRecovery<token>()) {
       Next();
       return true;
     }
@@ -3102,11 +3095,13 @@ class Parser : private iv::core::Noncopyable<> {
   }
 
   template<iv::core::Token::Type token>
-  bool CheckOrRecovery(bool* res) {
-    IS_NORETURN(token) {
+  bool CheckOrRecovery() {
+    if (token_ != token) {
+      ReportUnexpectedToken(token);
+      errors_.push_back(error_);
+      error_.clear();
       Skip skip(lexer_, strict_);
       SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
-      *res = true;  // recovery
       return false;
     }
     return true;
