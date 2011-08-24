@@ -2550,7 +2550,18 @@ class Parser : private iv::core::Noncopyable<> {
       }
 
       if (token_ != Token::TK_RBRACE) {
-        IS(Token::TK_COMMA);
+        IS_NORETURN(Token::TK_COMMA) {
+          // such as,
+          //   {
+          //     x: "VAL"
+          //
+          // finish this ObjectLiteral with recovery
+          Skip skip(lexer_, strict_);
+          SkipComment(skip.SkipUntilSemicolonOrLineTerminator());
+          *res = true;  // recovery
+          assert(prop);
+          return factory_->NewObjectLiteral(prop, begin, lexer_->begin_position());
+        }
         // IDENTIFIERNAME
         Next<iv::core::IgnoreReservedWordsAndIdentifyGetterOrSetter>();
         if (token_ == Token::TK_RBRACE) {
