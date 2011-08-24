@@ -73,6 +73,14 @@ class Interpreter
     frame_ = frame;
   }
 
+  Heap* heap() const {
+    return heap_;
+  }
+
+  const Result& result() const {
+    return result_;
+  }
+
  private:
   inline void Visit(Block* block);
   inline void Visit(FunctionStatement* func);

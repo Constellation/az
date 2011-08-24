@@ -34,8 +34,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
       waiting_result_(),
       not_reachable_functions_(),
       method_and_target_(),
-      object_literal_member_(),
-      prototype_member_() {
+      target_cache_(),
+      object_literal_member_() {
     completer_->set_heap(this);
     const std::vector<AVal> empty;
     // initialize builtin objects
@@ -1078,9 +1078,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return not_reachable_functions_.find(literal) != not_reachable_functions_.end();
   }
 
-  void RegisterPrototypeMethodBinding(Expression* constructor,
+  void RegisterPrototypeMethodBinding(Expression* expr,
                                       FunctionLiteral* literal) {
-    method_and_target_.insert(std::make_pair(literal, constructor));
+    method_and_target_.insert(std::make_pair(literal, expr));
+    target_cache_.insert(std::make_pair(expr, AVal(AVAL_NOBASE)));
   }
 
   Expression* IsPrototypeMethod(FunctionLiteral* function) const {
@@ -1091,6 +1092,19 @@ class Heap : private iv::core::Noncopyable<Heap> {
     } else {
       return NULL;
     }
+  }
+
+  bool IsMethodTarget(Expression* expr) const {
+    return target_cache_.find(expr) != target_cache_.end();
+  }
+
+  void MergeMethodTarget(Expression* expr, const AVal& val) {
+    target_cache_.find(expr)->second.Join(val);
+  }
+
+  AVal GetMethodTarget(Expression* expr) const {
+    assert(target_cache_.find(expr) != target_cache_.end());
+    return target_cache_.find(expr)->second;
   }
 
   // prototype getters
@@ -1191,8 +1205,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
   WaitingMap waiting_result_;
   std::unordered_set<FunctionLiteral*> not_reachable_functions_;
   std::unordered_map<FunctionLiteral*, Expression*> method_and_target_;
+  std::unordered_map<Expression*, AVal> target_cache_;
   std::unordered_map<FunctionLiteral*, AObject*> object_literal_member_;
-  std::unordered_map<FunctionLiteral*, AObject*> prototype_member_;
 };
 
 } }  // namespace az::cfa2

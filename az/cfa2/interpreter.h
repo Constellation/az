@@ -8,6 +8,7 @@
 #include <az/cfa2/heap_initializer.h>
 #include <az/cfa2/frame.h>
 #include <az/cfa2/result.h>
+#include <az/cfa2/method_target_guard.h>
 namespace az {
 namespace cfa2 {
 
@@ -52,14 +53,15 @@ void Interpreter::Run(FunctionLiteral* global) {
       if (AObject* obj = heap_->GetLiteralMemberBase(current->function())) {
         EvaluateFunction(current->target(), AVal(obj), vec, false);
       } else if (Expression* expr = heap_->IsPrototypeMethod(current->function())) {
-        // TODO:(Constellation)
-        // still very buggy (patching)
-        expr->Accept(this);
-        if (result_.result() == AVal(AVAL_NOBASE)) {
+        AVal target = heap_->GetMethodTarget(expr);
+        if (target == AVal(AVAL_NOBASE)) {
+          expr->Accept(this);
+          target = result_.result();
+        }
+        if (target == AVal(AVAL_NOBASE)) {
           EvaluateFunction(current->target(),
                            AVal(heap_->MakeObject()), vec, false);
         } else {
-          const AVal target = result_.result();
           target.Construct(heap_,
                            this, heap_->MakeObject(), vec, &result_);
           EvaluateFunction(current->target(), result_.result(), vec, false);
@@ -216,6 +218,7 @@ void Interpreter::Visit(ExpressionStatement* stmt) {
 
 void Interpreter::Visit(Assignment* assign) {
   using iv::core::Token;
+  const MethodTargetGuard method_target_guard(this, assign);
   const Token::Type op = assign->op();
   if (op == Token::TK_ASSIGN_ADD) {
     // +=
@@ -233,6 +236,7 @@ void Interpreter::Visit(Assignment* assign) {
 
 void Interpreter::Visit(BinaryOperation* binary) {
   using iv::core::Token;
+  const MethodTargetGuard method_target_guard(this, binary);
   const Token::Type token = binary->op();
   switch (token) {
     case Token::TK_LOGICAL_AND: {  // &&
@@ -389,6 +393,7 @@ void Interpreter::Visit(BinaryOperation* binary) {
 }
 
 void Interpreter::Visit(ConditionalExpression* cond) {
+  const MethodTargetGuard method_target_guard(this, cond);
   cond->cond()->Accept(this);
   const Result cr = result_;  // cond result
   cond->left()->Accept(this);
@@ -442,26 +447,27 @@ void Interpreter::Visit(ConditionalExpression* cond) {
 void Interpreter::Visit(UnaryOperation* unary) {
   // from iv / lv5 teleporter
   using iv::core::Token;
+  const MethodTargetGuard method_target_guard(this, unary);
   switch (unary->op()) {
     case Token::TK_DELETE: {
       // if no error occurred, this always returns BOOL / UNDEFINED
       unary->expr()->Accept(this);
       result_.set_result(AVal(AVAL_BOOL) | AVal(AVAL_UNDEFINED));
-      return;
+      break;
     }
 
     case Token::TK_VOID: {
       // if no error occurred, this always returns UNDEFINED
       unary->expr()->Accept(this);
       result_.set_result(AVal(AVAL_UNDEFINED));
-      return;
+      break;
     }
 
     case Token::TK_TYPEOF: {
       // if no error occurred, this always returns STRING
       unary->expr()->Accept(this);
       result_.set_result(AVal(AVAL_STRING));
-      return;
+      break;
     }
 
     case Token::TK_INC:
@@ -472,7 +478,7 @@ void Interpreter::Visit(UnaryOperation* unary) {
       // if no error occurred, this always returns NUMBER
       unary->expr()->Accept(this);
       result_.set_result(AVal(AVAL_NUMBER));
-      return;
+      break;
     }
 
     case Token::TK_NOT: {
@@ -485,7 +491,7 @@ void Interpreter::Visit(UnaryOperation* unary) {
         // indeterminate
         result_.set_result(AVal(AVAL_BOOL));
       }
-      return;
+      break;
     }
 
     default:
@@ -494,20 +500,24 @@ void Interpreter::Visit(UnaryOperation* unary) {
 }
 
 void Interpreter::Visit(PostfixExpression* postfix) {
+  const MethodTargetGuard method_target_guard(this, postfix);
   postfix->expr()->Accept(this);
   result_.set_result(AVal(AVAL_NUMBER));
 }
 
 void Interpreter::Visit(StringLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(AVal(literal->value()));
 }
 
 void Interpreter::Visit(NumberLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(AVal(AVAL_NUMBER));
 }
 
 void Interpreter::Visit(Identifier* ident) {
   // lookup!
+  const MethodTargetGuard method_target_guard(this, ident);
   Binding* binding = ident->refer();
   if (binding) {
     if (ident->refer()->type() == Binding::HEAP) {
@@ -525,27 +535,32 @@ void Interpreter::Visit(Identifier* ident) {
 }
 
 void Interpreter::Visit(ThisLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(CurrentFrame()->GetThis());
 }
 
-void Interpreter::Visit(NullLiteral* lit) {
+void Interpreter::Visit(NullLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(AVal(AVAL_NULL));
 }
 
-void Interpreter::Visit(TrueLiteral* lit) {
+void Interpreter::Visit(TrueLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(AVal(AVAL_TRUE));
 }
 
-void Interpreter::Visit(FalseLiteral* lit) {
+void Interpreter::Visit(FalseLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(AVal(AVAL_FALSE));
 }
 
 void Interpreter::Visit(RegExpLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(AVal(heap_->GetDeclObject(literal)));
 }
 
 void Interpreter::Visit(ArrayLiteral* literal) {
-  // visit each elements
+  const MethodTargetGuard method_target_guard(this, literal);
   AObject* ary = heap_->GetDeclObject(literal);
   AVal err(AVAL_NOBASE);
   bool error_found = false;
@@ -566,7 +581,7 @@ void Interpreter::Visit(ArrayLiteral* literal) {
 }
 
 void Interpreter::Visit(ObjectLiteral* literal) {
-  // visit each elements
+  const MethodTargetGuard method_target_guard(this, literal);
   AObject* obj = heap_->GetDeclObject(literal);
   AVal err(AVAL_NOBASE);
   bool error_found = false;
@@ -588,6 +603,7 @@ void Interpreter::Visit(ObjectLiteral* literal) {
 }
 
 void Interpreter::Visit(FunctionLiteral* literal) {
+  const MethodTargetGuard method_target_guard(this, literal);
   result_ = Result(AVal(heap_->GetDeclObject(literal)));
 }
 
@@ -658,6 +674,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
 }
 
 void Interpreter::Visit(IdentifierAccess* prop) {
+  const MethodTargetGuard method_target_guard(this, prop);
   prop->target()->Accept(this);
   base_ = result_.result().ToObject(heap_);
   const AVal refer = base_.GetProperty(heap_, Intern(prop->key()->value()));
@@ -665,6 +682,7 @@ void Interpreter::Visit(IdentifierAccess* prop) {
 }
 
 void Interpreter::Visit(IndexAccess* prop) {
+  const MethodTargetGuard method_target_guard(this, prop);
   prop->target()->Accept(this);
   const Result target(result_);
   prop->key()->Accept(this);
@@ -698,6 +716,7 @@ void Interpreter::Visit(IndexAccess* prop) {
 }
 
 void Interpreter::Visit(FunctionCall* call) {
+  const MethodTargetGuard method_target_guard(this, call);
   call->target()->Accept(this);
   AVal this_binding(AVAL_NOBASE);
   if (call->target()->AsPropertyAccess()) {
@@ -732,6 +751,7 @@ void Interpreter::Visit(FunctionCall* call) {
 }
 
 void Interpreter::Visit(ConstructorCall* call) {
+  const MethodTargetGuard method_target_guard(this, call);
   call->target()->Accept(this);
   AVal err(AVAL_NOBASE);
   bool error_found = false;
