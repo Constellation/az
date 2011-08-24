@@ -51,6 +51,19 @@ void Interpreter::Run(FunctionLiteral* global) {
                                   AVal(AVAL_NOBASE));
       if (AObject* obj = heap_->GetLiteralMemberBase(current->function())) {
         EvaluateFunction(current->target(), AVal(obj), vec, false);
+      } else if (Expression* expr = heap_->IsPrototypeMethod(current->function())) {
+        // TODO:(Constellation)
+        // still very buggy (patching)
+        expr->Accept(this);
+        if (result_.result() == AVal(AVAL_NOBASE)) {
+          EvaluateFunction(current->target(),
+                           AVal(heap_->MakeObject()), vec, false);
+        } else {
+          const AVal target = result_.result();
+          target.Construct(heap_,
+                           this, heap_->MakeObject(), vec, &result_);
+          EvaluateFunction(current->target(), result_.result(), vec, false);
+        }
       } else {
         EvaluateFunction(current->target(),
                          AVal(heap_->MakeObject()), vec, false);

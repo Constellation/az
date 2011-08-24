@@ -177,8 +177,51 @@ void HeapInitializer::Visit(ExpressionStatement* stmt) {
 // Expressions
 
 void HeapInitializer::Visit(Assignment* assign) {
-  assign->left()->Accept(this);
-  assign->right()->Accept(this);
+  Expression* left = assign->left();
+  Expression* right = assign->right();
+  left->Accept(this);
+  right->Accept(this);
+
+  // gathering prototype information
+  //
+  // if script is following,
+  //
+  //   function Test() {
+  //     this.value
+  //   }
+  //
+  //   Test.prototype.getValue = function getValue() {
+  //     this.<COMPLETION>
+  //   }
+  //
+  // We expect "this.value" is shown, but getValue function is not called in
+  // this script, so getValue is evaluated by CFA2 Interpreter
+  // when getValue summary is not found at the end,
+  // and at which time, getValue function is called by normal form
+  // (this binding is set as GlobalObject).
+  // So we gather prototype information for this problem. When script is
+  // following
+  //
+  //   Test.prototype.getValue = function getValue() { }
+  //
+  // we detect "prototype" symbol, and mark getValue function is "method to Test
+  // instance".
+  // Then, if getValue is evaluated at not called phase, we use this information
+  // and set Test instance to this binding.
+
+  if (left->AsIdentifierAccess() && right->AsFunctionLiteral()) {
+    IdentifierAccess* method = left->AsIdentifierAccess();
+    FunctionLiteral* literal = right->AsFunctionLiteral();
+    if (IdentifierAccess* parent = method->target()->AsIdentifierAccess()) {
+      if (iv::core::UStringPiece(parent->key()->value()) ==
+          iv::core::ToUString("prototype")) {
+        // form is
+        //   AAA.prototype.BBB = function() { }
+        heap_->RegisterPrototypeMethodBinding(parent->target(), literal);
+        DebugLog("prototype assignment");
+      }
+    }
+  }
 }
 
 void HeapInitializer::Visit(BinaryOperation* binary) {

@@ -33,6 +33,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
       state_(kInitialState),
       waiting_result_(),
       not_reachable_functions_(),
+      method_and_target_(),
       object_literal_member_(),
       prototype_member_() {
     completer_->set_heap(this);
@@ -1077,6 +1078,21 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return not_reachable_functions_.find(literal) != not_reachable_functions_.end();
   }
 
+  void RegisterPrototypeMethodBinding(Expression* constructor,
+                                      FunctionLiteral* literal) {
+    method_and_target_.insert(std::make_pair(literal, constructor));
+  }
+
+  Expression* IsPrototypeMethod(FunctionLiteral* function) const {
+    const std::unordered_map<FunctionLiteral*, Expression*>::const_iterator it =
+        method_and_target_.find(function);
+    if (it != method_and_target_.end()) {
+      return it->second;
+    } else {
+      return NULL;
+    }
+  }
+
   // prototype getters
 
   const AVal& GetArrayPrototype() const {
@@ -1174,6 +1190,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
   WaitingMap waiting_result_;
   std::unordered_set<FunctionLiteral*> not_reachable_functions_;
+  std::unordered_map<FunctionLiteral*, Expression*> method_and_target_;
   std::unordered_map<FunctionLiteral*, AObject*> object_literal_member_;
   std::unordered_map<FunctionLiteral*, AObject*> prototype_member_;
 };
