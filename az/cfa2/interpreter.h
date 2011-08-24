@@ -42,15 +42,17 @@ void Interpreter::Run(FunctionLiteral* global) {
   // summary update phase
   //
   // enumerate summaries and if this function is not summaried, so make this
-  for (Summaries::const_iterator it = heap_->summaries().begin(),
-       last = heap_->summaries().end(); it != last; ++it) {
-    if (!it->second->IsExists()) {
+  for (std::vector<Summary*>::const_iterator it = heap_->ordered_summaries().begin(),
+       last = heap_->ordered_summaries().end(); it != last; ++it) {
+    Summary* current = *it;
+    if (!current->IsExists()) {
       // not summarized yet
-      const std::vector<AVal> vec(it->first->params().size(), AVal(AVAL_NOBASE));
-      if (AObject* obj = heap_->GetLiteralMemberBase(it->first)) {
-        EvaluateFunction(it->second->target(), AVal(obj), vec, false);
+      const std::vector<AVal> vec(current->function()->params().size(),
+                                  AVal(AVAL_NOBASE));
+      if (AObject* obj = heap_->GetLiteralMemberBase(current->function())) {
+        EvaluateFunction(current->target(), AVal(obj), vec, false);
       } else {
-        EvaluateFunction(it->second->target(),
+        EvaluateFunction(current->target(),
                          AVal(heap_->MakeObject()), vec, false);
       }
     }

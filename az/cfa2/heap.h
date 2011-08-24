@@ -26,6 +26,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
       declared_heap_bindings_(),
       decls_(),
       summaries_(),
+      ordered_summaries_(),
       factory_(),
       ast_factory_(ast_factory),
       completer_(completer),
@@ -936,10 +937,9 @@ class Heap : private iv::core::Noncopyable<Heap> {
   }
 
   void InitSummary(FunctionLiteral* literal, AObject* func) {
-    summaries_.insert(
-        std::make_pair(
-            literal,
-            std::shared_ptr<Summary>(new Summary(literal, func))));
+    std::shared_ptr<Summary> summary(new Summary(literal, func));
+    summaries_.insert(std::make_pair(literal, summary));
+    ordered_summaries_.push_back(summary.get());
   }
 
   bool FindSummary(AObject* func,
@@ -984,9 +984,10 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
   void ShowSummaries() {
     std::vector<uint16_t> res;
-    for (Summaries::const_iterator it = summaries().begin(),
-         last = summaries().end(); it != last; ++it) {
-      if (const iv::core::Maybe<Identifier> ident = it->first->name()) {
+    for (std::vector<Summary*>::const_iterator it = ordered_summaries_.begin(),
+         last = ordered_summaries_.end(); it != last; ++it) {
+      Summary* summary = *it;
+      if (const iv::core::Maybe<Identifier> ident = summary->function()->name()) {
         res.insert(res.end(),
                    ident.Address()->value().begin(),
                    ident.Address()->value().end());
@@ -995,7 +996,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
         static const std::string prefix("<anonymous> ");
         res.insert(res.end(), prefix.begin(), prefix.end());
       }
-      const iv::core::UString str(it->second->ToTypeString(this));
+      const iv::core::UString str(summary->ToTypeString(this));
       res.insert(res.end(), str.begin(), str.end());
       res.push_back('\n');
       iv::core::unicode::FPutsUTF16(stdout, res.begin(), res.end());
@@ -1007,12 +1008,8 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return completer_;
   }
 
-  const Summaries& summaries() const {
-    return summaries_;
-  }
-
-  Summaries& summaries() {
-    return summaries_;
+  const std::vector<Summary*>& ordered_summaries() const {
+    return ordered_summaries_;
   }
 
   void UpdateState() {
@@ -1145,6 +1142,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
   HeapSet declared_heap_bindings_;
   std::unordered_map<AstNode*, AObject*> decls_;
   Summaries summaries_;
+  std::vector<Summary*> ordered_summaries_;
   AObjectFactory factory_;
   AstFactory* ast_factory_;
   Completer* completer_;

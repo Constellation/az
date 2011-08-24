@@ -130,6 +130,10 @@ class Summary : private iv::core::Noncopyable<Summary> {
     return result;
   }
 
+  FunctionLiteral* function() const {
+    return function_;
+  }
+
  private:
   FunctionLiteral* function_;
   AObject* object_;
@@ -139,8 +143,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
   State state_;
 };
 
-// need to be ordered
-typedef std::map<FunctionLiteral*, std::shared_ptr<Summary> > Summaries;
+typedef std::unordered_map<FunctionLiteral*, std::shared_ptr<Summary> > Summaries;
 
 } }  // namespace az::cfa2
 #endif  // _AZ_CFA2_SUMMARY_H_
