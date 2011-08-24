@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include <iterator>
-#include <iv/parser.h>
 #include <iv/detail/array.h>
+#include <iv/parser.h>
 #include <iv/ustring.h>
 #include <iv/unicode.h>
 #include <iv/cmdline.h>

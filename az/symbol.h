@@ -18,7 +18,7 @@ namespace az {
 template<std::size_t PointerSize, bool IsLittle>
 struct SymbolLayout;
 
-static const uint32_t kSymbolIsIndex = 0xFFFF;
+static const uint32_t kSymbolIsIndex = 0xFFFFFFFFUL;
 
 template<>
 struct SymbolLayout<4, true> {
