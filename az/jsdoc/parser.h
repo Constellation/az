@@ -231,30 +231,45 @@ class Parser : private iv::core::Noncopyable<Parser> {
   }
 
   std::size_t ScanType(const std::vector<uint16_t>& content) {
+    // type expression may have nest brace, such as,
+    // { { ok: string } }
+    //
+    // therefore, scanning type expression with balancing braces.
     type_.clear();
-    bool in_type_brace = false;
-    for (std::vector<uint16_t>::const_iterator it = content.begin(),
-         last = content.end(); it != last; ++it) {
-      if (!in_type_brace) {
-        if (iv::core::character::IsWhiteSpace(*it)) {
-          // through it
-        } else if (*it == '{') {
-          // left brace found
-          in_type_brace = true;
-        } else {
-          // type specifier is not found
-          break;
-        }
+    std::vector<uint16_t>::const_iterator it = content.begin();
+    for (const std::vector<uint16_t>::const_iterator last = content.end();
+         it != last; ++it) {
+      if (iv::core::character::IsWhiteSpace(*it)) {
+        // through it
+      } else if (*it == '{') {
+        // left brace found
+        ++it;
+        break;
       } else {
-        if (iv::core::character::IsLineTerminator(*it)) {
-          break;
-        } else if (*it == '}') {
-          // right brace found
+        // type specifier is not found
+        type_.clear();
+        return 0;
+      }
+    }
+    // type expression { is found
+    std::size_t brace = 0;
+    for (const std::vector<uint16_t>::const_iterator last = content.end();
+         it != last; ++it) {
+      if (iv::core::character::IsLineTerminator(*it)) {
+        // failed
+        break;
+      } else if (*it == '}') {
+        // right brace found
+        if (brace == 0) {
+          // end
           return std::distance(content.begin(), ++it);
         } else {
-          type_.push_back(*it);
+          --brace;
         }
+      } else if (*it == '{') {
+        ++brace;
       }
+      type_.push_back(*it);
     }
     type_.clear();
     return 0; // type speficier parsing is failed
