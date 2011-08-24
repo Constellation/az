@@ -325,11 +325,10 @@ class Parser : private iv::core::Noncopyable<> {
               expr->AsStringLiteral()->value().compare(detail::kUseStrict.data()) == 0) {
             strict_switcher.SwitchStrictMode();
             if (octal_escaped_directive_found) {
-              RAISE_WITH_NUMBER_NORETURN(
+              ReportAndRecovery(
                   "octal escape sequence not allowed in strict code",
+                  lexer_->previous_end_position(),
                   line);
-              reporter_->ReportSyntaxError(errors_.back(), lexer_->previous_end_position());
-              *res = true;  // recovery
             }
             // and one token lexed is not in strict
             // so rescan
@@ -396,9 +395,9 @@ class Parser : private iv::core::Noncopyable<> {
 
       case Token::TK_CONST:
         if (strict_) {
-          RAISE_NORETURN("\"const\" not allowed in strict code");
-          reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
-          *res = true;  // recovery
+          ReportAndRecovery(
+              "\"const\" not allowed in strict code",
+              lexer_->begin_position());
         }
       case Token::TK_VAR:
         // VariableStatement
@@ -904,9 +903,7 @@ class Parser : private iv::core::Noncopyable<> {
           if (decls->size() != 1) {
             // ForInStatement requests VaraibleDeclarationNoIn (not List),
             // so check declarations' size is 1.
-            RAISE_NORETURN("invalid for-in left-hand-side");
-            reporter_->ReportSyntaxError(errors_.back(), begin);
-            *res = true;  // recovery
+            ReportAndRecovery("invalid for-in left-hand-side", begin);
             failed = true;
           }
           VariableStatement* const var =
@@ -972,9 +969,7 @@ class Parser : private iv::core::Noncopyable<> {
           init = factory_->NewExpressionStatement(init_expr,
                                                   lexer_->previous_end_position());
           if (!init_expr->IsValidLeftHandSide() && !failed) {
-            RAISE_NORETURN("invalid for-in left-hand-side");
-            reporter_->ReportSyntaxError(errors_.back(), for_stmt_begin);
-            *res = true;  // recovery
+            ReportAndRecovery("invalid for-in left-hand-side", for_stmt_begin);
             failed = true;
           }
           Next();
@@ -1106,9 +1101,7 @@ class Parser : private iv::core::Noncopyable<> {
       label = ParseIdentifier(lexer_->Buffer());
       target = LookupContinuableTarget(label);
       if (!target) {
-        RAISE_NORETURN("label not found");
-        reporter_->ReportSyntaxError(errors_.back(), begin);
-        *res = true;  // recovery
+        ReportAndRecovery("label not found", begin);
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
@@ -1124,9 +1117,7 @@ class Parser : private iv::core::Noncopyable<> {
     } else {
       target = LookupContinuableTarget();
       if (!target) {
-        RAISE_NORETURN("label not found");
-        reporter_->ReportSyntaxError(errors_.back(), begin);
-        *res = true;  // recovery
+        ReportAndRecovery("label not found", begin);
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
@@ -1187,9 +1178,7 @@ class Parser : private iv::core::Noncopyable<> {
       } else {
         target = LookupBreakableTarget(label);
         if (!target) {
-          RAISE_NORETURN("label not found");
-          reporter_->ReportSyntaxError(errors_.back(), begin);
-          *res = true;  // recovery
+          ReportAndRecovery("label not found", begin);
           ExpectSemicolon(res);
           if (!*res) {
             reporter_->ReportSyntaxError(errors_.back(), begin);
@@ -1206,9 +1195,7 @@ class Parser : private iv::core::Noncopyable<> {
     } else {
       target = LookupBreakableTarget();
       if (!target) {
-        RAISE_NORETURN("label not found");
-        reporter_->ReportSyntaxError(errors_.back(), begin);
-        *res = true;  // recovery
+        ReportAndRecovery("label not found", begin);
         ExpectSemicolon(res);
         if (!*res) {
           reporter_->ReportSyntaxError(errors_.back(), begin);
@@ -1246,9 +1233,7 @@ class Parser : private iv::core::Noncopyable<> {
     if (scope_->IsGlobal()) {
       // return statement found in global
       // SyntaxError
-      RAISE_NORETURN("\"return\" not in function");
-      reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
+      ReportAndRecovery("\"return\" not in function", begin);
       failed = true;
     }
 
@@ -1297,9 +1282,7 @@ class Parser : private iv::core::Noncopyable<> {
     // section 12.10.1
     // when in strict mode code, WithStatement is not allowed.
     if (strict_) {
-      RAISE_NORETURN("with statement not allowed in strict code");
-      reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
+      ReportAndRecovery("with statement not allowed in strict code", begin);
       failed = true;
     }
 
@@ -1422,9 +1405,7 @@ class Parser : private iv::core::Noncopyable<> {
       bool invalid_case_clause = false;
       if (case_clause->IsDefault()) {
         if (default_found) {
-          RAISE_NORETURN("duplicate default clause in switch");
-          reporter_->ReportSyntaxError(errors_.back(), begin);
-          *res = true;  // recovery
+          ReportAndRecovery("duplicate default clause in switch", begin);
           failed = true;
           invalid_case_clause = true;
         } else {
@@ -1509,9 +1490,7 @@ class Parser : private iv::core::Noncopyable<> {
     Next();
     // Throw requires Expression
     if (lexer_->has_line_terminator_before_next()) {
-      RAISE_NORETURN("missing expression between throw and newline");
-      reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
+      ReportAndRecovery("missing expression between throw and newline", begin);
       return ReturnFailedStatement(begin);
     }
     Expression* const expr = ParseExpression(true, res);
@@ -1595,14 +1574,15 @@ class Parser : private iv::core::Noncopyable<> {
           const EvalOrArguments val = IsEvalOrArguments(name);
           if (val) {
             if (val == kEval) {
-              RAISE_NORETURN("catch placeholder \"eval\" not allowed in strict code");
+              ReportAndRecovery(
+                  "catch placeholder \"eval\" not allowed in strict code",
+                  begin);
             } else {
               assert(val == kArguments);
-              RAISE_NORETURN(
-                  "catch placeholder \"arguments\" not allowed in strict code");
+              ReportAndRecovery(
+                  "catch placeholder \"arguments\" not allowed in strict code",
+                  begin);
             }
-            reporter_->ReportSyntaxError(errors_.back(), begin);
-            *res = true;  // recovery
             failed = true;
           }
         }
@@ -1638,9 +1618,8 @@ class Parser : private iv::core::Noncopyable<> {
     }
 
     if (!has_catch_or_finally) {
-      RAISE_NORETURN("missing catch or finally after try statement");
-      reporter_->ReportSyntaxError(errors_.back(), begin);
-      *res = true;  // recovery
+      ReportAndRecovery(
+          "missing catch or finally after try statement", begin);
       return ReturnFailedStatement(begin);
     }
 
@@ -1734,9 +1713,7 @@ class Parser : private iv::core::Noncopyable<> {
       bool failed = false;
       if (ContainsLabel(labels, label) || TargetsContainsLabel(label)) {
         // duplicate label
-        RAISE_NORETURN("duplicate label");
-        reporter_->ReportSyntaxError(errors_.back(), begin);
-        *res = true;  // recovery
+        ReportAndRecovery("duplicate label", begin);
         failed = true;
       } else {
         labels->push_back(label);
@@ -1769,9 +1746,9 @@ class Parser : private iv::core::Noncopyable<> {
     assert(token_ == Token::TK_FUNCTION);
     const std::size_t begin = lexer_->begin_position();
     if (strict_) {
-      RAISE_NORETURN("function statement not allowed in strict code");
-      reporter_->ReportSyntaxError(errors_.back(), lexer_->begin_position());
-      *res = true;  // recovery
+      ReportAndRecovery(
+          "function statement not allowed in strict code",
+          lexer_->begin_position());
       failed = true;
     }
     FunctionLiteral* const expr = ParseFunctionLiteral(
@@ -2483,18 +2460,15 @@ class Parser : private iv::core::Noncopyable<> {
             map.insert(std::make_pair(ident, ObjectLiteral::DATA));
           } else {
             if (it->second != ObjectLiteral::DATA) {
-              RAISE_NORETURN(
+              ReportAndRecovery(
                   "accessor property and data property "
-                  "exist with the same name");
-              reporter_->ReportSyntaxError(errors_.back(), begin);
-              *res = true;  // recovery
+                  "exist with the same name",
+                  begin);
             } else {
               if (strict_) {
-                RAISE_NORETURN(
+                ReportAndRecovery(
                     "multiple data property assignments "
-                    "with the same name not allowed in strict code");
-                reporter_->ReportSyntaxError(errors_.back(), begin);
-                *res = true;  // recovery
+                    "with the same name not allowed in strict code", begin);
               }
             }
           }
@@ -2522,17 +2496,13 @@ class Parser : private iv::core::Noncopyable<> {
               map.insert(std::make_pair(ident, type));
             } else if (it->second & (ObjectLiteral::DATA | type)) {
               if (it->second & ObjectLiteral::DATA) {
-                RAISE_NORETURN(
+                ReportAndRecovery(
                     "data property and accessor property "
-                    "exist with the same name");
-                reporter_->ReportSyntaxError(errors_.back(), begin);
-                *res = true;  // recovery
+                    "exist with the same name", begin);
               } else {
-                RAISE_NORETURN(
+                ReportAndRecovery(
                     "multiple same accessor properties "
-                    "exist with the same name");
-                reporter_->ReportSyntaxError(errors_.back(), begin);
-                *res = true;  // recovery
+                    "exist with the same name", begin);
               }
             } else {
               it->second |= type;
@@ -2561,29 +2531,21 @@ class Parser : private iv::core::Noncopyable<> {
           map.insert(std::make_pair(ident, ObjectLiteral::DATA));
         } else {
           if (it->second != ObjectLiteral::DATA) {
-            // TODO:(Constellation)
-            // check this node is failed
-            RAISE_NORETURN("accessor property and data property "
-                           "exist with the same name");
-            reporter_->ReportSyntaxError(errors_.back(), begin);
-            *res = true;  // recovery
+            ReportAndRecovery(
+                "accessor property and data property "
+                "exist with the same name", begin);
           } else {
             if (strict_) {
-              // TODO:(Constellation)
-              // check this node is failed
-              RAISE_NORETURN("multiple data property assignments "
-                             "with the same name not allowed in strict code");
-              reporter_->ReportSyntaxError(errors_.back(), begin);
-              *res = true;  // recovery
+              ReportAndRecovery(
+                  "multiple data property assignments "
+                  "with the same name not allowed in strict code", begin);
             }
           }
         }
       } else {
         const std::size_t end = lexer_->begin_position();
         Next();
-        RAISE_NORETURN("invalid property name");
-        reporter_->ReportSyntaxError(errors_.back(), begin);
-        *res = true;  // recovery
+        ReportAndRecovery("invalid property name", begin);
         return factory_->NewObjectLiteral(prop, begin, end);
       }
 
@@ -2758,46 +2720,40 @@ class Parser : private iv::core::Noncopyable<> {
         case kDetectNone:
           break;
         case kDetectEvalName:
-          RAISE_WITH_NUMBER_NORETURN(
+          ReportAndRecovery(
               "function name \"eval\" not allowed in strict code",
+              throw_error_if_strict_code_number,
               throw_error_if_strict_code_line);
-          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
-          *res = true;  // recovery
           break;
         case kDetectArgumentsName:
-          RAISE_WITH_NUMBER_NORETURN(
+          ReportAndRecovery(
               "function name \"arguments\" not allowed in strict code",
+              throw_error_if_strict_code_number,
               throw_error_if_strict_code_line);
-          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
-          *res = true;  // recovery
           break;
         case kDetectEvalParameter:
-          RAISE_WITH_NUMBER_NORETURN(
+          ReportAndRecovery(
               "parameter \"eval\" not allowed in strict code",
+              throw_error_if_strict_code_number,
               throw_error_if_strict_code_line);
-          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
-          *res = true;  // recovery
           break;
         case kDetectArgumentsParameter:
-          RAISE_WITH_NUMBER_NORETURN(
+          ReportAndRecovery(
               "parameter \"arguments\" not allowed in strict code",
+              throw_error_if_strict_code_number,
               throw_error_if_strict_code_line);
-          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
-          *res = true;  // recovery
           break;
         case kDetectDuplicateParameter:
-          RAISE_WITH_NUMBER_NORETURN(
+          ReportAndRecovery(
               "duplicate parameter not allowed in strict code",
+              throw_error_if_strict_code_number,
               throw_error_if_strict_code_line);
-          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
-          *res = true;  // recovery
           break;
         case kDetectFutureReservedWords:
-          RAISE_WITH_NUMBER_NORETURN(
+          ReportAndRecovery(
               "FutureReservedWords is found in strict code",
+              throw_error_if_strict_code_number,
               throw_error_if_strict_code_line);
-          reporter_->ReportSyntaxError(errors_.back(), throw_error_if_strict_code_number);
-          *res = true;  // recovery
           break;
       }
     }
@@ -3244,6 +3200,19 @@ class Parser : private iv::core::Noncopyable<> {
     std::shared_ptr<jsdoc::Info> doc = doc_;
     doc_.reset();
     return doc;
+  }
+
+  void ReportAndRecovery(const char* str, std::size_t pos) {
+    error_state_ |= kNotRecoverable;
+    error_.append(str);
+    errors_.push_back(error_);
+    error_.clear();
+    reporter_->ReportSyntaxError(errors_.back(), pos);
+  }
+
+  void ReportAndRecovery(const char* str, std::size_t pos, std::size_t line) {
+    // not used line number in this recovery parser
+    ReportAndRecovery(str, pos);
   }
 
   bool IsCompletionPoint() const {
