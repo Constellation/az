@@ -100,6 +100,10 @@ int main(int argc, char** argv) {
       "tag",
       "tag",
       't', "tag option");
+  cmd.AddList<std::string>(
+      "file",
+      "file",
+      'f', "script file to load");
   cmd.set_footer("[program_file] [arguments]");
 
   const bool cmd_parse_success = cmd.Parse(argc, argv);
@@ -115,21 +119,30 @@ int main(int argc, char** argv) {
   }
 
   const std::vector<std::string>& rest = cmd.rest();
-  if (rest.empty()) {
+  if (rest.empty() && !cmd.Exist("file")) {
     std::fputs(cmd.usage().c_str(), stdout);
     return EXIT_FAILURE;
   }
 
-  std::vector<char> vec;
-  if (!ReadFile(rest.front(), &vec)) {
-    return EXIT_FAILURE;
+  std::vector<char> res;
+  if (cmd.Exist("file")) {
+    const std::vector<std::string>& vec = cmd.GetList<std::string>("file");
+    for (std::vector<std::string>::const_iterator it = vec.begin(),
+         last = vec.end(); it != last; ++it) {
+      if (!ReadFile(*it, &res)) {
+        return EXIT_FAILURE;
+      }
+    }
+  } else {
+    if (!ReadFile(rest.front(), &res)) {
+      return EXIT_FAILURE;
+    }
   }
-
   iv::core::UString src;
-  src.reserve(vec.size());
+  src.reserve(res.size());
   if (iv::core::unicode::UTF8ToUTF16(
-          vec.begin(),
-          vec.end(),
+          res.begin(),
+          res.end(),
           std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
     std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
     return EXIT_FAILURE;
