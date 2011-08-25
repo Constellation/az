@@ -17,7 +17,7 @@ class ScopeBase<az::AstFactory>
   : public Inherit<az::AstFactory, kScope> {
  public:
   friend class az::AstFactory;
-  typedef typename SpaceVector<az::AstFactory, FunctionLiteral<az::AstFactory>* >::type FunctionLiterals;
+  typedef SpaceVector<az::AstFactory, FunctionLiteral<az::AstFactory>* >::type FunctionLiterals;
 
   void RegisterFunctionLiteral(FunctionLiteral<az::AstFactory>* literal) {
     literals_->push_back(literal);
