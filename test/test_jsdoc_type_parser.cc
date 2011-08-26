@@ -31,18 +31,18 @@ TEST(JSDocTypeParser, TypeExpressionParserTest) {
   }
   {
     // failed case
-//    const iv::core::UString str = iv::core::ToUString("ok.String.<String|Number>");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsTypeNameWithApplication());
+    const iv::core::UString str = iv::core::ToUString("ok.String.<String|Number>");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsTypeNameWithApplication());
   }
   {
-//    const iv::core::UString str = iv::core::ToUString("ok.String.<String|Number>");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsTypeNameWithApplication());
+    const iv::core::UString str = iv::core::ToUString("ok.String.<String|Number>");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsTypeNameWithApplication());
   }
 }
 
@@ -78,19 +78,19 @@ TEST(JSDocTypeParser, TypeExpressionParserTest2) {
     ASSERT_TRUE(expr);
     EXPECT_TRUE(expr->AsTypeNameWithApplication());
   }
-//  {
-//    const iv::core::UString str = iv::core::ToUString("Object.<string, number>");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsTypeNameWithApplication());
-//  }
   {
-//    const iv::core::UString str = iv::core::ToUString("{(number|boolean)}");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsRecordType());
+    const iv::core::UString str = iv::core::ToUString("Object.<string, number>");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsTypeNameWithApplication());
+  }
+  {
+    const iv::core::UString str = iv::core::ToUString("(number|boolean)");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsUnionType());
   }
   {
     const iv::core::UString str = iv::core::ToUString("{myNum: number, myObject}");
@@ -114,11 +114,11 @@ TEST(JSDocTypeParser, TypeExpressionParserTest2) {
     EXPECT_TRUE(expr->AsPrefixBangExpression());
   }
   {
-//    const iv::core::UString str = iv::core::ToUString("function(string, boolean)");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsFunctionType());
+    const iv::core::UString str = iv::core::ToUString("function(string, boolean)");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsFunctionType());
   }
   {
     const iv::core::UString str = iv::core::ToUString("function(): number");
@@ -128,46 +128,46 @@ TEST(JSDocTypeParser, TypeExpressionParserTest2) {
     EXPECT_TRUE(expr->AsFunctionType());
   }
   {
-//    const iv::core::UString str = iv::core::ToUString("function(this:goog.ui.Menu, string)");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsFunctionType());
+    const iv::core::UString str = iv::core::ToUString("function(this:goog.ui.Menu, string)");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsFunctionType());
   }
   {
-//    const iv::core::UString str = iv::core::ToUString("function(new:goog.ui.Menu, string)");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsFunctionType());
+    const iv::core::UString str = iv::core::ToUString("function(new:goog.ui.Menu, string)");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsFunctionType());
   }
   {
     const iv::core::UString str = iv::core::ToUString("function(string, ...[number])");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsFunctionType());
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsFunctionType());
   }
   {
-//    const iv::core::UString str = iv::core::ToUString("...number");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsRestExpression());
+    const iv::core::UString str = iv::core::ToUString("...number");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsRestExpression());
   }
   {
-//    const iv::core::UString str = iv::core::ToUString("number=");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsPostfixEqualExpression());
+    const iv::core::UString str = iv::core::ToUString("number=");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsPostfixEqualExpression());
   }
   {
-//    const iv::core::UString str = iv::core::ToUString("function(?string=, number=)");
-//    az::jsdoc::TypeParser parser(&factory, str);
-//    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
-//    ASSERT_TRUE(expr);
-//    EXPECT_TRUE(expr->AsFunctionType());
+    const iv::core::UString str = iv::core::ToUString("function(?string=, number=)");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsFunctionType());
   }
   {
     const iv::core::UString str = iv::core::ToUString("*");

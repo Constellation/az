@@ -169,14 +169,14 @@ class NameExpression : public TypeName {
 class TypeNameWithApplication : public TypeName {
  public:
   TypeNameWithApplication(TypeExpression* expr,
-                          TypeExpression* application)
+                          TypeExpressions* application)
     : expr_(expr),
       application_(application) {
   }
   DECLARE_DERIVED_NODE_TYPE(TypeNameWithApplication)
  private:
   TypeExpression* expr_;
-  TypeExpression* application_;
+  TypeExpressions* application_;
 };
 
 class ParametersType : public TypeExpression {

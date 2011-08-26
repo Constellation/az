@@ -57,16 +57,63 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
   TypeExpression* ParseParamType() {
     // top level
     bool ok = true;
+    bool* res = &ok;
     Next();
-    return ParseTypeExpression(&ok);
+    TypeExpression* expr = ParseParamType(CHECK);
+    IS(TypeToken::TK_EOS);
+    return expr;
   }
 
   TypeExpression* ParseType() {
     // top level
-    return NULL;
+    bool ok = true;
+    bool* res = &ok;
+    Next();
+    TypeExpression* expr = ParseTypeExpression(CHECK);
+    IS(TypeToken::TK_EOS);
+    return expr;
   }
 
  private:
+
+  TypeExpression* ParseParamType(bool* res) {
+    if (token_ == TypeToken::TK_REST) {
+      Next();
+      TypeExpression* top = ParseTopLevelTypeExpression(CHECK);
+      return new (factory_) RestExpression(top);
+    }
+    TypeExpression* expr = ParseTypeExpression(CHECK);
+    if (token_ == TypeToken::TK_EQUAL) {
+      Next();
+      return new (factory_) PostfixEqualExpression(expr);
+    }
+    return expr;
+  }
+
+  TypeExpression* ParseTopLevelTypeExpression(bool* res) {
+    // TopLevelTypeExpression := TypeExpression
+    //     | TypeUnionList
+    //
+    // this rule is Google Closure Compiler extension
+    TypeExpression* expr = ParseTypeExpression(CHECK);
+    if (token_ == TypeToken::TK_PIPE) {
+      // union list extension
+      TypeExpressions* vec = factory_->NewVector<TypeExpression*>();
+      vec->push_back(expr);
+      Next();
+      while (true) {
+        TypeExpression* expr = ParseTypeExpression(CHECK);
+        vec->push_back(expr);
+        if (token_ == TypeToken::TK_PIPE) {
+          Next();
+        } else {
+          break;
+        }
+      }
+      return new (factory_) UnionType(vec);
+    }
+    return expr;
+  }
 
   TypeExpression* ParseTypeExpression(bool* res) {
     // TypeExpression := BasicTypeExpression
@@ -137,7 +184,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
   UnionType* ParseUnionType(bool* res) {
     // UnionType := '(' TypeUnionList ')'
     // TypeUnionList := TypeExpression | TypeExpression '|' TypeUnionList
-    assert(token_ == TypeToken::TK_LBRACE);
+    assert(token_ == TypeToken::TK_LPAREN);
     Next();
     TypeExpressions* vec = factory_->NewVector<TypeExpression*>();
     while (true) {
@@ -191,6 +238,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
         EXPECT(TypeToken::TK_COMMA);
       }
     }
+    EXPECT(TypeToken::TK_RBRACE);
     return new (factory_) RecordType(vec);
   }
 
@@ -216,11 +264,25 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     NameExpression* name = ParseNameExpression(CHECK);
     if (token_ == TypeToken::TK_DOT_LT) {
       Next();
-      TypeExpression* application = ParseTypeExpression(CHECK);
+      TypeExpressions* application = ParseTypeExpressionList(CHECK);
       EXPECT(TypeToken::TK_GT);
       return new (factory_) TypeNameWithApplication(name, application);
     }
     return name;
+  }
+
+  TypeExpressions* ParseTypeExpressionList(bool* res) {
+    // TypeExpressionList := TopLevelTypeExpression
+    //     | TopLevelTypeExpression ',' TypeExpressionList
+    TypeExpressions* vec = factory_->NewVector<TypeExpression*>();
+    TypeExpression* top = ParseTopLevelTypeExpression(CHECK);
+    vec->push_back(top);
+    while (token_ == TypeToken::TK_COMMA) {
+      Next();
+      top = ParseTopLevelTypeExpression(CHECK);
+      vec->push_back(top);
+    }
+    return vec;
   }
 
   NameExpression* ParseNameExpression(bool* res) {
@@ -298,8 +360,14 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
       if (token_ == TypeToken::TK_REST) {
         // RestParameterType
         Next();
-        NameExpression* ident = ParseNameExpression(CHECK);
-        vec->push_back(new (factory_) RestExpression(ident));
+        if (token_ == TypeToken::TK_RPAREN) {
+          vec->push_back(new (factory_) RestExpression(NULL));
+        } else {
+          EXPECT(TypeToken::TK_LBRACK);
+          NameExpression* ident = ParseNameExpression(CHECK);
+          vec->push_back(new (factory_) RestExpression(ident));
+          EXPECT(TypeToken::TK_RBRACK);
+        }
         break;
       } else {
         TypeExpression* expr = ParseTypeExpression(CHECK);
@@ -311,7 +379,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
           vec->push_back(expr);
         }
       }
-      if (token_ != TypeToken::TK_RBRACK) {
+      if (token_ != TypeToken::TK_RPAREN) {
         EXPECT(TypeToken::TK_COMMA);
       }
     }

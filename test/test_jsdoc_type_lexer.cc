@@ -94,15 +94,13 @@ TEST(JSDocTypeLexer, TypeExpressionLexerTest2) {
     ASSERT_EQ(az::jsdoc::TypeToken::TK_EOS, lexer.Next());
   }
   {
-    const iv::core::UString str = iv::core::ToUString("{(number|boolean)}");
+    const iv::core::UString str = iv::core::ToUString("(number|boolean)");
     az::jsdoc::TypeLexer lexer(str);
-    ASSERT_EQ(az::jsdoc::TypeToken::TK_LBRACE, lexer.Next());
     ASSERT_EQ(az::jsdoc::TypeToken::TK_LPAREN, lexer.Next());
     ASSERT_EQ(az::jsdoc::TypeToken::TK_NAME, lexer.Next());
     ASSERT_EQ(az::jsdoc::TypeToken::TK_PIPE, lexer.Next());
     ASSERT_EQ(az::jsdoc::TypeToken::TK_NAME, lexer.Next());
     ASSERT_EQ(az::jsdoc::TypeToken::TK_RPAREN, lexer.Next());
-    ASSERT_EQ(az::jsdoc::TypeToken::TK_RBRACE, lexer.Next());
     ASSERT_EQ(az::jsdoc::TypeToken::TK_EOS, lexer.Next());
   }
   {
