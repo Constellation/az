@@ -1,3 +1,5 @@
+#include <iv/detail/cstdint.h>
+#include <iv/detail/cinttypes.h>
 #include <iv/ustring.h>
 #include <iv/unicode.h>
 #include <az/factory.h>
@@ -70,9 +72,9 @@ bool Complete(NPNetscapeFuncs* np,
   }
   if (len > src.size()) {
     std::fprintf(stderr,
-                 "%s %lld %s\n",
+                 "%s " "%" PRIu64 " %s\n",
                  "pulse position",
-                 static_cast<long long>(len),
+                 static_cast<uint64_t>(len),
                  "is out of range");
     np->setexception(receiver, "invaid completion position");
     return false;

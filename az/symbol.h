@@ -4,6 +4,7 @@
 #define _AZ_SYMBOL_H_
 #include <cstdio>
 #include <iv/detail/cstdint.h>
+#include <iv/detail/cinttypes.h>
 #include <iv/detail/unordered_set.h>
 #include <iv/detail/functional.h>
 #include <iv/detail/array.h>
@@ -166,8 +167,8 @@ inline iv::core::UString GetIndexStringFromSymbol(Symbol sym) {
   return iv::core::UString(
       buf.data(),
       buf.data() + snprintf(
-          buf.data(), buf.size(), "%lu",
-          static_cast<unsigned long>(index)));  // NOLINT
+          buf.data(), buf.size(), "%"PRIu32,
+          index));
 }
 
 inline iv::core::UString GetSymbolString(Symbol sym) {
