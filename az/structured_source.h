@@ -64,6 +64,28 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
     }
   }
 
+  bool InRange(std::size_t line, std::size_t column) const {
+    // line in range check
+    // line value is 1 origin
+    if (line == 0 || source_.size() < line) {
+      return false;
+    }
+    const Line& l = source_[line - 1];
+
+    // column in range check
+    // column value is 1 origin
+    if (column == 0 || std::get<1>(l) < column) {
+      return false;
+    }
+    return true;
+  }
+
+  std::size_t GetOffset(std::size_t line, std::size_t column) const {
+    assert(InRange(line, column));
+    const Line& l = source_[line - 1];
+    return std::get<0>(l) + (column - 1);
+  }
+
   const Lines& GetLines() const {
     return source_;
   }

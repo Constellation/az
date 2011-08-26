@@ -4,6 +4,7 @@
 #include <vector>
 #include <iterator>
 #include <iv/detail/array.h>
+#include <iv/detail/cinttypes.h>
 #include <iv/parser.h>
 #include <iv/ustring.h>
 #include <iv/unicode.h>
@@ -41,17 +42,61 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
   }
 }
 
-inline int Pulse(const iv::core::UString& src, std::size_t len) {
+inline bool ParsePulseOption(const std::string& format,
+                             std::pair<std::size_t, std::size_t>* res) {
+  uint64_t line;
+  uint64_t column;
+  if (std::sscanf(format.c_str(), "%" SCNu64 ":" "%" SCNu64, &line, &column) != 2) {
+    return false;
+  }
+  res->first = line;
+  res->second = column;
+  return true;
+}
+
+inline int Pulse(const std::vector<char>& preload,
+                 const iv::core::UString& script,
+                 const std::string& format) {
   typedef az::Parser<iv::core::UString,
                      az::CompleteLexer,
                      az::EmptyReporter,
                      az::BasicCompleter> Parser;
+  std::pair<std::size_t, std::size_t> res;
+  if (!ParsePulseOption(format, &res)) {
+    std::fprintf(stderr, "%s: %s\n", "invalid pulse option", format.c_str());
+    return EXIT_FAILURE;
+  }
+
   az::Context ctx;
-  az::StructuredSource structured(src);
+  std::size_t offset = 0;
+  {
+    // calculating offset...
+    const az::StructuredSource structured_script(script);
+
+    if (!structured_script.InRange(res.first, res.second)) {
+      std::fprintf(stderr, "%s\n", "pulse offset is out of range");
+      return EXIT_FAILURE;
+    }
+    offset = structured_script.GetOffset(res.first, res.second);
+  }
+
+  // load preload
+  iv::core::UString src;
+  src.reserve(preload.size() + script.size());
+  if (iv::core::unicode::UTF8ToUTF16(
+          preload.begin(),
+          preload.end(),
+          std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
+    std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
+    return EXIT_FAILURE;
+  }
+  src.append(script);
+
+  const az::StructuredSource structured(src);
   az::EmptyReporter reporter;
   az::AstFactory factory;
   az::cfa2::CLICompleter completer;
-  az::CompleteLexer lexer(src, len);
+  az::CompleteLexer lexer(src, offset);
   Parser parser(&ctx, &factory, src, &lexer, &reporter, &completer, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
@@ -92,10 +137,10 @@ int main(int argc, char** argv) {
   cmd.Add("version",
           "version",
           'v', "print the version");
-  cmd.Add<std::size_t>(
+  cmd.Add<std::string>(
       "pulse",
       "pulse",
-      0, "pulse option", false, 0);
+      0, "pulse option");
   cmd.Add(
       "tag",
       "tag",
@@ -136,52 +181,56 @@ int main(int argc, char** argv) {
     }
   }
 
-  const std::size_t preloaded_offset = res.size();
-
-  if (!ReadFile(rest.front(), &res)) {
-    return EXIT_FAILURE;
-  }
-  iv::core::UString src;
-  src.reserve(res.size());
-  if (iv::core::unicode::UTF8ToUTF16(
-          res.begin(),
-          res.end(),
-          std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
-    std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
-    return EXIT_FAILURE;
-  }
   if (cmd.Exist("pulse")) {
     // pulse mode
-    const std::size_t len =
-       preloaded_offset + cmd.Get<std::size_t>("pulse");
-    if (len > src.size()) {
-      std::fprintf(stderr,
-                   "%s %lld %s %lld%s\n",
-                   "pulse position",
-                   static_cast<long long>(len),
-                   "is out of range (size",
-                   static_cast<long long>(src.size()),
-                   ")");
+    const std::string format = cmd.Get<std::string>("pulse");
+
+    std::vector<char> script;
+    if (!ReadFile(rest.front(), &script)) {
       return EXIT_FAILURE;
     }
-    return Pulse(src, len);
-  } else if (cmd.Exist("tag")) {
-    return Tag(src);
+
+    iv::core::UString script_source;
+    script_source.reserve(script.size());
+    if (iv::core::unicode::UTF8ToUTF16(
+            script.begin(),
+            script.end(),
+            std::back_inserter(script_source)) != iv::core::unicode::NO_ERROR) {
+      std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
+      return EXIT_FAILURE;
+    }
+    return Pulse(res, script_source, format);
   } else {
-    typedef az::Parser<iv::core::UString,
-                       az::CompleteLexer,
-                       az::Reporter,
-                       az::BasicCompleter> Parser;
-    // normal analysis
-    az::Context ctx;
-    az::StructuredSource structured(src);
-    az::Reporter reporter(structured);
-    az::AstFactory factory;
-    az::CompleteLexer lexer(src);
-    Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
-    az::FunctionLiteral* const global = parser.ParseProgram();
-    assert(global);
-    az::Analyze(global, src, &reporter);
+    if (!ReadFile(rest.front(), &res)) {
+      return EXIT_FAILURE;
+    }
+    iv::core::UString src;
+    src.reserve(res.size());
+    if (iv::core::unicode::UTF8ToUTF16(
+            res.begin(),
+            res.end(),
+            std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
+      std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
+      return EXIT_FAILURE;
+    }
+    if (cmd.Exist("tag")) {
+      return Tag(src);
+    } else {
+      typedef az::Parser<iv::core::UString,
+                         az::CompleteLexer,
+                         az::Reporter,
+                         az::BasicCompleter> Parser;
+      // normal analysis
+      az::Context ctx;
+      az::StructuredSource structured(src);
+      az::Reporter reporter(structured);
+      az::AstFactory factory;
+      az::CompleteLexer lexer(src);
+      Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
+      az::FunctionLiteral* const global = parser.ParseProgram();
+      assert(global);
+      az::Analyze(global, src, &reporter);
+    }
   }
   return 0;
 }

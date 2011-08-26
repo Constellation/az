@@ -44,8 +44,10 @@ function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
   try
     call writefile(l:buf, l:tempfile)
     let l:escaped_tempfile = shellescape(l:tempfile)
-    let l:offset = line2byte('.') + a:cur_keyword_pos - 1
-    let l:command = 'az ' . l:escaped_tempfile . ' --pulse=' . l:offset
+    let l:line = line('.')
+    let l:column = a:cur_keyword_pos + 1
+    let l:position = l:line . ':' . l:column
+    let l:command = 'az ' . l:escaped_tempfile . ' --pulse=' . l:position
     let l:output = split(neocomplcache#system(l:command), "\n")
   finally
     call delete(l:tempfile)
