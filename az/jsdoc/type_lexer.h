@@ -119,6 +119,42 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
     return buffer_;
   }
 
+  bool IsNullLiteral() const {
+    return
+        buffer_.size() == 4 &&
+        std::equal(buffer_.begin(), buffer_.end(), "null");
+  }
+
+  bool IsUndefinedLiteral() const {
+    return
+        buffer_.size() == 9 &&
+        std::equal(buffer_.begin(), buffer_.end(), "undefined");
+  }
+
+  bool IsFunction() const {
+    return
+        buffer_.size() == 8 &&
+        std::equal(buffer_.begin(), buffer_.end(), "function");
+  }
+
+  bool IsThisLiteral() const {
+    return
+        buffer_.size() == 4 &&
+        std::equal(buffer_.begin(), buffer_.end(), "this");
+  }
+
+  bool IsVoidLiteral() const {
+    return
+        buffer_.size() == 4 &&
+        std::equal(buffer_.begin(), buffer_.end(), "void");
+  }
+
+  bool IsNewLiteral() const {
+    return
+        buffer_.size() == 3 &&
+        std::equal(buffer_.begin(), buffer_.end(), "new");
+  }
+
  private:
   void Advance() {
     if (pos_ == end_) {
