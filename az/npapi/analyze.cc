@@ -8,7 +8,7 @@
 #include <az/empty_reporter.h>
 #include <az/parser.h>
 #include <az/symbol.h>
-#include <az/completer.h>
+#include <az/basic_completer.h>
 #include <az/complete_lexer.h>
 #include <az/cfa2.h>
 #include <az/npapi/analyze.h>
@@ -24,7 +24,7 @@ bool Analyze(NPNetscapeFuncs* np,
   typedef az::Parser<iv::core::UString,
                      CompleteLexer,
                      JSONReporter,
-                     Completer> Parser;
+                     BasicCompleter> Parser;
   iv::core::UString src;
   src.reserve(piece.size());
   if (iv::core::unicode::UTF8ToUTF16(
@@ -35,11 +35,12 @@ bool Analyze(NPNetscapeFuncs* np,
     BOOLEAN_TO_NPVARIANT(false, *result);
     return false;
   }
+  Context ctx;
   StructuredSource structured(src);
   JSONReporter reporter(structured);
   AstFactory factory;
   CompleteLexer lexer(src);
-  Parser parser(&factory, src, &lexer, &reporter, NULL, structured);
+  Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
   FunctionLiteral* const global = parser.ParseProgram();
   if (!global) {
     // syntax error occurred
@@ -59,7 +60,7 @@ bool Complete(NPNetscapeFuncs* np,
   typedef az::Parser<iv::core::UString,
                      CompleteLexer,
                      EmptyReporter,
-                     Completer> Parser;
+                     BasicCompleter> Parser;
   iv::core::UString src;
   src.reserve(piece.size());
   if (iv::core::unicode::UTF8ToUTF16(
@@ -79,16 +80,18 @@ bool Complete(NPNetscapeFuncs* np,
     np->setexception(receiver, "invaid completion position");
     return false;
   }
+  Context ctx;
   StructuredSource structured(src);
   EmptyReporter reporter;
   AstFactory factory;
   JSONCompleter completer;
   CompleteLexer lexer(src, len);
-  Parser parser(&factory, src, &lexer, &reporter, &completer, structured);
+  Parser parser(&ctx, &factory, src, &lexer, &reporter, &completer, structured);
   FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
-    cfa2::Complete(global, src, &factory, &reporter, &completer);
+    cfa2::Heap heap(&factory, &completer);
+    cfa2::Complete(global, &heap, src, &reporter);
     StringToNPVariant(np, completer.Output(), result);
   } else {
     StringToNPVariant(np, "null", result);

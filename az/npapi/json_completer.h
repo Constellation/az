@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <az/ast_fwd.h>
+#include <az/cfa2/completer.h>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -10,9 +11,9 @@
 namespace az {
 namespace npapi {
 
-class JSONCompleter : public BasicCompleter {
+class JSONCompleter : public cfa2::Completer {
  public:
-  void Notify(Symbol name, const AVal& target) {
+  void Notify(Symbol name, const cfa2::AVal& target) {
     if (names_.find(name) == names_.end()) {
       names_.insert(name);
     }

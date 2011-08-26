@@ -46,7 +46,9 @@ inline bool ParsePulseOption(const std::string& format,
                              std::pair<std::size_t, std::size_t>* res) {
   uint64_t line;
   uint64_t column;
-  if (std::sscanf(format.c_str(), "%" SCNu64 ":" "%" SCNu64, &line, &column) != 2) {
+  if (std::sscanf(  // NOLINT
+          format.c_str(),
+          "%"SCNu64 ":" "%"SCNu64, &line, &column) != 2) {
     return false;
   }
   res->first = line;
