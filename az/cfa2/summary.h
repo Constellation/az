@@ -38,7 +38,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
       this_binding_.Join(this_binding);
     }
 
-    const std::vector<AVal> args() const {
+    const std::vector<AVal>& args() const {
       return args_;
     }
 
@@ -102,6 +102,10 @@ class Summary : private iv::core::Noncopyable<Summary> {
 
   const Entries& candidates() const {
     return candidates_;
+  }
+
+  const Entry& type() const {
+    return type_;
   }
 
   void AddCandidate(const AVal& this_binding,

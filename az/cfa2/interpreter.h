@@ -79,7 +79,13 @@ void Interpreter::Run(FunctionLiteral* global) {
       // global evaluation
       Interpret(global);
     } else {
-      EvaluateCompletionTargetFunction(heap_->completer());
+      Completer* completer = heap_->completer();
+      FunctionLiteral* compl_literal = completer->GetTargetFunction();
+      std::shared_ptr<Summary> summary =
+          heap_->GetSummaryByFunction(compl_literal);
+      const Summary::Entry& entry = summary->type();
+      EvaluateFunction(summary->target(),
+                       entry.this_binding(), entry.args(), false);
     }
   }
 }
@@ -91,6 +97,7 @@ void Interpreter::Visit(Block* block) {
 }
 
 void Interpreter::Visit(FunctionStatement* func) {
+  // do nothing
 }
 
 void Interpreter::Visit(FunctionDeclaration* func) {

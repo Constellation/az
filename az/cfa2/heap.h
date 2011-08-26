@@ -939,6 +939,7 @@ class Heap : private iv::core::Noncopyable<Heap> {
 
   void InitSummary(FunctionLiteral* literal, AObject* func) {
     std::shared_ptr<Summary> summary(new Summary(literal, func));
+    assert(summaries_.find(literal) == summaries_.end());
     summaries_.insert(std::make_pair(literal, summary));
     ordered_summaries_.push_back(summary.get());
   }
@@ -946,14 +947,13 @@ class Heap : private iv::core::Noncopyable<Heap> {
   bool FindSummary(AObject* func,
                    const AVal& this_binding,
                    const std::vector<AVal>& args, Result* result) const {
-    Summaries::const_iterator s = summaries_.find(func->function());
-    assert(s != summaries_.end());
-    if (s->second->state() < state_) {
+    std::shared_ptr<Summary> summary = GetSummaryByFunction(func->function());
+    if (summary->state() < state_) {
       // out of date summary
       return false;
     }
-    for (Summary::Entries::const_iterator it = s->second->candidates().begin(),
-         last = s->second->candidates().end(); it != last; ++it) {
+    for (Summary::Entries::const_iterator it = summary->candidates().begin(),
+         last = summary->candidates().end(); it != last; ++it) {
       const Summary::Entry& entry = **it;
       if (entry.this_binding() == this_binding) {
         if (args.size() == entry.args().size()) {
@@ -968,19 +968,24 @@ class Heap : private iv::core::Noncopyable<Heap> {
     return false;
   }
 
+  std::shared_ptr<Summary> GetSummaryByFunction(FunctionLiteral* literal) const {
+    Summaries::const_iterator it = summaries_.find(literal);
+    assert(it != summaries_.end());
+    return it->second;
+  }
+
   void AddSummary(AObject* func,
                   State state,
                   const AVal& this_binding,
                   const std::vector<AVal>& args, const Result& result) {
-    Summaries::iterator s = summaries_.find(func->function());
-    assert(s != summaries_.end());
-    if (s->second->state() == state) {
-      s->second->AddCandidate(this_binding, args, result);
-    } else if (s->second->state() < state) {
+    std::shared_ptr<Summary> summary = GetSummaryByFunction(func->function());
+    if (summary->state() == state) {
+      summary->AddCandidate(this_binding, args, result);
+    } else if (summary->state() < state) {
       // old, so clear candidates
-      s->second->UpdateCandidates(state, this_binding, args, result);
+      summary->UpdateCandidates(state, this_binding, args, result);
     }
-    s->second->UpdateType(this_binding, args, result);
+    summary->UpdateType(this_binding, args, result);
   }
 
   void ShowSummaries() {
