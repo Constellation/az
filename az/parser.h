@@ -2918,10 +2918,6 @@ class Parser : private iv::core::Noncopyable<> {
     target_ = target;
   }
 
-  inline AstFactory* factory() const {
-    return factory_;
-  }
-
   inline Identifiers* labels() const {
     return labels_;
   }

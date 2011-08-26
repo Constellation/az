@@ -116,6 +116,13 @@ class AstFactory
     return new (New(sizeof(Vector))) Vector(typename Vector::allocator_type(this));
   }
 
+  template<typename Range>
+  typename iv::core::SpaceUString<AstFactory>::type* NewUString(const Range& range) {
+    typedef typename iv::core::SpaceUString<AstFactory>::type String;
+    return new (New(sizeof(String)))
+        String(range.begin(), range.end(), typename String::allocator_type(this));
+  }
+
   NullLiteral* NewNullLiteral(std::size_t begin,
                               std::size_t end) {
     NullLiteral* null = new (this) NullLiteral();
@@ -395,7 +402,6 @@ class AstFactory
     return access;
   }
 };
-
 
 }  // namespace az
 #endif  // _AZ_H_
