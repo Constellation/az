@@ -52,6 +52,8 @@ void AObject::MergeNumberProperty(Heap* heap) {
   if (number_) {
     return;
   }
+  // tricy code. (remove_if for map/unordered_map)
+  // http://stackoverflow.com/questions/800955/remove-if-equivalent-for-stdmap
   AVal result(AVAL_NOBASE);
   for (Properties::const_iterator it = properties_.begin(),
        last = properties_.end(); it != last;) {
