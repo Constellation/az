@@ -4,6 +4,7 @@
 #include <iv/noncopyable.h>
 #include <iv/ustringpiece.h>
 #include <iv/character.h>
+#include <az/utility.h>
 #include <az/jsdoc/fwd.h>
 #include <az/jsdoc/type_token.h>
 namespace az {
@@ -120,39 +121,27 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
   }
 
   bool IsNullLiteral() const {
-    return
-        buffer_.size() == 4 &&
-        std::equal(buffer_.begin(), buffer_.end(), "null");
+    return IsEqual(buffer, "null");
   }
 
   bool IsUndefinedLiteral() const {
-    return
-        buffer_.size() == 9 &&
-        std::equal(buffer_.begin(), buffer_.end(), "undefined");
+    return IsEqual(buffer, "undefined");
   }
 
   bool IsFunction() const {
-    return
-        buffer_.size() == 8 &&
-        std::equal(buffer_.begin(), buffer_.end(), "function");
+    return IsEqual(buffer, "function");
   }
 
   bool IsThisLiteral() const {
-    return
-        buffer_.size() == 4 &&
-        std::equal(buffer_.begin(), buffer_.end(), "this");
+    return IsEqual(buffer, "this");
   }
 
   bool IsVoidLiteral() const {
-    return
-        buffer_.size() == 4 &&
-        std::equal(buffer_.begin(), buffer_.end(), "void");
+    return IsEqual(buffer, "void");
   }
 
   bool IsNewLiteral() const {
-    return
-        buffer_.size() == 3 &&
-        std::equal(buffer_.begin(), buffer_.end(), "new");
+    return IsEqual(buffer, "new");
   }
 
  private:

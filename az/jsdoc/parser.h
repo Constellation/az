@@ -3,6 +3,7 @@
 #include <iterator>
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
+#include <az/utility.h>
 #include <az/debug_log.h>
 #include <az/jsdoc/token.h>
 #include <az/jsdoc/tag.h>
@@ -191,8 +192,7 @@ class Parser : private iv::core::Noncopyable<Parser> {
     token_ = Token::TK_TAG;
     for (TagArray::const_iterator it = kKnownTags.begin(),
          last = kKnownTags.end(); it != last; ++it, ++index) {
-      if (it->size() == title_.size() &&
-          std::equal(it->begin(), it->end(), title_.begin())) {
+      if (IsEqual(*it, title_)) {
         token_ = static_cast<Token::Type>(index);
         break;
       }
