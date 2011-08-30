@@ -5,6 +5,7 @@
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/deleter.h>
+#include <az/context.h>
 #include <az/basic_completer.h>
 #include <az/cfa2/builtins_fwd.h>
 #include <az/cfa2/binding.h>
@@ -15,27 +16,36 @@
 namespace az {
 namespace cfa2 {
 
-class Heap : private iv::core::Noncopyable<Heap> {
+class Heap : public az::Context {
  public:
   friend class Frame;
   typedef std::unordered_set<Binding*> HeapSet;
   typedef std::tuple<AVal, std::vector<AVal>, State, bool> Execution;
 
-  Heap(AstFactory* ast_factory, Completer* completer)
-    : heap_(),
+  Heap()
+    : Context(),
+      heap_(),
       declared_heap_bindings_(),
       decls_(),
       summaries_(),
       ordered_summaries_(),
       factory_(),
-      ast_factory_(ast_factory),
-      completer_(completer),
+      ast_factory_(NULL),
+      completer_(NULL),
       state_(kInitialState),
       waiting_result_(),
       not_reachable_functions_(),
       method_and_target_(),
       target_cache_(),
       object_literal_member_() {
+  }
+
+  // lazy initialization
+  void InitializeCFA2(AstFactory* ast_factory, Completer* completer) {
+    // set factory and completer
+    ast_factory_ = ast_factory;
+    completer_ = completer;
+
     completer_->set_heap(this);
     const std::vector<AVal> empty;
     // initialize builtin objects

@@ -3,7 +3,6 @@
 #include <iv/detail/array.h>
 #include <iv/ustring.h>
 #include <az/factory.h>
-#include <az/jsdoc/type_ast.h>
 #include <az/jsdoc/type_parser.h>
 
 TEST(JSDocTypeParser, TypeExpressionParserTest) {

@@ -69,7 +69,6 @@ inline int Pulse(const std::vector<char>& preload,
     return EXIT_FAILURE;
   }
 
-  az::Context ctx;
   std::size_t offset = 0;
   {
     // calculating offset...
@@ -99,12 +98,13 @@ inline int Pulse(const std::vector<char>& preload,
   az::AstFactory factory;
   az::cfa2::CLICompleter completer;
   az::CompleteLexer lexer(src, offset);
+  az::cfa2::Heap ctx;
   Parser parser(&ctx, &factory, src, &lexer, &reporter, &completer, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
-    az::cfa2::Heap heap(&factory, &completer);
-    az::cfa2::Complete(global, &heap, src, &reporter);
+    ctx.InitializeCFA2(&factory, &completer);
+    az::cfa2::Complete(global, &ctx, src, &reporter);
     completer.Output();
   }
   return EXIT_SUCCESS;
@@ -115,7 +115,7 @@ inline int Tag(const iv::core::UString& src) {
                      az::CompleteLexer,
                      az::EmptyReporter,
                      az::BasicCompleter> Parser;
-  az::Context ctx;
+  az::cfa2::Heap ctx;
   az::StructuredSource structured(src);
   az::EmptyReporter reporter;
   az::AstFactory factory;
@@ -123,8 +123,8 @@ inline int Tag(const iv::core::UString& src) {
   Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
-  az::cfa2::Heap heap(&factory, NULL);
-  az::cfa2::Complete(global, &heap, src, &reporter);
+  ctx.InitializeCFA2(&factory, NULL);
+  az::cfa2::Complete(global, &ctx, src, &reporter);
   return EXIT_SUCCESS;
 }
 

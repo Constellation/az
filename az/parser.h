@@ -2938,6 +2938,10 @@ class Parser : private iv::core::Noncopyable<> {
     return (!(error_state_ & kNotRecoverable)) && token_ == Token::TK_EOS;
   }
 
+  inline AstFactory* factory() const {
+    return factory_;
+  }
+
  protected:
   class ScopeSwitcher : private iv::core::Noncopyable<> {
    public:
