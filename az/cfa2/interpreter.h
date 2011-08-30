@@ -1166,5 +1166,81 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
   }
 }
 
+void Interpreter::Visit(jsdoc::PrefixQuestionExpression* node) {
+}
+
+void Interpreter::Visit(jsdoc::PrefixBangExpression* node) {
+}
+
+void Interpreter::Visit(jsdoc::PostfixQuestionExpression* node) {
+}
+
+void Interpreter::Visit(jsdoc::PostfixBangExpression* node) {
+}
+
+void Interpreter::Visit(jsdoc::QuestionLiteral* node) {
+}
+
+void Interpreter::Visit(jsdoc::StarLiteral* node) {
+}
+
+void Interpreter::Visit(jsdoc::NullLiteral* node) {
+  result_ = Result(AVal(AVAL_NULL));
+}
+
+void Interpreter::Visit(jsdoc::UndefinedLiteral* node) {
+  result_ = Result(AVal(AVAL_UNDEFINED));
+}
+
+void Interpreter::Visit(jsdoc::VoidLiteral* node) {
+  result_ = Result(AVal(AVAL_UNDEFINED));
+}
+
+void Interpreter::Visit(jsdoc::UnionType* node) {
+}
+
+void Interpreter::Visit(jsdoc::ArrayType* node) {
+}
+
+void Interpreter::Visit(jsdoc::RecordType* node) {
+}
+
+void Interpreter::Visit(jsdoc::FieldTypeKeyValue* node) {
+}
+
+void Interpreter::Visit(jsdoc::FunctionType* node) {
+}
+
+void Interpreter::Visit(jsdoc::NameExpression* node) {
+  jsdoc::NameString* str = node->value();
+
+  // primitive type check phase
+  if (IsEqualIgnoreCase(*str, "string")) {
+    result_ = Result(AVal(AVAL_STRING));
+  } else if (IsEqualIgnoreCase(*str, "number")) {
+    result_ = Result(AVal(AVAL_NUMBER));
+  } else if (IsEqualIgnoreCase(*str, "boolean")) {
+    result_ = Result(AVal(AVAL_BOOL));
+  } else if (IsEqualIgnoreCase(*str, "true")) {
+    result_ = Result(AVal(AVAL_TRUE));
+  } else if (IsEqualIgnoreCase(*str, "false")) {
+    result_ = Result(AVal(AVAL_FALSE));
+  }
+}
+
+void Interpreter::Visit(jsdoc::TypeNameWithApplication* node) {
+}
+
+void Interpreter::Visit(jsdoc::ParametersType* node) {
+  UNREACHABLE();
+}
+
+void Interpreter::Visit(jsdoc::RestExpression* node) {
+  UNREACHABLE();
+}
+
+void Interpreter::Visit(jsdoc::PostfixEqualExpression* node) {
+}
+
 } }  // namespace az::cfa2
 #endif  // AZ_CFA2_INTERPRETER_H_

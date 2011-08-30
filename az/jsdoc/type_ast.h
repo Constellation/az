@@ -42,6 +42,9 @@ class TypeExpression
 class PrefixQuestionExpression : public TypeExpression {
  public:
   PrefixQuestionExpression(TypeExpression* expr) : expr_(expr) { }
+  TypeExpression* expr() const {
+    return expr_;
+  }
   DECLARE_DERIVED_NODE_TYPE(PrefixQuestionExpression)
  private:
   TypeExpression* expr_;
@@ -50,6 +53,9 @@ class PrefixQuestionExpression : public TypeExpression {
 class PrefixBangExpression : public TypeExpression {
  public:
   PrefixBangExpression(TypeExpression* expr) : expr_(expr) { }
+  TypeExpression* expr() const {
+    return expr_;
+  }
   DECLARE_DERIVED_NODE_TYPE(PrefixBangExpression)
  private:
   TypeExpression* expr_;
@@ -58,6 +64,9 @@ class PrefixBangExpression : public TypeExpression {
 class PostfixQuestionExpression : public TypeExpression {
  public:
   PostfixQuestionExpression(TypeExpression* expr) : expr_(expr) { }
+  TypeExpression* expr() const {
+    return expr_;
+  }
   DECLARE_DERIVED_NODE_TYPE(PostfixQuestionExpression)
  private:
   TypeExpression* expr_;
@@ -66,6 +75,9 @@ class PostfixQuestionExpression : public TypeExpression {
 class PostfixBangExpression : public TypeExpression {
  public:
   PostfixBangExpression(TypeExpression* expr) : expr_(expr) { }
+  TypeExpression* expr() const {
+    return expr_;
+  }
   DECLARE_DERIVED_NODE_TYPE(PostfixBangExpression)
  private:
   TypeExpression* expr_;
@@ -99,6 +111,9 @@ class VoidLiteral : public TypeExpression {
 class UnionType : public TypeExpression {
  public:
   UnionType(TypeExpressions* exprs) : exprs_(exprs) { }
+  TypeExpressions* exprs() const {
+    return exprs_;
+  }
   DECLARE_DERIVED_NODE_TYPE(UnionType)
  private:
   TypeExpressions* exprs_;
@@ -107,6 +122,9 @@ class UnionType : public TypeExpression {
 class ArrayType : public TypeExpression {
  public:
   ArrayType(TypeExpressions* exprs) : exprs_(exprs) { }
+  TypeExpressions* exprs() const {
+    return exprs_;
+  }
   DECLARE_DERIVED_NODE_TYPE(ArrayType)
  private:
   TypeExpressions* exprs_;
@@ -115,6 +133,9 @@ class ArrayType : public TypeExpression {
 class RecordType : public TypeExpression {
  public:
   RecordType(TypeExpressions* exprs) : exprs_(exprs) { }
+  TypeExpressions* exprs() const {
+    return exprs_;
+  }
   DECLARE_DERIVED_NODE_TYPE(RecordType)
  private:
   TypeExpressions* exprs_;
@@ -126,6 +147,12 @@ class FieldTypeKeyValue : public TypeExpression {
                     TypeExpression* value)
     : key_(key),
       value_(value) {
+  }
+  TypeExpression* key() const {
+    return key_;
+  }
+  TypeExpression* value() const {
+    return value_;
   }
   DECLARE_DERIVED_NODE_TYPE(FieldTypeKeyValue)
  private:
@@ -143,6 +170,18 @@ class FunctionType : public TypeExpression {
       this_binding_(this_binding),
       params_(params),
       result_(result) {
+  }
+  bool IsNew() const {
+    return is_new_;
+  }
+  TypeName* this_binding() const {
+    return this_binding_;
+  }
+  ParametersType* params() const {
+    return params_;
+  }
+  TypeExpression* result() const {
+    return result_;
   }
   DECLARE_DERIVED_NODE_TYPE(FunctionType)
 
@@ -176,6 +215,12 @@ class TypeNameWithApplication : public TypeName {
     : expr_(expr),
       application_(application) {
   }
+  TypeExpression* expr() const {
+    return expr_;
+  }
+  TypeExpressions* application() const {
+    return application_;
+  }
   DECLARE_DERIVED_NODE_TYPE(TypeNameWithApplication)
  private:
   TypeExpression* expr_;
@@ -185,6 +230,9 @@ class TypeNameWithApplication : public TypeName {
 class ParametersType : public TypeExpression {
  public:
   ParametersType(TypeExpressions* exprs) : exprs_(exprs) { }
+  TypeExpressions* exprs() const {
+    return exprs_;
+  }
   DECLARE_DERIVED_NODE_TYPE(ParametersType)
  private:
   TypeExpressions* exprs_;
@@ -193,6 +241,9 @@ class ParametersType : public TypeExpression {
 class RestExpression : public TypeExpression {
  public:
   RestExpression(TypeExpression* expr) : expr_(expr) { }
+  TypeExpression* expr() const {
+    return expr_;
+  }
   DECLARE_DERIVED_NODE_TYPE(RestExpression)
  private:
   TypeExpression* expr_;
@@ -201,6 +252,9 @@ class RestExpression : public TypeExpression {
 class PostfixEqualExpression : public TypeExpression {
  public:
   PostfixEqualExpression(TypeExpression* expr) : expr_(expr) { }
+  TypeExpression* expr() const {
+    return expr_;
+  }
   DECLARE_DERIVED_NODE_TYPE(PostfixEqualExpression)
  private:
   TypeExpression* expr_;
