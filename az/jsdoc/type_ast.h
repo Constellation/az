@@ -161,6 +161,9 @@ class TypeName : public TypeExpression {
 class NameExpression : public TypeName {
  public:
   NameExpression(NameString* str) : str_(str) { }
+  NameString* value() {
+    return str_;
+  }
   DECLARE_DERIVED_NODE_TYPE(NameExpression)
  private:
   NameString* str_;

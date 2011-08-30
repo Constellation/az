@@ -8,8 +8,9 @@ namespace cfa2 {
 
 class TypeAstVisitor : public jsdoc::TypeAstVisitor {
  public:
-  TypeAstVisitor()
-    : result_(NULL) {
+  TypeAstVisitor(AstFactory* factory)
+    : factory_(factory),
+      result_(NULL) {
   }
 
   Expression* Get(jsdoc::TypeExpression* expr) {
@@ -63,6 +64,13 @@ class TypeAstVisitor : public jsdoc::TypeAstVisitor {
   }
 
   void Visit(jsdoc::NameExpression* node) {
+    // primitive type check phase
+    jsdoc::NameString* str = node->value();
+    if (IsEqualIgnoreCase(*str, "string")) {
+      std::vector<uint16_t> buffer;
+      result_ = factory_->NewStringLiteral(buffer, 0, 0);
+      return;
+    }
   }
 
   void Visit(jsdoc::TypeNameWithApplication* node) {
@@ -77,6 +85,7 @@ class TypeAstVisitor : public jsdoc::TypeAstVisitor {
   void Visit(jsdoc::PostfixEqualExpression* node) {
   }
 
+  AstFactory* factory_;
   Expression* result_;
 };
 

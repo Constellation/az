@@ -397,7 +397,6 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     if (token_ == TypeToken::TK_NAME && lexer_.IsVoidLiteral()) {
       return new (factory_) VoidLiteral();
     }
-    std::cout << "COURCE" << std::endl;
     return ParseTypeExpression(res);
   }
 
