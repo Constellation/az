@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_AVAL_H_
-#define _AZ_CFA2_AVAL_H_
+#ifndef AZ_CFA2_AVAL_H_
+#define AZ_CFA2_AVAL_H_
 #include <az/cfa2/aval_fwd.h>
 #include <az/cfa2/completer.h>
 #include <az/cfa2/interpreter_fwd.h>
@@ -223,4 +223,4 @@ void AVal::Complete(Heap* heap, Completer* completer) const {
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_AVAL_H_
+#endif  // AZ_CFA2_AVAL_H_

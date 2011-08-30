@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_AVAL_FWD_H_
-#define _AZ_CFA2_AVAL_FWD_H_
+#ifndef AZ_CFA2_AVAL_FWD_H_
+#define AZ_CFA2_AVAL_FWD_H_
 #include <set>
 #include <algorithm>
 #include <iterator>
@@ -254,4 +254,4 @@ class AVal {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_AVAL_H_
+#endif  // AZ_CFA2_AVAL_H_

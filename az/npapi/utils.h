@@ -1,5 +1,5 @@
-#ifndef _AZ_NPAPI_UTILS_H_
-#define _AZ_NPAPI_UTILS_H_
+#ifndef AZ_NPAPI_UTILS_H_
+#define AZ_NPAPI_UTILS_H_
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -33,4 +33,4 @@ inline bool UStringToNPVariant(NPNetscapeFuncs* np, const iv::core::UStringPiece
 }
 
 }  // namespace az
-#endif  // _AZ_NPAPI_UTILS_H_
+#endif  // AZ_NPAPI_UTILS_H_

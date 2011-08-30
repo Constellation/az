@@ -1,6 +1,6 @@
 // mark complete tokens
-#ifndef _AZ_CFA2_COMPLETER_H_
-#define _AZ_CFA2_COMPLETER_H_
+#ifndef AZ_CFA2_COMPLETER_H_
+#define AZ_CFA2_COMPLETER_H_
 #include <az/ast_fwd.h>
 #include <az/basic_completer.h>
 namespace az {
@@ -23,4 +23,4 @@ class Completer : public BasicCompleter {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_COMPLETER_H_
+#endif  // AZ_CFA2_COMPLETER_H_

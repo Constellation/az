@@ -1,5 +1,5 @@
-#ifndef _AZ_DELETER_H_
-#define _AZ_DELETER_H_
+#ifndef AZ_DELETER_H_
+#define AZ_DELETER_H_
 namespace az {
 
 struct Deleter {
@@ -12,4 +12,4 @@ struct Deleter {
 };
 
 }  // namespace az
-#endif  // _AZ_DELETER_H_
+#endif  // AZ_DELETER_H_

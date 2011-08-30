@@ -1,5 +1,5 @@
-#ifndef _AZ_EXECUTION_CONTEXT_H_
-#define _AZ_EXECUTION_CONTEXT_H_
+#ifndef AZ_EXECUTION_CONTEXT_H_
+#define AZ_EXECUTION_CONTEXT_H_
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
@@ -107,4 +107,4 @@ class ExecutionContext : public std::enable_shared_from_this<ExecutionContext> {
 };
 
 }  // namespace az
-#endif  // _AZ_EXECUTION_CONTEXT_H_
+#endif  // AZ_EXECUTION_CONTEXT_H_

@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_INTERPRETER_H_
-#define _AZ_CFA2_INTERPRETER_H_
+#ifndef AZ_CFA2_INTERPRETER_H_
+#define AZ_CFA2_INTERPRETER_H_
 #include <deque>
 #include <iv/debug.h>
 #include <az/cfa2/interpreter_fwd.h>
@@ -1167,4 +1167,4 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_INTERPRETER_H_
+#endif  // AZ_CFA2_INTERPRETER_H_

@@ -1,6 +1,6 @@
 // reporter base
-#ifndef _AZ_BASIC_REPORTER_H_
-#define _AZ_BASIC_REPORTER_H_
+#ifndef AZ_BASIC_REPORTER_H_
+#define AZ_BASIC_REPORTER_H_
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
 namespace az {
@@ -21,4 +21,4 @@ class BasicReporter : private iv::core::Noncopyable<BasicReporter> {
 };
 
 }  // namespace az
-#endif  // _AZ_BASIC_REPORTER_H_
+#endif  // AZ_BASIC_REPORTER_H_

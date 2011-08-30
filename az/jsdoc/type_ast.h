@@ -1,6 +1,6 @@
 // simple type expression ast
-#ifndef _AZ_JSDOC_TYPE_AST_H_
-#define _AZ_JSDOC_TYPE_AST_H_
+#ifndef AZ_JSDOC_TYPE_AST_H_
+#define AZ_JSDOC_TYPE_AST_H_
 #include <iv/noncopyable.h>
 #include <az/factory.h>
 #include <az/jsdoc/type_ast_fwd.h>
@@ -208,4 +208,4 @@ class PostfixEqualExpression : public TypeExpression {
 #undef DECLARE_DERIVED_NODE_TYPE
 #undef DECLARE_NODE_TYPE_BASE
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_TYPE_AST_H_
+#endif  // AZ_JSDOC_TYPE_AST_H_

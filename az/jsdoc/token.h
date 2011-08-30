@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_TOKEN_H_
-#define _AZ_JSDOC_TOKEN_H_
+#ifndef AZ_JSDOC_TOKEN_H_
+#define AZ_JSDOC_TOKEN_H_
 namespace az {
 namespace jsdoc {
 
@@ -33,4 +33,4 @@ class Token {
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_TOKEN_H_
+#endif  // AZ_JSDOC_TOKEN_H_

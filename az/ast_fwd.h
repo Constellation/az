@@ -1,5 +1,5 @@
-#ifndef _AZ_AST_FWD_H_
-#define _AZ_AST_FWD_H_
+#ifndef AZ_AST_FWD_H_
+#define AZ_AST_FWD_H_
 #include <iv/ast.h>
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/binding.h>
@@ -225,4 +225,4 @@ typedef iv::core::ast::AstVisitor<AstFactory>::const_type AstVisitor;
 typedef iv::core::ast::AstVisitor<AstFactory>::type MutableAstVisitor;
 
 }  // namespace az
-#endif  // _AZ_AST_FWD_H_
+#endif  // AZ_AST_FWD_H_

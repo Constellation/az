@@ -1,5 +1,5 @@
-#ifndef _AZ_SKIP_H_
-#define _AZ_SKIP_H_
+#ifndef AZ_SKIP_H_
+#define AZ_SKIP_H_
 #include <iv/keyword.h>
 #include <az/character.h>
 namespace az {
@@ -63,4 +63,4 @@ class BasicSkip {
 };
 
 }  // namespace az
-#endif  // _AZ_SKIP_H_
+#endif  // AZ_SKIP_H_

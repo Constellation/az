@@ -1,6 +1,6 @@
 // resolve which identifier is STACK or HEAP
-#ifndef _AZ_CFA2_BINDING_RESOLVER_FWD_H_
-#define _AZ_CFA2_BINDING_RESOLVER_FWD_H_
+#ifndef AZ_CFA2_BINDING_RESOLVER_FWD_H_
+#define AZ_CFA2_BINDING_RESOLVER_FWD_H_
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
 #include <az/symbol.h>
@@ -83,4 +83,4 @@ class BindingResolver
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_BINDING_RESOLVER_FWD_H_
+#endif  // AZ_CFA2_BINDING_RESOLVER_FWD_H_

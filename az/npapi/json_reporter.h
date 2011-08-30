@@ -1,5 +1,5 @@
-#ifndef _AZ_NPAPI_JSON_REPORTER_H_
-#define _AZ_NPAPI_JSON_REPORTER_H_
+#ifndef AZ_NPAPI_JSON_REPORTER_H_
+#define AZ_NPAPI_JSON_REPORTER_H_
 #include <vector>
 #include <string>
 #include <sstream>
@@ -109,4 +109,4 @@ class JSONReporter : public BasicReporter {
 };
 
 } }  // namespace az::npapi
-#endif  // _AZ_NPAPI_JSON_REPORTER_H_
+#endif  // AZ_NPAPI_JSON_REPORTER_H_

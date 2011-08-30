@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_BUILTINS_FWD_H_
-#define _AZ_CFA2_BUILTINS_FWD_H_
+#ifndef AZ_CFA2_BUILTINS_FWD_H_
+#define AZ_CFA2_BUILTINS_FWD_H_
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aval_fwd.h>
 #include <az/cfa2/result.h>
@@ -100,4 +100,4 @@ inline Result JSONParse(Heap* heap,
                         bool IsConstructorCalled);
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_BUILTINS_FWD_H_
+#endif  // AZ_CFA2_BUILTINS_FWD_H_

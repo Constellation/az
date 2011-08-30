@@ -1,5 +1,5 @@
-#ifndef _AZ_VARIABLE_TYPE_H_
-#define _AZ_VARIABLE_TYPE_H_
+#ifndef AZ_VARIABLE_TYPE_H_
+#define AZ_VARIABLE_TYPE_H_
 #include <iv/detail/unordered_map.h>
 #include <iv/detail/unordered_set.h>
 #include <iv/detail/memory.h>
@@ -56,4 +56,4 @@ class Var {
 typedef std::unordered_map<Symbol, Var> VariableMap;
 
 }  // namespace az
-#endif  // _AZ_VARIABLE_TYPE_H_
+#endif  // AZ_VARIABLE_TYPE_H_

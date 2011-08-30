@@ -1,6 +1,6 @@
 // heuristic js type
-#ifndef _AZ_JSTYPE_H_
-#define _AZ_JSTYPE_H_
+#ifndef AZ_JSTYPE_H_
+#define AZ_JSTYPE_H_
 #include <utility>
 #include <iv/detail/functional.h>
 namespace az {
@@ -220,4 +220,4 @@ inline const char* GetTypeName(AType type) {
 }
 
 }  // namespace az
-#endif  // _AZ_JSTYPE_H_
+#endif  // AZ_JSTYPE_H_

@@ -1,5 +1,5 @@
-#ifndef _AZ_NPAPI_ANALYZE_H_
-#define _AZ_NPAPI_ANALYZE_H_
+#ifndef AZ_NPAPI_ANALYZE_H_
+#define AZ_NPAPI_ANALYZE_H_
 #include <iv/stringpiece.h>
 #include <npapi/npapi.h>
 #include <npapi/nptypes.h>
@@ -15,4 +15,4 @@ bool Complete(NPNetscapeFuncs* np,
               NPObject* receiver, const iv::core::StringPiece& piece, std::size_t len, NPVariant* result);
 
 } }  // namespace az::npapi
-#endif  // _AZ_NPAPI_ANALYZE_H_
+#endif  // AZ_NPAPI_ANALYZE_H_

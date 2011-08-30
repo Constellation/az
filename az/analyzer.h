@@ -1,7 +1,7 @@
 // Az Analyzer
 // rewrite AST and analyze stack and heap variables status
-#ifndef _AZ_ANALYZER_H_
-#define _AZ_ANALYZER_H_
+#ifndef AZ_ANALYZER_H_
+#define AZ_ANALYZER_H_
 #include <iv/ast_visitor.h>
 #include <iv/utils.h>
 #include <iv/maybe.h>
@@ -1289,4 +1289,4 @@ inline void Analyze(FunctionLiteral* global,
 }
 
 }  // namespace az
-#endif  // _AZ_ANALYZER_H_
+#endif  // AZ_ANALYZER_H_

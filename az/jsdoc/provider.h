@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_PROVIDER_H_
-#define _AZ_JSDOC_PROVIDER_H_
+#ifndef AZ_JSDOC_PROVIDER_H_
+#define AZ_JSDOC_PROVIDER_H_
 #include <iv/ustringpiece.h>
 #include <az/jsdoc/info.h>
 #include <az/jsdoc/parser.h>
@@ -28,4 +28,4 @@ class Provider {
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_PROVIDER_H_
+#endif  // AZ_JSDOC_PROVIDER_H_

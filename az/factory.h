@@ -1,5 +1,5 @@
-#ifndef _AZ_FACTORY_H_
-#define _AZ_FACTORY_H_
+#ifndef AZ_FACTORY_H_
+#define AZ_FACTORY_H_
 #include <vector>
 #include <iv/detail/array.h>
 #include <iv/alloc.h>
@@ -404,4 +404,4 @@ class AstFactory
 };
 
 }  // namespace az
-#endif  // _AZ_H_
+#endif  // AZ_H_

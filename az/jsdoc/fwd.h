@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_FWD_H_
-#define _AZ_JSDOC_FWD_H_
+#ifndef AZ_JSDOC_FWD_H_
+#define AZ_JSDOC_FWD_H_
 #include <iv/stringpiece.h>
 namespace az {
 namespace jsdoc {
@@ -11,4 +11,4 @@ typedef std::array<iv::core::StringPiece, 20> TagArray;
 class Tag;
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_FWD_H_
+#endif  // AZ_JSDOC_FWD_H_

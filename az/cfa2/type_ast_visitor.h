@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_TYPE_AST_VISITOR_H_
-#define _AZ_CFA2_TYPE_AST_VISITOR_H_
+#ifndef AZ_CFA2_TYPE_AST_VISITOR_H_
+#define AZ_CFA2_TYPE_AST_VISITOR_H_
 #include <iv/debug.h>
 #include <az/ast_fwd.h>
 #include <az/jsdoc/type_ast_visitor.h>
@@ -8,11 +8,15 @@ namespace cfa2 {
 
 class TypeAstVisitor : public jsdoc::TypeAstVisitor {
  public:
+  TypeAstVisitor()
+    : result_(NULL) {
+  }
+
   Expression* Get(jsdoc::TypeExpression* expr) {
     // Top Level
     assert(expr);
     expr->Accept(this);
-    return NULL;
+    return result_;
   }
 
  private:
@@ -72,7 +76,9 @@ class TypeAstVisitor : public jsdoc::TypeAstVisitor {
 
   void Visit(jsdoc::PostfixEqualExpression* node) {
   }
+
+  Expression* result_;
 };
 
 } }  // namespace az::cfa2
-#endif  //_AZ_CFA2_TYPE_AST_VISITOR_H_
+#endif  //AZ_CFA2_TYPE_AST_VISITOR_H_

@@ -1,5 +1,5 @@
-#ifndef _AZ_TOKEN_H_
-#define _AZ_TOKEN_H_
+#ifndef AZ_TOKEN_H_
+#define AZ_TOKEN_H_
 #include <iv/token.h>
 namespace az {
 
@@ -60,4 +60,4 @@ inline bool IsStatementStartToken(iv::core::Token::Type token) {
 }
 
 }  // namespace az
-#endif  // _AZ_TOKEN_H_
+#endif  // AZ_TOKEN_H_

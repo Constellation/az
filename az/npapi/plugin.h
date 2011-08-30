@@ -1,5 +1,5 @@
-#ifndef _AZ_NPAPI_PLUGIN_H_
-#define _AZ_NPAPI_PLUGIN_H_
+#ifndef AZ_NPAPI_PLUGIN_H_
+#define AZ_NPAPI_PLUGIN_H_
 #include <vector>
 #include <string>
 namespace az {
@@ -54,4 +54,4 @@ struct NPClass NPAPI::kNpcRefObject = {
 };
 
 } }  // namespace az::npapi
-#endif  // _AZ_NPAPI_PLUGIN_H_
+#endif  // AZ_NPAPI_PLUGIN_H_

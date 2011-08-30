@@ -1,5 +1,5 @@
-#ifndef _AZ_BASIC_COMPLETER_H_
-#define _AZ_BASIC_COMPLETER_H_
+#ifndef AZ_BASIC_COMPLETER_H_
+#define AZ_BASIC_COMPLETER_H_
 #include <az/cfa2/aval_fwd.h>
 #include <az/ast_fwd.h>
 namespace az {
@@ -52,4 +52,4 @@ class BasicCompleter {
 };
 
 }  // namespace az
-#endif  // _AZ_COMPLETER_H_
+#endif  // AZ_COMPLETER_H_

@@ -1,5 +1,5 @@
-#ifndef _AZ_NPAPI_JSON_COMPLETER_H_
-#define _AZ_NPAPI_JSON_COMPLETER_H_
+#ifndef AZ_NPAPI_JSON_COMPLETER_H_
+#define AZ_NPAPI_JSON_COMPLETER_H_
 #include <vector>
 #include <string>
 #include <az/ast_fwd.h>
@@ -46,4 +46,4 @@ class JSONCompleter : public cfa2::Completer {
 };
 
 } }  // namespace az::npapi
-#endif  // _AZ_NPAPI_JSON_COMPLETER_H_
+#endif  // AZ_NPAPI_JSON_COMPLETER_H_

@@ -1,5 +1,5 @@
-#ifndef _AZ_DESTRUCTOR_H_
-#define _AZ_DESTRUCTOR_H_
+#ifndef AZ_DESTRUCTOR_H_
+#define AZ_DESTRUCTOR_H_
 namespace az {
 
 struct Destructor {
@@ -21,4 +21,4 @@ struct TypedDestructor {
 };
 
 }  // namespace az
-#endif  // _AZ_DESTRUCTOR_H_
+#endif  // AZ_DESTRUCTOR_H_

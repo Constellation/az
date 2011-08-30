@@ -1,5 +1,5 @@
-#ifndef _AZ_NPAPI_DEBUG_H_
-#define _AZ_NPAPI_DEBUG_H_
+#ifndef AZ_NPAPI_DEBUG_H_
+#define AZ_NPAPI_DEBUG_H_
 
 #ifdef DEBUG
 inline void Log(const char *msg) {
@@ -19,4 +19,4 @@ inline void Log(const char *msg) {
 
 #endif
 
-#endif  // _AZ_NPAPI_DEBUG_H_
+#endif  // AZ_NPAPI_DEBUG_H_

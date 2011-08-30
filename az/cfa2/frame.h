@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_FRAME_H_
-#define _AZ_CFA2_FRAME_H_
+#ifndef AZ_CFA2_FRAME_H_
+#define AZ_CFA2_FRAME_H_
 #include <iv/detail/unordered_map.h>
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aval.h>
@@ -65,4 +65,4 @@ class Frame {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_FRAME_H_
+#endif  // AZ_CFA2_FRAME_H_

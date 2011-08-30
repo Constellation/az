@@ -1,8 +1,8 @@
 // Az parser
 // this is incremental parser for Az project only
 // original source code is iv::core::Parser
-#ifndef _AZ_PARSER_H_
-#define _AZ_PARSER_H_
+#ifndef AZ_PARSER_H_
+#define AZ_PARSER_H_
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -3195,4 +3195,4 @@ class Parser : private iv::core::Noncopyable<> {
 #undef RAISE_RECOVERVABLE
 #undef CHECK
 }  // namespace az
-#endif  // _AZ_PARSER_H_
+#endif  // AZ_PARSER_H_

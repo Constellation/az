@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_INFO_H_
-#define _AZ_JSDOC_INFO_H_
+#ifndef AZ_JSDOC_INFO_H_
+#define AZ_JSDOC_INFO_H_
 #include <vector>
 #include <iv/detail/memory.h>
 #include <iv/ustringpiece.h>
@@ -44,4 +44,4 @@ class Info {
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_INFO_H_
+#endif  // AZ_JSDOC_INFO_H_

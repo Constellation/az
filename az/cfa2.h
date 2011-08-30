@@ -48,8 +48,8 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-#ifndef _AZ_CFA2_H_
-#define _AZ_CFA2_H_
+#ifndef AZ_CFA2_H_
+#define AZ_CFA2_H_
 #include <az/cfa2/completer.h>
 #include <az/cfa2/cli_completer.h>
 #include <az/cfa2/heap.h>
@@ -91,4 +91,4 @@ inline void Complete(FunctionLiteral* global,
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_H_
+#endif  // AZ_CFA2_H_

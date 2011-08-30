@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_TYPE_AST_VISITOR_H_
-#define _AZ_JSDOC_TYPE_AST_VISITOR_H_
+#ifndef AZ_JSDOC_TYPE_AST_VISITOR_H_
+#define AZ_JSDOC_TYPE_AST_VISITOR_H_
 #include <az/jsdoc/type_ast_fwd.h>
 namespace az {
 namespace jsdoc {
@@ -14,4 +14,4 @@ TYPE_EXPRESSION_AST_DERIVED_NODES(V)
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_TYPE_AST_VISITOR_H_
+#endif  // AZ_JSDOC_TYPE_AST_VISITOR_H_

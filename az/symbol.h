@@ -1,7 +1,7 @@
 // symbol
 // the original logic is derived from iv / lv5 symbol implementation
-#ifndef _AZ_SYMBOL_H_
-#define _AZ_SYMBOL_H_
+#ifndef AZ_SYMBOL_H_
+#define AZ_SYMBOL_H_
 #include <cstdio>
 #include <iv/detail/cstdint.h>
 #include <iv/detail/cinttypes.h>
@@ -285,4 +285,4 @@ inline Symbol Intern(uint32_t index) {
 }
 
 }  // namespace az
-#endif  // _AZ_SYMBOL_H_
+#endif  // AZ_SYMBOL_H_

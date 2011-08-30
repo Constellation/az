@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_HEAP_H_
-#define _AZ_CFA2_HEAP_H_
+#ifndef AZ_CFA2_HEAP_H_
+#define AZ_CFA2_HEAP_H_
 #include <algorithm>
 #include <utility>
 #include <iv/detail/memory.h>
@@ -1225,4 +1225,4 @@ class Heap : public az::Context {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_HEAP_H_
+#endif  // AZ_CFA2_HEAP_H_

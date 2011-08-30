@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_HEAP_INITIALIZER_H_
-#define _AZ_CFA2_HEAP_INITIALIZER_H_
+#ifndef AZ_CFA2_HEAP_INITIALIZER_H_
+#define AZ_CFA2_HEAP_INITIALIZER_H_
 #include <algorithm>
 #include <az/cfa2/heap_initializer_fwd.h>
 #include <az/cfa2/builtins.h>
@@ -396,4 +396,4 @@ void HeapInitializer::Visit(Declaration* dummy) {
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_DECL_INITIALIZER_H_
+#endif  // AZ_CFA2_DECL_INITIALIZER_H_

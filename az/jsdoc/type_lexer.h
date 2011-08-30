@@ -1,6 +1,6 @@
 // Type Lexer lex TypeExpression in JSDoc.
-#ifndef _AZ_JSDOC_TYPE_LEXER_H_
-#define _AZ_JSDOC_TYPE_LEXER_H_
+#ifndef AZ_JSDOC_TYPE_LEXER_H_
+#define AZ_JSDOC_TYPE_LEXER_H_
 #include <iv/noncopyable.h>
 #include <iv/ustringpiece.h>
 #include <iv/character.h>
@@ -211,4 +211,4 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_TYPE_LEXER_H_
+#endif  // AZ_JSDOC_TYPE_LEXER_H_

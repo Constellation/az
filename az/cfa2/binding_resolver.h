@@ -1,6 +1,6 @@
 // resolve which identifier is STACK or HEAP
-#ifndef _AZ_CFA2_BINDING_RESOLVER_H_
-#define _AZ_CFA2_BINDING_RESOLVER_H_
+#ifndef AZ_CFA2_BINDING_RESOLVER_H_
+#define AZ_CFA2_BINDING_RESOLVER_H_
 #include <functional>
 #include <iv/noncopyable.h>
 #include <iv/maybe.h>
@@ -557,4 +557,4 @@ void BindingResolver::Visit(Declaration* dummy) {
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_BINDING_RESOLVER_H_
+#endif  // AZ_CFA2_BINDING_RESOLVER_H_

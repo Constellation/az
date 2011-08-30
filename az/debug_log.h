@@ -1,5 +1,5 @@
-#ifndef _AZ_DEBUG_LOG_H_
-#define _AZ_DEBUG_LOG_H_
+#ifndef AZ_DEBUG_LOG_H_
+#define AZ_DEBUG_LOG_H_
 #include <cstdio>
 #include <iv/debug.h>
 #include <iv/unicode.h>
@@ -32,4 +32,4 @@ inline void DebugLog(const T& t) { }
 #endif
 
 }  // namespace az
-#endif  // _AZ_DEBUG_LOG_H_
+#endif  // AZ_DEBUG_LOG_H_

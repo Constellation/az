@@ -2,8 +2,8 @@
 //
 // original TypeExpression parser code is closure-compiler
 //
-#ifndef _AZ_JSDOC_TYPE_PARSER_H_
-#define _AZ_JSDOC_TYPE_PARSER_H_
+#ifndef AZ_JSDOC_TYPE_PARSER_H_
+#define AZ_JSDOC_TYPE_PARSER_H_
 #include <iv/noncopyable.h>
 #include <iv/ustringpiece.h>
 #include <iv/character.h>
@@ -411,4 +411,4 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
 #undef CHECK
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_TYPE_PARSER_H_
+#endif  // AZ_JSDOC_TYPE_PARSER_H_

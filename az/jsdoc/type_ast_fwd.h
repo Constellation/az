@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_TYPE_AST_FWD_H_
-#define _AZ_JSDOC_TYPE_AST_FWD_H_
+#ifndef AZ_JSDOC_TYPE_AST_FWD_H_
+#define AZ_JSDOC_TYPE_AST_FWD_H_
 
 #define TYPE_EXPRESSION_AST_DERIVED_NODES(V)\
   V(PrefixQuestionExpression)\
@@ -35,4 +35,4 @@ TYPE_EXPRESSION_AST_NODES(V)
 #undef V
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_TYPE_AST_FWD_H_
+#endif  // AZ_JSDOC_TYPE_AST_FWD_H_

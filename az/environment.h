@@ -1,5 +1,5 @@
-#ifndef _AZ_ENVIRONMENT_H_
-#define _AZ_ENVIRONMENT_H_
+#ifndef AZ_ENVIRONMENT_H_
+#define AZ_ENVIRONMENT_H_
 #include <bitset>
 #include <iv/detail/memory.h>
 #include <iv/ustringpiece.h>
@@ -143,4 +143,4 @@ class Environment : public std::enable_shared_from_this<Environment> {
 };
 
 }  // namespace az
-#endif  // _AZ_ENVIRONMENT_H_
+#endif  // AZ_ENVIRONMENT_H_

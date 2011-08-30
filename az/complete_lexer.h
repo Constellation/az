@@ -1,6 +1,6 @@
 // handling completion token
-#ifndef _AZ_COMPLETE_LEXER_H_
-#define _AZ_COMPLETE_LEXER_H_
+#ifndef AZ_COMPLETE_LEXER_H_
+#define AZ_COMPLETE_LEXER_H_
 #include <iv/lexer.h>
 namespace az {
 
@@ -65,4 +65,4 @@ class CompleteLexer
 };
 
 }  // namespace az
-#endif  // _AZ_COMPLETER_LEXER_H_
+#endif  // AZ_COMPLETER_LEXER_H_

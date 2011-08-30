@@ -1,6 +1,6 @@
 // AObject factory
-#ifndef _AZ_CFA2_AOBJECT_FACTORY_H_
-#define _AZ_CFA2_AOBJECT_FACTORY_H_
+#ifndef AZ_CFA2_AOBJECT_FACTORY_H_
+#define AZ_CFA2_AOBJECT_FACTORY_H_
 #include <algorithm>
 #include <new>
 #include <deque>
@@ -54,4 +54,4 @@ class AObjectFactory : private iv::core::Noncopyable<AObjectFactory> {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_AOBJECT_FACTORY_H_
+#endif  // AZ_CFA2_AOBJECT_FACTORY_H_

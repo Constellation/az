@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_TYPE_UTILS_H_
-#define _AZ_CFA2_TYPE_UTILS_H_
+#ifndef AZ_CFA2_TYPE_UTILS_H_
+#define AZ_CFA2_TYPE_UTILS_H_
 #include <iv/ustring.h>
 #include <az/cfa2/fwd.h>
 namespace az {
@@ -37,4 +37,4 @@ inline iv::core::UString GetFunctionPrototypeDeclaration(FunctionLiteral* fun) {
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_TYPE_UTILS_H_
+#endif  // AZ_CFA2_TYPE_UTILS_H_

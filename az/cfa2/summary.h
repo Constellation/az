@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_SUMMARY_H_
-#define _AZ_CFA2_SUMMARY_H_
+#ifndef AZ_CFA2_SUMMARY_H_
+#define AZ_CFA2_SUMMARY_H_
 #include <vector>
 #include <iv/detail/memory.h>
 #include <iv/detail/unordered_map.h>
@@ -150,4 +150,4 @@ class Summary : private iv::core::Noncopyable<Summary> {
 typedef std::unordered_map<FunctionLiteral*, std::shared_ptr<Summary> > Summaries;
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_SUMMARY_H_
+#endif  // AZ_CFA2_SUMMARY_H_

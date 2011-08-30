@@ -1,5 +1,5 @@
-#ifndef _AZ_EMPTY_REPORTER_H_
-#define _AZ_EMPTY_REPORTER_H_
+#ifndef AZ_EMPTY_REPORTER_H_
+#define AZ_EMPTY_REPORTER_H_
 #include <az/basic_reporter.h>
 namespace az {
 
@@ -73,4 +73,4 @@ class EmptyReporter : public BasicReporter {
 };
 
 }  // namespace az
-#endif  // _AZ_EMPTY_REPORTER_H_
+#endif  // AZ_EMPTY_REPORTER_H_

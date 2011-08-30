@@ -1,7 +1,7 @@
 // StructuredSource provides
 // interface for conversion from position to row and column
-#ifndef _AZ_STRUCTURED_SOURCE_H_
-#define _AZ_STRUCTURED_SOURCE_H_
+#ifndef AZ_STRUCTURED_SOURCE_H_
+#define AZ_STRUCTURED_SOURCE_H_
 #include <cstddef>
 #include <cassert>
 #include <vector>
@@ -128,4 +128,4 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
 };
 
 }  // namespace az
-#endif  // _AZ_STRUCTURED_SOURCE_H_
+#endif  // AZ_STRUCTURED_SOURCE_H_

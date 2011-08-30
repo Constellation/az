@@ -1,5 +1,5 @@
-#ifndef _AZ_REPORTER_H_
-#define _AZ_REPORTER_H_
+#ifndef AZ_REPORTER_H_
+#define AZ_REPORTER_H_
 #include <iv/detail/cinttypes.h>
 #include <iv/detail/cstdint.h>
 #include <az/basic_reporter.h>
@@ -224,4 +224,4 @@ class Reporter : public BasicReporter {
 };
 
 }  // namespace az
-#endif  // _AZ_BASIC_REPORTER_H_
+#endif  // AZ_BASIC_REPORTER_H_

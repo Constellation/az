@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_METHOD_TARGET_GUARD_H_
-#define _AZ_CFA2_METHOD_TARGET_GUARD_H_
+#ifndef AZ_CFA2_METHOD_TARGET_GUARD_H_
+#define AZ_CFA2_METHOD_TARGET_GUARD_H_
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
 #include <az/cfa2/heap.h>
@@ -27,4 +27,4 @@ class MethodTargetGuard : private iv::core::Noncopyable<MethodTargetGuard> {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_METHOD_TARGET_GUARD_H_
+#endif  // AZ_CFA2_METHOD_TARGET_GUARD_H_

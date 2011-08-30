@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_BUILTINS_H_
-#define _AZ_CFA2_BUILTINS_H_
+#ifndef AZ_CFA2_BUILTINS_H_
+#define AZ_CFA2_BUILTINS_H_
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/aval.h>
 #include <az/cfa2/result.h>
@@ -178,4 +178,4 @@ inline Result JSONParse(Heap* heap,
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_BUILTINS_H_
+#endif  // AZ_CFA2_BUILTINS_H_

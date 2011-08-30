@@ -1,5 +1,5 @@
-#ifndef _AZ_CHARACTER_H_
-#define _AZ_CHARACTER_H_
+#ifndef AZ_CHARACTER_H_
+#define AZ_CHARACTER_H_
 namespace az {
 namespace character {
 
@@ -12,4 +12,4 @@ inline bool IsLineTerminatorCRLF(uint16_t first, uint16_t second) {
 }
 
 } }  // namespace az::character
-#endif  // _AZ_CHARACTER_H_
+#endif  // AZ_CHARACTER_H_

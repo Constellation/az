@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_RESULT_H_
-#define _AZ_CFA2_RESULT_H_
+#ifndef AZ_CFA2_RESULT_H_
+#define AZ_CFA2_RESULT_H_
 #include <algorithm>
 #include <az/cfa2/fwd.h>
 #include <az/cfa2/aval_fwd.h>
@@ -95,4 +95,4 @@ class Result {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_RESULT_H_
+#endif  // AZ_CFA2_RESULT_H_

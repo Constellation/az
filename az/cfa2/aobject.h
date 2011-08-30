@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_AOBJECT_H_
-#define _AZ_CFA2_AOBJECT_H_
+#ifndef AZ_CFA2_AOBJECT_H_
+#define AZ_CFA2_AOBJECT_H_
 #include <az/cfa2/type_utils.h>
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/heap.h>
@@ -170,4 +170,4 @@ iv::core::UString AObject::ToTypeString(
 }
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_AOBJECT_H_
+#endif  // AZ_CFA2_AOBJECT_H_

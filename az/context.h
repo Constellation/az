@@ -1,5 +1,5 @@
-#ifndef _AZ_CONTEXT_H_
-#define _AZ_CONTEXT_H_
+#ifndef AZ_CONTEXT_H_
+#define AZ_CONTEXT_H_
 #include <iv/detail/unordered_map.h>
 #include <iv/debug.h>
 #include <az/ast_fwd.h>
@@ -32,4 +32,4 @@ class Context : private iv::core::Noncopyable<Context> {
 };
 
 }  // namespace az
-#endif  // _AZ_CONTEXT_H_
+#endif  // AZ_CONTEXT_H_

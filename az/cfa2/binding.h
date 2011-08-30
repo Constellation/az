@@ -1,5 +1,5 @@
-#ifndef _AZ_CFA2_BINDING_H_
-#define _AZ_CFA2_BINDING_H_
+#ifndef AZ_CFA2_BINDING_H_
+#define AZ_CFA2_BINDING_H_
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/symbol.h>
@@ -64,4 +64,4 @@ class Binding : private iv::core::Noncopyable<Binding> {
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_BINDING_H_
+#endif  // AZ_CFA2_BINDING_H_

@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_TAG_H_
-#define _AZ_JSDOC_TAG_H_
+#ifndef AZ_JSDOC_TAG_H_
+#define AZ_JSDOC_TAG_H_
 #include <iv/stringpiece.h>
 #include <iv/ustringpiece.h>
 #include <az/jsdoc/fwd.h>
@@ -81,4 +81,4 @@ class Tag {
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_TAG_H_
+#endif  // AZ_JSDOC_TAG_H_

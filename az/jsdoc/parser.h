@@ -1,5 +1,5 @@
-#ifndef _AZ_JSDOC_PARSER_H_
-#define _AZ_JSDOC_PARSER_H_
+#ifndef AZ_JSDOC_PARSER_H_
+#define AZ_JSDOC_PARSER_H_
 #include <iterator>
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
@@ -335,4 +335,4 @@ class Parser : private iv::core::Noncopyable<Parser> {
 };
 
 } }  // namespace az::jsdoc
-#endif  // _AZ_JSDOC_PARSER_H_
+#endif  // AZ_JSDOC_PARSER_H_

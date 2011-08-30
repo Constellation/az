@@ -1,6 +1,6 @@
 // CFA2 interpreter
-#ifndef _AZ_CFA2_INTERPRETER_FWD_H_
-#define _AZ_CFA2_INTERPRETER_FWD_H_
+#ifndef AZ_CFA2_INTERPRETER_FWD_H_
+#define AZ_CFA2_INTERPRETER_FWD_H_
 #include <vector>
 #include <deque>
 #include <exception>
@@ -141,4 +141,4 @@ class Interpreter
 };
 
 } }  // namespace az::cfa2
-#endif  // _AZ_CFA2_INTERPRETER_FWD_H_
+#endif  // AZ_CFA2_INTERPRETER_FWD_H_
