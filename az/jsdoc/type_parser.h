@@ -82,7 +82,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
       TypeExpression* top = ParseTopLevelTypeExpression(CHECK);
       return new (factory_) RestExpression(top);
     }
-    TypeExpression* expr = ParseTypeExpression(CHECK);
+    TypeExpression* expr = ParseTopLevelTypeExpression(CHECK);
     if (token_ == TypeToken::TK_EQUAL) {
       Next();
       return new (factory_) PostfixEqualExpression(expr);
@@ -128,7 +128,8 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
           token_ == TypeToken::TK_EQUAL ||
           token_ == TypeToken::TK_RBRACE ||
           token_ == TypeToken::TK_RPAREN ||
-          token_ == TypeToken::TK_PIPE) {
+          token_ == TypeToken::TK_PIPE ||
+          token_ == TypeToken::TK_EOS) {
         // '?'
         return new (factory_) QuestionLiteral();
       }
@@ -396,6 +397,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     if (token_ == TypeToken::TK_NAME && lexer_.IsVoidLiteral()) {
       return new (factory_) VoidLiteral();
     }
+    std::cout << "COURCE" << std::endl;
     return ParseTypeExpression(res);
   }
 

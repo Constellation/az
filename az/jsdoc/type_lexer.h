@@ -121,27 +121,27 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
   }
 
   bool IsNullLiteral() const {
-    return IsEqual(buffer, "null");
+    return IsEqual(buffer_, "null");
   }
 
   bool IsUndefinedLiteral() const {
-    return IsEqual(buffer, "undefined");
+    return IsEqual(buffer_, "undefined");
   }
 
   bool IsFunction() const {
-    return IsEqual(buffer, "function");
+    return IsEqual(buffer_, "function");
   }
 
   bool IsThisLiteral() const {
-    return IsEqual(buffer, "this");
+    return IsEqual(buffer_, "this");
   }
 
   bool IsVoidLiteral() const {
-    return IsEqual(buffer, "void");
+    return IsEqual(buffer_, "void");
   }
 
   bool IsNewLiteral() const {
-    return IsEqual(buffer, "new");
+    return IsEqual(buffer_, "new");
   }
 
  private:

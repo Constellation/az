@@ -176,3 +176,42 @@ TEST(JSDocTypeParser, TypeExpressionParserTest2) {
     EXPECT_TRUE(expr->AsStarLiteral());
   }
 }
+
+TEST(JSDocTypeParser, TypeExpressionParserTest3) {
+  az::AstFactory factory;
+  {
+    const iv::core::UString str = iv::core::ToUString("?");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsQuestionLiteral());
+  }
+  {
+    const iv::core::UString str = iv::core::ToUString("?=");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsPostfixEqualExpression());
+  }
+  {
+    const iv::core::UString str = iv::core::ToUString("function(?, number)");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsFunctionType());
+  }
+  {
+    const iv::core::UString str = iv::core::ToUString("function(number, ?)");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsFunctionType());
+  }
+  {
+    const iv::core::UString str = iv::core::ToUString("function(): ?|number");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseParamType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsUnionType());
+  }
+}
