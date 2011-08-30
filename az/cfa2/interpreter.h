@@ -48,27 +48,39 @@ void Interpreter::Run(FunctionLiteral* global) {
     Summary* current = *it;
     if (!current->IsExists()) {
       // not summarized yet
-      const std::vector<AVal> vec(current->function()->params().size(),
-                                  AVal(AVAL_NOBASE));
-      if (AObject* obj = heap_->GetLiteralMemberBase(current->function())) {
-        EvaluateFunction(current->target(), AVal(obj), vec, false);
-      } else if (Expression* expr = heap_->IsPrototypeMethod(current->function())) {
-        AVal target = heap_->GetMethodTarget(expr);
-        if (target == AVal(AVAL_NOBASE)) {
-          expr->Accept(this);
-          target = result_.result();
+      FunctionLiteral* function = current->function();
+      AObject* target = current->target();
+      const std::vector<AVal> vec(function->params().size(), AVal(AVAL_NOBASE));
+
+      // if jsdoc found and @constructor is specified,
+      // call this function as constructor
+      if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(function)) {
+        if (info->IsSpecified(jsdoc::Token::TK_CONSTRUCTOR)) {
+          AObject* this_binding = heap_->MakeObject();
+          this_binding->UpdatePrototype(heap_,
+                                        target->GetProperty(Intern("prototype")));
+          EvaluateFunction(target, AVal(this_binding), vec, true);
+          continue;
         }
-        if (target == AVal(AVAL_NOBASE)) {
-          EvaluateFunction(current->target(),
-                           AVal(heap_->MakeObject()), vec, false);
+      }
+
+      if (AObject* obj = heap_->GetLiteralMemberBase(function)) {
+        EvaluateFunction(target, AVal(obj), vec, false);
+      } else if (Expression* expr = heap_->IsPrototypeMethod(function)) {
+        AVal constructor = heap_->GetMethodTarget(expr);
+        if (constructor == AVal(AVAL_NOBASE)) {
+          expr->Accept(this);
+          constructor = result_.result();
+        }
+        if (constructor == AVal(AVAL_NOBASE)) {
+          EvaluateFunction(target, AVal(heap_->MakeObject()), vec, false);
         } else {
-          target.Construct(heap_,
-                           this, heap_->MakeObject(), vec, &result_);
-          EvaluateFunction(current->target(), result_.result(), vec, false);
+          constructor.Construct(heap_,
+                                this, heap_->MakeObject(), vec, &result_);
+          EvaluateFunction(target, result_.result(), vec, false);
         }
       } else {
-        EvaluateFunction(current->target(),
-                         AVal(heap_->MakeObject()), vec, false);
+        EvaluateFunction(target, AVal(heap_->MakeObject()), vec, false);
       }
     }
   }

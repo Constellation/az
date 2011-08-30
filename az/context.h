@@ -8,6 +8,7 @@ namespace az {
 
 class Context : private iv::core::Noncopyable<Context> {
  public:
+  typedef std::unordered_map<AstNode*, std::shared_ptr<jsdoc::Info> > JSDocMap;
   Context() : docs_() { }
 
   virtual ~Context() { }
@@ -18,8 +19,16 @@ class Context : private iv::core::Noncopyable<Context> {
     docs_[node] = info;
   }
 
+  std::shared_ptr<jsdoc::Info> GetInfo(AstNode* node) {
+    JSDocMap::const_iterator it = docs_.find(node);
+    if (it != docs_.end()) {
+      return it->second;
+    }
+    return std::shared_ptr<jsdoc::Info>();
+  }
+
  private:
-  std::unordered_map<AstNode*, std::shared_ptr<jsdoc::Info> > docs_;
+  JSDocMap docs_;
 };
 
 }  // namespace az
