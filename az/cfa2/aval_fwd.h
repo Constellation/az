@@ -127,9 +127,14 @@ class AVal {
                         const std::vector<AVal>& args, Result* result) const;
 
   inline bool IsTrue() const;
+
   inline bool IsFalse() const;
 
   inline void Complete(Heap* heap, Completer* completer) const;
+
+  void ExcludeBase(BaseType base) {
+    base_ &= ~base;
+  }
 
   // join rhs aval to this
   void Join(const AVal& rhs) {

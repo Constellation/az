@@ -1167,9 +1167,15 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
 }
 
 void Interpreter::Visit(jsdoc::PrefixQuestionExpression* node) {
+  node->expr()->Accept(this);
+  result_.MergeResult(AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(jsdoc::PrefixBangExpression* node) {
+  node->expr()->Accept(this);
+  AVal res = result_.result();
+  res.ExcludeBase(AVAL_NULL);
+  result_.set_result(res);
 }
 
 void Interpreter::Visit(jsdoc::PostfixQuestionExpression* node) {
@@ -1182,6 +1188,7 @@ void Interpreter::Visit(jsdoc::QuestionLiteral* node) {
 }
 
 void Interpreter::Visit(jsdoc::StarLiteral* node) {
+  result_ = Result(AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(jsdoc::NullLiteral* node) {
@@ -1197,9 +1204,19 @@ void Interpreter::Visit(jsdoc::VoidLiteral* node) {
 }
 
 void Interpreter::Visit(jsdoc::UnionType* node) {
+  AVal res(AVAL_NOBASE);
+  jsdoc::TypeExpressions* exprs = node->exprs();
+  assert(!exprs->empty());
+  for (jsdoc::TypeExpressions::const_iterator it = exprs->begin(),
+       last = exprs->end(); it != last; ++it) {
+    (*it)->Accept(this);
+    res |= result_.result();
+  }
+  result_.set_result(res);
 }
 
 void Interpreter::Visit(jsdoc::ArrayType* node) {
+  // TODO(Constellation) implement it
 }
 
 void Interpreter::Visit(jsdoc::RecordType* node) {
@@ -1240,6 +1257,7 @@ void Interpreter::Visit(jsdoc::RestExpression* node) {
 }
 
 void Interpreter::Visit(jsdoc::PostfixEqualExpression* node) {
+  UNREACHABLE();
 }
 
 } }  // namespace az::cfa2

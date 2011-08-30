@@ -56,6 +56,10 @@ class Result {
     MergeException(rhs);
   }
 
+  void MergeResult(BaseType base) {
+    result_.Join(base);
+  }
+
   void MergeResult(const AVal& val) {
     result_.Join(val);
   }
