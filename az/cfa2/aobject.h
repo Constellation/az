@@ -3,6 +3,7 @@
 #include <az/cfa2/type_utils.h>
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/heap.h>
+#include <az/cfa2/already_searched.h>
 namespace az {
 namespace cfa2 {
 
@@ -40,7 +41,7 @@ AVal AObject::GetNumberProperty(Heap* heap) {
   return *number_;
 }
 
-AVal AObject::GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_searched) const {
+AVal AObject::GetNumberPropertyImpl(AlreadySearched* already_searched) const {
   if (number_) {
     return *number_;
   } else {
@@ -91,7 +92,7 @@ AVal AObject::GetStringProperty(Heap* heap) {
   }
 }
 
-AVal AObject::GetStringPropertyImpl(std::unordered_set<const AObject*>* already_searched) const {
+AVal AObject::GetStringPropertyImpl(AlreadySearched* already_searched) const {
   already_searched->insert(this);
   if (string_) {
     return *string_;
@@ -146,9 +147,8 @@ void AObject::Complete(Heap* heap, Completer* completer) const {
   proto_.ToObject(heap).Complete(heap, completer);
 }
 
-iv::core::UString AObject::ToTypeString(
-    Heap* heap,
-    std::unordered_set<const AObject*>* already_searched) const {
+iv::core::UString AObject::ToTypeString(Heap* heap,
+                                        AlreadySearched* already_searched) const {
   if (already_searched->find(this) != already_searched->end()) {
     return iv::core::ToUString("any");
   } else {

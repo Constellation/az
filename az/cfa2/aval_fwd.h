@@ -9,6 +9,7 @@
 #include <iv/ustring.h>
 #include <iv/ustringpiece.h>
 #include <az/cfa2/fwd.h>
+#include <az/cfa2/already_searched.h>
 namespace az {
 namespace cfa2 {
 
@@ -112,15 +113,15 @@ class AVal {
 
   inline AVal GetProperty(Heap* heap, Symbol name) const;
 
-  inline AVal GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const;
+  inline AVal GetPropertyImpl(Symbol name, AlreadySearched* already_searched) const;
 
   inline AVal GetStringProperty(Heap* heap) const;
 
-  inline AVal GetStringPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;
+  inline AVal GetStringPropertyImpl(AlreadySearched* already_searched) const;
 
   inline AVal GetNumberProperty(Heap* heap) const;
 
-  inline AVal GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;
+  inline AVal GetNumberPropertyImpl(AlreadySearched* already_searched) const;
 
   inline void Call(Heap* heap,
                    Interpreter* interp,

@@ -39,7 +39,7 @@ void AVal::UpdatePrototype(Heap* heap, const AVal& val) const {
 
 AVal AVal::GetProperty(Heap* heap, Symbol name) const {
   AVal val(AVAL_NOBASE);
-  std::unordered_set<const AObject*> already_searched;
+  AlreadySearched already_searched;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
@@ -50,7 +50,7 @@ AVal AVal::GetProperty(Heap* heap, Symbol name) const {
 
 AVal AVal::GetStringProperty(Heap* heap) const {
   AVal val(AVAL_NOBASE);
-  std::unordered_set<const AObject*> already_searched;
+  AlreadySearched already_searched;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
@@ -109,7 +109,7 @@ void AVal::Construct(Heap* heap,
   *result = res;
 }
 
-AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const {
+AVal AVal::GetPropertyImpl(Symbol name, AlreadySearched* already_searched) const {
   AVal val(AVAL_NOBASE);
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
@@ -121,7 +121,7 @@ AVal AVal::GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* alre
   return val;
 }
 
-AVal AVal::GetStringPropertyImpl(std::unordered_set<const AObject*>* already_searched) const {
+AVal AVal::GetStringPropertyImpl(AlreadySearched* already_searched) const {
   AVal val(AVAL_NOBASE);
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
@@ -135,7 +135,7 @@ AVal AVal::GetStringPropertyImpl(std::unordered_set<const AObject*>* already_sea
 
 AVal AVal::GetNumberProperty(Heap* heap) const {
   AVal val(AVAL_NOBASE);
-  std::unordered_set<const AObject*> already_searched;
+  AlreadySearched already_searched;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
@@ -144,7 +144,7 @@ AVal AVal::GetNumberProperty(Heap* heap) const {
   return val;
 }
 
-AVal AVal::GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_searched) const {
+AVal AVal::GetNumberPropertyImpl(AlreadySearched* already_searched) const {
   AVal val(AVAL_NOBASE);
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
@@ -177,7 +177,7 @@ iv::core::UString AVal::ToTypeString(Heap* heap) const {
     }
   }
 
-  std::unordered_set<const AObject*> already_searched;
+  AlreadySearched already_searched;
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     types.insert((*it)->ToTypeString(heap, &already_searched));

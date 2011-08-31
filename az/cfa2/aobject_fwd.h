@@ -6,6 +6,7 @@
 #include <az/cfa2/aval_fwd.h>
 #include <az/cfa2/result.h>
 #include <az/cfa2/builtins_fwd.h>
+#include <az/cfa2/already_searched.h>
 namespace az {
 
 class Completer;
@@ -145,13 +146,13 @@ class AObject
         return *string_;
       }
       // Lookup [[Prototype]]
-      std::unordered_set<const AObject*> already_searched;
+      AlreadySearched already_searched;
       already_searched.insert(this);
       return proto_.GetPropertyImpl(name, &already_searched);
     }
   }
 
-  AVal GetPropertyImpl(Symbol name, std::unordered_set<const AObject*>* already_searched) const {
+  AVal GetPropertyImpl(Symbol name, AlreadySearched* already_searched) const {
     AVal result;
     if (GetOwnProperty(name, &result)) {
       already_searched->insert(this);
@@ -162,18 +163,19 @@ class AObject
     }
   }
 
-  inline iv::core::UString ToTypeString(Heap* heap, std::unordered_set<const AObject*>* already_searched) const;
+  inline iv::core::UString ToTypeString(Heap* heap,
+                                        AlreadySearched* already_searched) const;
 
   bool IsFunction() const {
     return function_ || builtin_;
   }
 
   inline AVal GetNumberProperty(Heap* heap);
-  inline AVal GetNumberPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;
+  inline AVal GetNumberPropertyImpl(AlreadySearched* already_searched) const;
   inline void MergeNumberProperty(Heap* heap);
   inline void UpdateNumberProperty(Heap* heap, const AVal& val);
   inline AVal GetStringProperty(Heap* heap);
-  inline AVal GetStringPropertyImpl(std::unordered_set<const AObject*>* already_searched) const;
+  inline AVal GetStringPropertyImpl(AlreadySearched* already_searched) const;
   inline void MergeStringProperty(Heap* heap);
   inline void UpdateStringProperty(Heap* heap, const AVal& val);
 
