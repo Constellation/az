@@ -19,12 +19,21 @@ class CLICompleter : public Completer {
     assert(heap());
     for (Properties::const_iterator it = properties_.begin(),
          last = properties_.end(); it != last; ++it) {
-      const iv::core::UString target = GetSymbolString(it->first);
-      const iv::core::UString type = it->second.ToTypeString(heap());
-      iv::core::unicode::FPutsUTF16(stdout, target.begin(), target.end());
-      std::fputc('#', stdout);
-      iv::core::unicode::FPutsUTF16(stdout, type.begin(), type.end());
-      std::fputc('\n', stdout);
+      iv::core::UString target = GetSymbolString(it->first);
+      if (!target.empty()) {
+//        if (!iv::core::character::IsIdentifierStart(target[0])) {
+//          const iv::core::UString temp = target;
+//          target.clear();
+//          target.push_back('[');
+//          target.append(az::EscapedString(temp));
+//          target.push_back(']');
+//        }
+        const iv::core::UString type = it->second.ToTypeString(heap());
+        iv::core::unicode::FPutsUTF16(stdout, target.begin(), target.end());
+        std::fputc('#', stdout);
+        iv::core::unicode::FPutsUTF16(stdout, type.begin(), type.end());
+        std::fputc('\n', stdout);
+      }
     }
   }
 
