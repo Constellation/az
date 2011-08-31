@@ -130,20 +130,23 @@ void Interpreter::Visit(VariableStatement* var) {
 
     // this Identifier may have JSDoc
     bool jsdoc_type_is_found = false;
+    AVal from_jsdoc(AVAL_NOBASE);
     if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(ident)) {
       if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_TYPE)) {
         jsdoc_type_is_found = true;
         assert(tag->type());
         tag->type()->Accept(this);
+        from_jsdoc = result_.result();
       }
     }
 
-    if (!jsdoc_type_is_found) {
-      if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
-        expr.Address()->Accept(this);
-      }
+    if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
+      expr.Address()->Accept(this);
     }
 
+    if (jsdoc_type_is_found) {
+      result_.MergeResult(from_jsdoc);
+    }
     if (result_.HasException()) {
       // collecting errors
       error_found = true;
