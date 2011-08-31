@@ -847,10 +847,12 @@ Result Interpreter::EvaluateFunction(AObject* function,
                                      const AVal& this_binding,
                                      const std::vector<AVal>& args,
                                      bool IsConstructorCalled) {
+  // if builtin function
   if (function->builtin()) {
     return function->builtin()(heap_, this_binding, args, IsConstructorCalled);
   }
 
+  // if JS AST function
   FunctionLiteral* literal = function->function();
 
   Result res;
@@ -875,6 +877,14 @@ Result Interpreter::EvaluateFunction(AObject* function,
         // first time, through it.
         // second time, shut out this path and return NOBASE
         if (std::get<3>(*prev)) {
+          if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+            if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_RETURN)) {
+              // @return found, so use it
+              assert(tag->type());
+              tag->type()->Accept(this);
+              return result_;
+            }
+          }
           return Result(AVal(AVAL_NOBASE));
         } else {
           current = heap_->AddWaitingResults(literal, this_binding, args, true);
@@ -962,6 +972,16 @@ Result Interpreter::EvaluateFunction(AObject* function,
         }
       }
 
+      if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+        if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_RETURN)) {
+          Result current = result_;
+          // @return found, so use it
+          assert(tag->type());
+          tag->type()->Accept(this);
+          current.MergeResult(result_.result());
+          result_ = current;
+        }
+      }
       heap_->RemoveWaitingResults(literal);
       heap_->AddSummary(function, start_state, this_binding, args, result_);
       return result_;
