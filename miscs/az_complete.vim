@@ -30,6 +30,9 @@ function! s:source.get_keyword_pos(cur_text) "{{{
   while l:start > 0 && l:line[l:start - 1] =~ '\i'
     let l:start -= 1
   endwhile
+  if l:line[l:start - 1] != '.'
+    return -1
+  endif
   return l:start
 endfunction "}}}
 
