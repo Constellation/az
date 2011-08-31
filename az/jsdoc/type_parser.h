@@ -232,9 +232,9 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     // FieldTypeList := FieldType | FieldType ',' FieldTypeList
     assert(token_ == TypeToken::TK_LBRACE);
     Next();
-    TypeExpressions* vec = factory_->NewVector<TypeExpression*>();
+    FieldTypes* vec = factory_->NewVector<FieldType*>();
     while (token_ != TypeToken::TK_RBRACE) {
-      TypeExpression* field = ParseFieldType(CHECK);
+      FieldType* field = ParseFieldType(CHECK);
       vec->push_back(field);
       if (token_ != TypeToken::TK_RBRACE) {
         EXPECT(TypeToken::TK_COMMA);
@@ -244,7 +244,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     return new (factory_) RecordType(vec);
   }
 
-  TypeExpression* ParseFieldType(bool* res) {
+  FieldType* ParseFieldType(bool* res) {
     // FieldType := FieldName | FieldName ':' TypeExpression
     // FieldName := NameExpression | StringLiteral | NumberLiteral |
     // ReservedIdentifier

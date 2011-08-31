@@ -280,7 +280,7 @@ void HeapInitializer::Visit(RegExpLiteral* literal) {
 
 void HeapInitializer::Visit(ArrayLiteral* literal) {
   // store AObject address to heap
-  std::vector<AVal> args;
+  const std::vector<AVal> args;
   AObject* ary = heap_->GetFactory()->NewAObject();
   heap_->DeclObject(literal, ary);
   ARRAY_CONSTRUCTOR(heap_, AVal(ary), args, true);

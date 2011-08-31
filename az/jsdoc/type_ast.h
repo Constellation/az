@@ -28,6 +28,7 @@ class TypeAstVisitor;
   inline virtual type* As##type() { return NULL; }
 
 typedef iv::core::SpaceVector<AstFactory, TypeExpression*>::type TypeExpressions;
+typedef iv::core::SpaceVector<AstFactory, FieldType*>::type FieldTypes;
 typedef iv::core::SpaceUString<AstFactory>::type NameString;
 
 class TypeExpression
@@ -132,13 +133,13 @@ class ArrayType : public TypeExpression {
 
 class RecordType : public TypeExpression {
  public:
-  RecordType(TypeExpressions* exprs) : exprs_(exprs) { }
-  TypeExpressions* exprs() const {
+  RecordType(FieldTypes* exprs) : exprs_(exprs) { }
+  FieldTypes* exprs() const {
     return exprs_;
   }
   DECLARE_DERIVED_NODE_TYPE(RecordType)
  private:
-  TypeExpressions* exprs_;
+  FieldTypes* exprs_;
 };
 
 class FieldType: public TypeExpression {

@@ -974,8 +974,8 @@ Result Interpreter::EvaluateFunction(AObject* function,
 
       if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
         if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_RETURN)) {
-          Result current = result_;
           // @return found, so use it
+          Result current = result_;
           assert(tag->type());
           tag->type()->Accept(this);
           current.MergeResult(result_.result());
@@ -1292,12 +1292,49 @@ void Interpreter::Visit(jsdoc::UnionType* node) {
 }
 
 void Interpreter::Visit(jsdoc::ArrayType* node) {
-  // TODO(Constellation) implement it
+  AObject* ary = heap_->GetDeclObject(node);
+  if (ary) {
+    // already created, so use it
+    result_ = Result(AVal(ary));
+    return;
+  }
+  ary = heap_->GetFactory()->NewAObject();
+  heap_->DeclObject(node, ary);
+  const std::vector<AVal> args;
+  ARRAY_CONSTRUCTOR(heap_, AVal(ary), args, true);
+
+  assert(ary);
+  uint32_t index = 0;
+  for (jsdoc::TypeExpressions::const_iterator it = node->exprs()->begin(),
+       last = node->exprs()->end(); it != last; ++it, ++index) {
+    (*it)->Accept(this);
+    ary->UpdateProperty(heap_, Intern(index), result_.result());
+  }
+  result_ = Result(AVal(ary));
 }
 
 void Interpreter::Visit(jsdoc::RecordType* node) {
-  // TODO(Constellation) implement it
-  result_.Reset();
+  AObject* obj = heap_->GetDeclObject(node);
+  if (obj) {
+    // already created, so use it
+    result_ = Result(AVal(obj));
+    return;
+  }
+  obj = heap_->MakeObject();
+  heap_->DeclObject(node, obj);
+
+  assert(obj);
+  for (jsdoc::FieldTypes::const_iterator it = node->exprs()->begin(),
+       last = node->exprs()->end(); it != last; ++it) {
+    jsdoc::FieldType* field = *it;
+    if (field->HasValue()) {
+      field->value()->Accept(this);
+      obj->UpdateProperty(heap_, Intern(*field->key()), result_.result());
+    } else {
+      obj->UpdateProperty(heap_, Intern(*field->key()), AVal(AVAL_NOBASE));
+    }
+  }
+  result_ = Result(AVal(obj));
 }
 
 void Interpreter::Visit(jsdoc::FieldType* node) {
