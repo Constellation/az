@@ -137,6 +137,7 @@ class Interpreter
   inline void EvaluateCompletionTargetFunction(Completer* completer);
 
   inline Result Assign(Assignment* assign, Result res, AVal old);
+  inline Result Assign(Expression* lhs, Result res);
 
   // JSDoc TypeExpression Visitor
   inline void Visit(jsdoc::PrefixQuestionExpression* node);

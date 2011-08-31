@@ -250,6 +250,23 @@ void Interpreter::Visit(DebuggerStatement* stmt) {
 }
 
 void Interpreter::Visit(ExpressionStatement* stmt) {
+  // handling expression statement to assign
+  Expression* expr = stmt->expr();
+  if (expr->AsIdentifier() || expr->AsIdentifierAccess()) {
+    if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(expr)) {
+      //   /** @const */
+      //   Test.prototype.test;
+      // or
+      //   /** @const */
+      //   test;
+      if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_TYPE)) {
+        assert(tag->type());
+        tag->type()->Accept(this);
+        result_ = Assign(expr, result_);
+        return;
+      }
+    }
+  }
   stmt->expr()->Accept(this);
 }
 
@@ -964,24 +981,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
   }
 }
 
-Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
-  // LHS is following pattern
-  //   + Call
-  //     - FunctionCall
-  //     - ConstructorCall
-  //   + PropertyAccess
-  //     - IndexAccess
-  //     - IdentifierAccess
-  //   + Identifier
-  Expression* lhs = assign->left();
-  assert(lhs->IsValidLeftHandSide());
-  if (assign->op() != iv::core::Token::TK_ASSIGN) {
-    if (assign->op() == iv::core::Token::TK_ASSIGN_ADD) {
-      res.set_result(res.result() + old);
-    } else {
-      res.set_result(AVal(AVAL_NUMBER));
-    }
-  }
+Result Interpreter::Assign(Expression* lhs, Result res) {
   if (Identifier* ident = lhs->AsIdentifier()) {
     // Identifier
     Binding* binding = ident->refer();
@@ -1054,6 +1054,27 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
     }
   }
   return res;
+}
+
+Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
+  // LHS is following pattern
+  //   + Call
+  //     - FunctionCall
+  //     - ConstructorCall
+  //   + PropertyAccess
+  //     - IndexAccess
+  //     - IdentifierAccess
+  //   + Identifier
+  Expression* lhs = assign->left();
+  assert(lhs->IsValidLeftHandSide());
+  if (assign->op() != iv::core::Token::TK_ASSIGN) {
+    if (assign->op() == iv::core::Token::TK_ASSIGN_ADD) {
+      res.set_result(res.result() + old);
+    } else {
+      res.set_result(AVal(AVAL_NUMBER));
+    }
+  }
+  return Assign(lhs, res);
 }
 
 void Interpreter::GainCompletion(Completer* completer) {
