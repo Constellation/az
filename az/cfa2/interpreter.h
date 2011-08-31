@@ -124,6 +124,7 @@ void Interpreter::Visit(VariableStatement* var) {
   bool error_found = false;
   for (Declarations::const_iterator it = var->decls().begin(),
        last = var->decls().end(); it != last; ++it) {
+    result_.Reset();
     Identifier* ident = (*it)->name();
     Binding* binding = ident->refer();
     assert(binding);

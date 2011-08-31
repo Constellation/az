@@ -76,6 +76,12 @@ class Result {
     has_exception_ = true;
   }
 
+  void Reset() {
+    result_.Reset();
+    has_exception_ = false;
+    exception_.Reset();
+  }
+
   bool HasException() const {
     return has_exception_;
   }

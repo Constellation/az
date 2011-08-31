@@ -96,6 +96,12 @@ class AVal {
     return objects_;
   }
 
+  void Reset() {
+    base_ = AVAL_NOBASE;
+    str_.reset();
+    objects_.clear();
+  }
+
   inline void UpdateStringProperty(Heap* heap, const AVal& val) const;
 
   inline void UpdateNumberProperty(Heap* heap, const AVal& val) const;
