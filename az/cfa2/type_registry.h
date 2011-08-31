@@ -35,7 +35,7 @@ class TypeRegistry {
     Expression* current = lhs;
     while (true) {
       if (Identifier* ident = current->AsIdentifier()) {
-        name->append(ident->value().begin(), ident->value().end());
+        name->assign(ident->value().begin(), ident->value().end());
         name->insert(name->end(), reversed.rbegin(), reversed.rend());
         return true;
       } else if (IdentifierAccess* access = current->AsIdentifierAccess()) {
