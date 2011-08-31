@@ -78,7 +78,7 @@ def Build():
     env.Replace(CXX='clang++', CC='clang')
 
   if env['debug']:
-    env.Append(CCFLAGS=["-g3"])
+    env.Append(CCFLAGS=["-g3", "-Werror"])
   else:
     env.Append(
         CCFLAGS=["-O3"],
@@ -87,7 +87,7 @@ def Build():
   env.Append(
     CCFLAGS=[
       "-pedantic",
-      "-Wall", "-Wextra", "-Werror", '-pipe',
+      "-Wall", "-Wextra", '-pipe',
       "-Wno-unused-parameter", "-Wwrite-strings", "-Wreturn-type", "-Wpointer-arith",
       "-Wwrite-strings", "-Wno-missing-field-initializers"],
     CPPPATH=[join(root_dir, 'iv'), root_dir],
