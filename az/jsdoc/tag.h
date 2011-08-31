@@ -4,6 +4,7 @@
 #include <iv/ustringpiece.h>
 #include <az/jsdoc/fwd.h>
 #include <az/jsdoc/token.h>
+#include <az/jsdoc/type_ast_fwd.h>
 namespace az {
 namespace jsdoc {
 
@@ -44,7 +45,7 @@ class Tag {
     return token_;
   }
 
-  const iv::core::UString& type() const {
+  TypeExpression* type() const {
     return type_;
   }
 
@@ -61,8 +62,8 @@ class Tag {
     title_.assign(vec.begin(), vec.end());
   }
 
-  void set_type(const std::vector<uint16_t>& vec) {
-    type_.assign(vec.begin(), vec.end());
+  void set_type(TypeExpression* expr) {
+    type_ = expr;
   }
 
   void set_name(const std::vector<uint16_t>& vec) {
@@ -75,7 +76,7 @@ class Tag {
 
   Token::Type token_;
   iv::core::UString title_;
-  iv::core::UString type_;
+  TypeExpression* type_;
   iv::core::UString name_;
   iv::core::UString description_;
 };

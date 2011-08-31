@@ -51,9 +51,10 @@ TEST(JSDocParserCase, UnwrapCommentTest) {
 
 TEST(JSDocParser, TagParseTest) {
   using az::jsdoc::Token;
+  az::AstFactory factory;
   {
     const iv::core::UString str = iv::core::ToUString("/** @const */");
-    az::jsdoc::Parser parser(str);
+    az::jsdoc::Parser parser(&factory, str);
     const std::array<Token::Type, 1> expected = { {
       Token::TK_CONST
     } };
@@ -67,7 +68,7 @@ TEST(JSDocParser, TagParseTest) {
   {
     const iv::core::UString str =
         iv::core::ToUString("/**@const\n @const*/");
-    az::jsdoc::Parser parser(str);
+    az::jsdoc::Parser parser(&factory, str);
     const std::array<Token::Type, 2> expected = { {
       Token::TK_CONST,
       Token::TK_CONST
@@ -87,7 +88,7 @@ TEST(JSDocParser, TagParseTest) {
             " * @const @const\n"
             " * @const @const\n"
             " */");
-    az::jsdoc::Parser parser(str);
+    az::jsdoc::Parser parser(&factory, str);
     const std::array<Token::Type, 3> expected = { {
       Token::TK_CONST,
       Token::TK_CONST,
@@ -103,18 +104,20 @@ TEST(JSDocParser, TagParseTest) {
 
 TEST(JSDocParser, TypeParseTest) {
   using az::jsdoc::Token;
+  az::AstFactory factory;
   {
     const iv::core::UString str = iv::core::ToUString(
         "/**\n"
         " * @param {String} userName\n"
         " * @param {String userName\n"
         "*/");
-    az::jsdoc::Parser parser(str);
+    az::jsdoc::Parser parser(&factory, str);
     {
       const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
       ASSERT_TRUE(tag);
       EXPECT_EQ(Token::TK_PARAM, tag->token());
-      EXPECT_TRUE(iv::core::ToUString("String") == tag->type());
+      ASSERT_TRUE(tag->type());
+      EXPECT_TRUE(tag->type()->AsNameExpression());
     }
     {
       // this tag is failed
@@ -126,30 +129,34 @@ TEST(JSDocParser, TypeParseTest) {
 
 TEST(JSDocParser, ParamParseTest) {
   using az::jsdoc::Token;
+  az::AstFactory factory;
   {
     const iv::core::UString str = iv::core::ToUString(
         "/**\n"
         " * @param {String} userName\n"
         "*/");
-    az::jsdoc::Parser parser(str);
+    az::jsdoc::Parser parser(&factory, str);
     const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
     EXPECT_EQ(Token::TK_PARAM, tag->token());
-    EXPECT_TRUE(iv::core::ToUString("String") == tag->type());
+    ASSERT_TRUE(tag->type());
+    EXPECT_TRUE(tag->type()->AsNameExpression());
     EXPECT_TRUE(iv::core::ToUString("userName") == tag->name());
   }
 }
 
 TEST(JSDocParser, TypeExpressionScanTest) {
   using az::jsdoc::Token;
+  az::AstFactory factory;
   {
     const iv::core::UString str = iv::core::ToUString(
         "/**\n"
         " * @param {{ok:String}} userName\n"
         "*/");
-    az::jsdoc::Parser parser(str);
+    az::jsdoc::Parser parser(&factory, str);
     const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
     EXPECT_EQ(Token::TK_PARAM, tag->token());
-    EXPECT_TRUE(iv::core::ToUString("{ok:String}") == tag->type());
+    ASSERT_TRUE(tag->type());
+    EXPECT_TRUE(tag->type()->AsRecordType());
     EXPECT_TRUE(iv::core::ToUString("userName") == tag->name());
   }
   {
@@ -157,7 +164,7 @@ TEST(JSDocParser, TypeExpressionScanTest) {
         "/**\n"
         " * @param {{ok:String} userName\n"
         "*/");
-    az::jsdoc::Parser parser(str);
+    az::jsdoc::Parser parser(&factory, str);
     const std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
     EXPECT_FALSE(tag);
   }

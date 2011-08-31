@@ -4,17 +4,22 @@
 #include <iv/detail/memory.h>
 #include <iv/noncopyable.h>
 #include <az/utility.h>
+#include <az/factory.h>
 #include <az/debug_log.h>
 #include <az/jsdoc/token.h>
 #include <az/jsdoc/tag.h>
 #include <az/jsdoc/info.h>
+#include <az/jsdoc/type_ast.h>
+#include <az/jsdoc/type_parser.h>
 namespace az {
 namespace jsdoc {
 
 class Parser : private iv::core::Noncopyable<Parser> {
  public:
-  explicit Parser(const iv::core::UStringPiece& src)
-    : source_(),
+  explicit Parser(AstFactory* factory,
+                  const iv::core::UStringPiece& src)
+    : factory_(factory),
+      source_(),
       c_(-1),
       content_(),
       title_(),
@@ -153,7 +158,14 @@ class Parser : private iv::core::Noncopyable<Parser> {
       if (type_.empty()) {
         return std::shared_ptr<Tag>();
       }
-      tag->set_type(type_);
+      TypeParser parser(factory_, iv::core::UStringPiece(type_.data(), type_.size()));
+      if (TypeExpression* expr =
+          (token_ == Token::TK_PARAM) ?
+          parser.ParseParamType() : parser.ParseType()) {
+        tag->set_type(expr);
+      } else {
+        return std::shared_ptr<Tag>();
+      }
     }
 
     if (IsNameRequiredToken()) {
@@ -322,6 +334,7 @@ class Parser : private iv::core::Noncopyable<Parser> {
     return token_ == Token::TK_PARAM;
   }
 
+  AstFactory* factory_;
   std::vector<uint16_t> source_;
   int c_;
   Token::Type token_;

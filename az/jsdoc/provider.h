@@ -8,12 +8,13 @@ namespace jsdoc {
 
 class Provider {
  public:
-  Provider()
-    : info_(new Info()) {
+  Provider(AstFactory* factory)
+    : factory_(factory),
+      info_(new Info()) {
   }
 
   void Parse(const iv::core::UStringPiece& src) {
-    Parser parser(src);
+    Parser parser(factory_, src);
     for (std::shared_ptr<az::jsdoc::Tag> tag = parser.Next();
          tag; tag = parser.Next()) {
       info_->Register(tag);
@@ -24,6 +25,7 @@ class Provider {
     return info_;
   }
  private:
+  AstFactory* factory_;
   std::shared_ptr<Info> info_;
 };
 

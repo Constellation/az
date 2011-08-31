@@ -1,6 +1,5 @@
 #ifndef AZ_CFA2_INTERPRETER_H_
 #define AZ_CFA2_INTERPRETER_H_
-#include <deque>
 #include <iv/debug.h>
 #include <az/cfa2/interpreter_fwd.h>
 #include <az/cfa2/aobject.h>
@@ -1230,18 +1229,23 @@ void Interpreter::Visit(jsdoc::FunctionType* node) {
 
 void Interpreter::Visit(jsdoc::NameExpression* node) {
   jsdoc::NameString* str = node->value();
-
   // primitive type check phase
   if (IsEqualIgnoreCase(*str, "string")) {
-    result_ = Result(AVal(AVAL_STRING));
+    result_.set_result(AVal(AVAL_STRING));
   } else if (IsEqualIgnoreCase(*str, "number")) {
-    result_ = Result(AVal(AVAL_NUMBER));
+    result_.set_result(AVal(AVAL_NUMBER));
   } else if (IsEqualIgnoreCase(*str, "boolean")) {
-    result_ = Result(AVal(AVAL_BOOL));
+    result_.set_result(AVal(AVAL_BOOL));
   } else if (IsEqualIgnoreCase(*str, "true")) {
-    result_ = Result(AVal(AVAL_TRUE));
+    result_.set_result(AVal(AVAL_TRUE));
   } else if (IsEqualIgnoreCase(*str, "false")) {
-    result_ = Result(AVal(AVAL_FALSE));
+    result_.set_result(AVal(AVAL_FALSE));
+  } else if (IsEqualIgnoreCase(*str, "undefined")) {
+    result_.set_result(AVal(AVAL_UNDEFINED));
+  } else if (IsEqualIgnoreCase(*str, "null")) {
+    result_.set_result(AVal(AVAL_NULL));
+  } else {
+    // this is name lookup
   }
 }
 

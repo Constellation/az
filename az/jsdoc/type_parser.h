@@ -7,6 +7,7 @@
 #include <iv/noncopyable.h>
 #include <iv/ustringpiece.h>
 #include <iv/character.h>
+#include <iv/dtoa.h>
 #include <az/factory.h>
 #include <az/jsdoc/fwd.h>
 #include <az/jsdoc/type_token.h>
@@ -247,8 +248,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     // FieldType := FieldName | FieldName ':' TypeExpression
     // FieldName := NameExpression | StringLiteral | NumberLiteral |
     // ReservedIdentifier
-    IS(TypeToken::TK_NAME);
-    NameExpression* key = ParseNameExpression(CHECK);
+    NameExpression* key = ParseFieldName(CHECK);
     if (token_ == TypeToken::TK_COLON) {
       Next();
       TypeExpression* value = ParseTypeExpression(CHECK);
@@ -257,11 +257,27 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     return key;
   }
 
+  NameExpression* ParseFieldName(bool* res) {
+    if (token_ == TypeToken::TK_NAME || token_ == TypeToken::TK_STRING) {
+      return ParseNameExpression(res);
+    } else if (token_ == TypeToken::TK_NUMBER) {
+      const double val = lexer_.Numeric();
+      iv::core::dtoa::StringPieceDToA builder;
+      builder.Build(val);
+      NameString* str = factory_->NewUString(builder.buffer());
+      NameExpression* name = new (factory_) NameExpression(str);
+      Next();
+      return name;
+    } else {
+      UNEXPECT(token_);
+    }
+  }
+
   TypeName* ParseTypeName(bool* res) {
     // TypeName := NameExpression | NameExpression TypeApplication
     // TypeApplication := '.<' TypeExpressionList '>'
     // TypeExpressionList := TypeExpression // a white lie
-    assert(token_ == TypeToken::TK_NAME);
+    IS(TypeToken::TK_NAME);
     NameExpression* name = ParseNameExpression(CHECK);
     if (token_ == TypeToken::TK_DOT_LT) {
       Next();
@@ -287,6 +303,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
   }
 
   NameExpression* ParseNameExpression(bool* res) {
+    assert(token_ == TypeToken::TK_NAME || token_ == TypeToken::TK_STRING);
     NameString* str = factory_->NewUString(lexer_.Buffer());
     NameExpression* name = new (factory_) NameExpression(str);
     Next();
@@ -365,6 +382,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
           vec->push_back(new (factory_) RestExpression(NULL));
         } else {
           EXPECT(TypeToken::TK_LBRACK);
+          IS(TypeToken::TK_NAME);
           NameExpression* ident = ParseNameExpression(CHECK);
           vec->push_back(new (factory_) RestExpression(ident));
           EXPECT(TypeToken::TK_RBRACK);
@@ -409,6 +427,9 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
   TypeToken::Type token_;
 };
 
+#undef IS
+#undef EXPECT
+#undef UNEXPECT
 #undef CHECK
 
 } }  // namespace az::jsdoc

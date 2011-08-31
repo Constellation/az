@@ -24,6 +24,8 @@ class TypeToken {
     TK_BANG,       // !
     TK_EQUAL,      // =
     TK_NAME,       // name token
+    TK_STRING,       // string
+    TK_NUMBER,       // number
     TK_EOS
   };
 };

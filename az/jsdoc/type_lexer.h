@@ -17,7 +17,9 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
       pos_(0),
       end_(source_.size()),
       c_(-1),
-      buffer_() {
+      buffer_(),
+      buffer8_(),
+      numeric_() {
     Advance();
   }
 
@@ -27,6 +29,9 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
       Advance();
     }
     switch (c_) {
+      case '"':
+        return ScanString();
+
       case ':':
         Advance();
         return TypeToken::TK_COLON;
@@ -102,6 +107,8 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
         if (c_ < 0) {
           // EOS
           return TypeToken::TK_EOS;
+        } else if (iv::core::character::IsDecimalDigit(c_)) {
+          return ScanNumber();
         } else if (TypeLexer::IsTypeName(c_)) {
           // type string permits following case,
           //
@@ -144,6 +151,10 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
     return IsEqual(buffer_, "new");
   }
 
+  double Numeric() const {
+    return numeric_;
+  }
+
  private:
   void Advance() {
     if (pos_ == end_) {
@@ -181,15 +192,153 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
         }
         Record('.');
       } else {
-        Record(c_);
+        Record();
         Advance();
       }
     }
     return TypeToken::TK_NAME;
   }
 
-  inline void Record(const int ch) {
+  // allow JSONNumber
+  TypeToken::Type ScanNumber() {
+    buffer8_.clear();
+    if (c_ == '0') {
+      Record8();
+      Advance();
+    } else {
+      ScanDecimalDigits();
+    }
+    if (c_ == '.') {
+      Record8();
+      Advance();
+      if (c_ < 0 ||
+          !iv::core::character::IsDecimalDigit(c_)) {
+        return TypeToken::TK_ILLEGAL;
+      }
+      ScanDecimalDigits();
+    }
+
+    // exponent part
+    if (c_ == 'e' || c_ == 'E') {
+      Record8();
+      Advance();
+      if (c_ == '+' || c_ == '-') {
+        Record8();
+        Advance();
+      }
+      // more than 1 decimal digit required
+      if (c_ < 0 ||
+          !iv::core::character::IsDecimalDigit(c_)) {
+        return TypeToken::TK_ILLEGAL;
+      }
+      ScanDecimalDigits();
+    }
+    buffer8_.push_back('\0');
+    numeric_ = std::atof(buffer8_.data());
+    return TypeToken::TK_NUMBER;
+  }
+
+  void ScanDecimalDigits() {
+    while (0 <= c_ && iv::core::character::IsDecimalDigit(c_)) {
+      Record8();
+      Advance();
+    }
+  }
+
+  // allow JSONString
+  TypeToken::Type ScanString() {
+    assert(c_ == '"');
+    buffer_.clear();
+    Advance();
+    while (c_ != '"' && c_ >= 0) {
+      if (c_ == '\\') {
+        Advance();
+        // escape sequence
+        if (c_ < 0) {
+          return TypeToken::TK_ILLEGAL;
+        }
+        if (!ScanEscape()) {
+          return TypeToken::TK_ILLEGAL;
+        }
+      } else if (c_ > 0x001F &&
+                 !iv::core::character::IsLineTerminator(c_)) {
+        Record();
+        Advance();
+      } else {
+        return TypeToken::TK_ILLEGAL;
+      }
+    }
+    if (c_ != '"') {
+      // not closed
+      return TypeToken::TK_ILLEGAL;
+    }
+    Advance();
+    return TypeToken::TK_STRING;
+  }
+
+  bool ScanEscape() {
+    switch (c_) {
+      case '"' :
+      case '/':
+      case '\\':
+        Record();
+        Advance();
+        break;
+      case 'b' :
+        Record('\b');
+        Advance();
+        break;
+      case 'f' :
+        Record('\f');
+        Advance();
+        break;
+      case 'n' :
+        Record('\n');
+        Advance();
+        break;
+      case 'r' :
+        Record('\r');
+        Advance();
+        break;
+      case 't' :
+        Record('\t');
+        Advance();
+        break;
+      case 'u' : {
+        Advance();
+        uint16_t uc = '\0';
+        for (int i = 0; i < 4; ++i) {
+          const int d = iv::core::HexValue(c_);
+          if (d < 0) {
+            return false;
+          }
+          uc = uc * 16 + d;
+          Advance();
+        }
+        Record(uc);
+        break;
+      }
+      default:
+        // in JSON syntax, NonEscapeCharacter not found
+        return false;
+    }
+    return true;
+  }
+
+  inline void Record(int ch) {
     buffer_.push_back(ch);
+  }
+
+  inline void Record() {
+    buffer_.push_back(c_);
+  }
+
+  inline void Record8(int ch) {
+    buffer8_.push_back(ch);
+  }
+
+  inline void Record8() {
+    buffer8_.push_back(c_);
   }
 
   iv::core::UStringPiece source_;
@@ -197,6 +346,8 @@ class TypeLexer : private iv::core::Noncopyable<TypeLexer> {
   std::size_t end_;
   int c_;
   std::vector<uint16_t> buffer_;
+  std::vector<char> buffer8_;
+  double numeric_;
 };
 
 } }  // namespace az::jsdoc

@@ -3118,7 +3118,7 @@ class Parser : private iv::core::Noncopyable<> {
         // this is JSDoc start mark
         // so, parse JSDoc
         // DebugLog(comment);
-        jsdoc::Provider provider;
+        jsdoc::Provider provider(factory_);
         provider.Parse(comment);
         doc_ = provider.GetInfo();
       }
