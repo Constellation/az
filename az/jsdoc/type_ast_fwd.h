@@ -14,7 +14,7 @@
   V(UnionType)\
   V(ArrayType)\
   V(RecordType)\
-  V(FieldTypeKeyValue)\
+  V(FieldType)\
   V(FunctionType)\
   V(NameExpression)\
   V(TypeNameWithApplication)\

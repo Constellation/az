@@ -215,3 +215,14 @@ TEST(JSDocTypeParser, TypeExpressionParserTest3) {
     EXPECT_TRUE(expr->AsUnionType());
   }
 }
+
+TEST(JSDocTypeParser, TypeExpressionParserTest4) {
+  az::AstFactory factory;
+  {
+    const iv::core::UString str = iv::core::ToUString("string|number");
+    az::jsdoc::TypeParser parser(&factory, str);
+    az::jsdoc::TypeExpression* expr = parser.ParseType();
+    ASSERT_TRUE(expr);
+    EXPECT_TRUE(expr->AsUnionType());
+  }
+}

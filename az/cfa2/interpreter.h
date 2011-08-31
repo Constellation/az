@@ -1191,7 +1191,7 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
 
 void Interpreter::Visit(jsdoc::PrefixQuestionExpression* node) {
   node->expr()->Accept(this);
-  result_.MergeResult(AVal(AVAL_NOBASE));
+  result_.MergeResult(AVal(AVAL_NULL));
 }
 
 void Interpreter::Visit(jsdoc::PrefixBangExpression* node) {
@@ -1202,12 +1202,19 @@ void Interpreter::Visit(jsdoc::PrefixBangExpression* node) {
 }
 
 void Interpreter::Visit(jsdoc::PostfixQuestionExpression* node) {
+  node->expr()->Accept(this);
+  result_.MergeResult(AVal(AVAL_NULL));
 }
 
 void Interpreter::Visit(jsdoc::PostfixBangExpression* node) {
+  node->expr()->Accept(this);
+  AVal res = result_.result();
+  res.ExcludeBase(AVAL_NULL);
+  result_.set_result(res);
 }
 
 void Interpreter::Visit(jsdoc::QuestionLiteral* node) {
+  result_ = Result(AVal(AVAL_NOBASE));
 }
 
 void Interpreter::Visit(jsdoc::StarLiteral* node) {
@@ -1245,7 +1252,7 @@ void Interpreter::Visit(jsdoc::ArrayType* node) {
 void Interpreter::Visit(jsdoc::RecordType* node) {
 }
 
-void Interpreter::Visit(jsdoc::FieldTypeKeyValue* node) {
+void Interpreter::Visit(jsdoc::FieldType* node) {
 }
 
 void Interpreter::Visit(jsdoc::FunctionType* node) {
@@ -1260,14 +1267,6 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
     result_.set_result(AVal(AVAL_NUMBER));
   } else if (IsEqualIgnoreCase(*str, "boolean")) {
     result_.set_result(AVal(AVAL_BOOL));
-  } else if (IsEqualIgnoreCase(*str, "true")) {
-    result_.set_result(AVal(AVAL_TRUE));
-  } else if (IsEqualIgnoreCase(*str, "false")) {
-    result_.set_result(AVal(AVAL_FALSE));
-  } else if (IsEqualIgnoreCase(*str, "undefined")) {
-    result_.set_result(AVal(AVAL_UNDEFINED));
-  } else if (IsEqualIgnoreCase(*str, "null")) {
-    result_.set_result(AVal(AVAL_NULL));
   } else {
     // this is name lookup
     // TODO:(Constellation) implement it

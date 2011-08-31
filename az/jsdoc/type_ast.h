@@ -141,22 +141,25 @@ class RecordType : public TypeExpression {
   TypeExpressions* exprs_;
 };
 
-class FieldTypeKeyValue : public TypeExpression {
+class FieldType: public TypeExpression {
  public:
-  FieldTypeKeyValue(TypeExpression* key,
-                    TypeExpression* value)
+  FieldType(NameString* key,
+            TypeExpression* value)
     : key_(key),
       value_(value) {
   }
-  TypeExpression* key() const {
+  NameString* key() const {
     return key_;
   }
   TypeExpression* value() const {
     return value_;
   }
-  DECLARE_DERIVED_NODE_TYPE(FieldTypeKeyValue)
+  bool HasValue() const {
+    return value();
+  }
+  DECLARE_DERIVED_NODE_TYPE(FieldType)
  private:
-  TypeExpression* key_;
+  NameString* key_;
   TypeExpression* value_;
 };
 

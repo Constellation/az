@@ -248,26 +248,27 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     // FieldType := FieldName | FieldName ':' TypeExpression
     // FieldName := NameExpression | StringLiteral | NumberLiteral |
     // ReservedIdentifier
-    NameExpression* key = ParseFieldName(CHECK);
+    NameString* key = ParseFieldName(CHECK);
     if (token_ == TypeToken::TK_COLON) {
       Next();
       TypeExpression* value = ParseTypeExpression(CHECK);
-      return new (factory_) FieldTypeKeyValue(key, value);
+      return new (factory_) FieldType(key, value);
     }
-    return key;
+    return new (factory_) FieldType(key, NULL);
   }
 
-  NameExpression* ParseFieldName(bool* res) {
+  NameString* ParseFieldName(bool* res) {
     if (token_ == TypeToken::TK_NAME || token_ == TypeToken::TK_STRING) {
-      return ParseNameExpression(res);
+      NameString* str = factory_->NewUString(lexer_.Buffer());
+      Next();
+      return str;
     } else if (token_ == TypeToken::TK_NUMBER) {
       const double val = lexer_.Numeric();
       iv::core::dtoa::StringPieceDToA builder;
       builder.Build(val);
       NameString* str = factory_->NewUString(builder.buffer());
-      NameExpression* name = new (factory_) NameExpression(str);
       Next();
-      return name;
+      return str;
     } else {
       UNEXPECT(token_);
     }
@@ -303,7 +304,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
   }
 
   NameExpression* ParseNameExpression(bool* res) {
-    assert(token_ == TypeToken::TK_NAME || token_ == TypeToken::TK_STRING);
+    assert(token_ == TypeToken::TK_NAME);
     NameString* str = factory_->NewUString(lexer_.Buffer());
     NameExpression* name = new (factory_) NameExpression(str);
     Next();

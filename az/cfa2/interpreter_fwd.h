@@ -151,7 +151,7 @@ class Interpreter
   inline void Visit(jsdoc::UnionType* node);
   inline void Visit(jsdoc::ArrayType* node);
   inline void Visit(jsdoc::RecordType* node);
-  inline void Visit(jsdoc::FieldTypeKeyValue* node);
+  inline void Visit(jsdoc::FieldType* node);
   inline void Visit(jsdoc::FunctionType* node);
   inline void Visit(jsdoc::NameExpression* node);
   inline void Visit(jsdoc::TypeNameWithApplication* node);
