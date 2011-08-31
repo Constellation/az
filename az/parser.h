@@ -3116,7 +3116,7 @@ class Parser : private iv::core::Noncopyable<> {
     const std::size_t end = lexer_->end_position();
     const iv::core::UStringPiece comment =
         structured_.original().substr(begin, end - begin + 1);
-    if (comment.size() >= 5 &&  // target comment is more than "/***/"
+    if (comment.size() > 5 &&  // target comment size is more than "/***/"
         token == Token::TK_MULTI_LINE_COMMENT) {
       if (comment[0] == '/' && comment[1] == '*' && comment[2] == '*') {
         // this is JSDoc start mark
