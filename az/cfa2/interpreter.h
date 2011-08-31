@@ -1296,12 +1296,18 @@ void Interpreter::Visit(jsdoc::ArrayType* node) {
 }
 
 void Interpreter::Visit(jsdoc::RecordType* node) {
+  // TODO(Constellation) implement it
+  result_.Reset();
 }
 
 void Interpreter::Visit(jsdoc::FieldType* node) {
+  // TODO(Constellation) implement it
+  UNREACHABLE();
 }
 
 void Interpreter::Visit(jsdoc::FunctionType* node) {
+  // TODO(Constellation) implement it
+  result_.Reset();
 }
 
 void Interpreter::Visit(jsdoc::NameExpression* node) {
@@ -1317,11 +1323,13 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
     // class lookup
     //
     // see type registry
-    //
-    // FIXME:(Constellation) set object in HeapInitializer
     if (FunctionLiteral* literal = heap_->registry()->GetRegisteredConstructorOrInterface(*node->value())) {
       const std::vector<AVal> args;
-      AObject* this_binding = heap_->MakeObject();
+      AObject* this_binding = heap_->GetDeclObject(node);
+      if (!this_binding) {
+        this_binding = heap_->MakeObject();
+        heap_->DeclObject(node, this_binding);
+      }
       AObject* target = heap_->GetDeclObject(literal);
       this_binding->UpdatePrototype(heap_,
                                     target->GetProperty(Intern("prototype")));
@@ -1333,6 +1341,8 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
 }
 
 void Interpreter::Visit(jsdoc::TypeNameWithApplication* node) {
+  // TODO:(Constellation) use application data
+  node->expr()->Accept(this);
 }
 
 void Interpreter::Visit(jsdoc::ParametersType* node) {

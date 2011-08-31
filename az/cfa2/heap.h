@@ -7,6 +7,7 @@
 #include <az/deleter.h>
 #include <az/context.h>
 #include <az/basic_completer.h>
+#include <az/jsdoc/type_ast_fwd.h>
 #include <az/cfa2/builtins_fwd.h>
 #include <az/cfa2/binding.h>
 #include <az/cfa2/aobject_factory.h>
@@ -28,6 +29,7 @@ class Heap : public az::Context {
       heap_(),
       declared_heap_bindings_(),
       decls_(),
+      decls_typed_(),
       summaries_(),
       ordered_summaries_(),
       factory_(),
@@ -910,12 +912,28 @@ class Heap : public az::Context {
     return declared_heap_bindings_.find(binding) != declared_heap_bindings_.end();
   }
 
+  // for JS AstNode
   void DeclObject(AstNode* node, AObject* obj) {
     decls_[node] = obj;
   }
 
   AObject* GetDeclObject(AstNode* node) const {
+    assert(decls_.find(node) != decls_.end());
     return decls_.find(node)->second;
+  }
+
+  // for jsdoc::TypeExpression
+  void DeclObject(jsdoc::TypeExpression* node, AObject* obj) {
+    decls_typed_[node] = obj;
+  }
+
+  // maybe NULL
+  AObject* GetDeclObject(jsdoc::TypeExpression* node) const {
+    const std::unordered_map<jsdoc::TypeExpression*, AObject*>::const_iterator it = decls_typed_.find(node);
+    if (it != decls_typed_.end()) {
+      return it->second;
+    }
+    return NULL;
   }
 
   void DeclObjectLiteralMember(FunctionLiteral* literal, AObject* obj) {
@@ -1192,6 +1210,7 @@ class Heap : public az::Context {
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
   std::unordered_map<AstNode*, AObject*> decls_;
+  std::unordered_map<jsdoc::TypeExpression*, AObject*> decls_typed_;
   Summaries summaries_;
   std::vector<Summary*> ordered_summaries_;
   AObjectFactory factory_;

@@ -318,6 +318,8 @@ void BindingResolver::Visit(Assignment* assign) {
   assign->right()->Accept(this);
   if (FunctionLiteral* literal = assign->right()->AsFunctionLiteral()) {
     if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(assign)) {
+      // adding jsdoc to function
+      heap_->Tag(literal, info);
       if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR)) {
         heap_->registry()->RegisterAssignedType(assign->left(), literal);
       } else if (info->GetTag(jsdoc::Token::TK_INTERFACE)) {

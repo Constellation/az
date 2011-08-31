@@ -131,7 +131,7 @@ inline int Tag(const iv::core::UString& src) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  az::DebugLog("PROGRAM START");
+  az::DebugLog("\nPROGRAM START");
   iv::cmdline::Parser cmd("az");
   cmd.Add("help",
           "help",
