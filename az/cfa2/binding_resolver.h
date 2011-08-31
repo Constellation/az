@@ -1,4 +1,6 @@
 // resolve which identifier is STACK or HEAP
+//
+// and collect @constructor / @interface jsdoc information
 #ifndef AZ_CFA2_BINDING_RESOLVER_H_
 #define AZ_CFA2_BINDING_RESOLVER_H_
 #include <functional>
@@ -314,6 +316,15 @@ void BindingResolver::Visit(ExpressionStatement* stmt) {
 void BindingResolver::Visit(Assignment* assign) {
   assign->left()->Accept(this);
   assign->right()->Accept(this);
+  if (FunctionLiteral* literal = assign->right()->AsFunctionLiteral()) {
+    if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(assign)) {
+      if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR)) {
+        heap_->RegisterAssignedType(assign->left(), literal);
+      } else if (info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+        heap_->RegisterAssignedType(assign->right(), literal);
+      }
+    }
+  }
 }
 
 void BindingResolver::Visit(BinaryOperation* binary) {

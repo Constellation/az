@@ -13,6 +13,7 @@
 #include <az/cfa2/summary.h>
 #include <az/cfa2/state.h>
 #include <az/cfa2/result.h>
+#include <az/cfa2/type_registry.h>
 namespace az {
 namespace cfa2 {
 
@@ -37,7 +38,8 @@ class Heap : public az::Context {
       not_reachable_functions_(),
       method_and_target_(),
       target_cache_(),
-      object_literal_member_() {
+      object_literal_member_(),
+      registry_() {
   }
 
   // lazy initialization
@@ -1182,6 +1184,11 @@ class Heap : public az::Context {
     return number_object_;
   }
 
+  // type registry
+  void RegisterAssignedType(Expression* name, FunctionLiteral* literal) {
+    registry_.RegisterAssignedType(name, literal);
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
@@ -1222,6 +1229,7 @@ class Heap : public az::Context {
   std::unordered_map<FunctionLiteral*, Expression*> method_and_target_;
   std::unordered_map<Expression*, AVal> target_cache_;
   std::unordered_map<FunctionLiteral*, AObject*> object_literal_member_;
+  TypeRegistry registry_;
 };
 
 } }  // namespace az::cfa2
