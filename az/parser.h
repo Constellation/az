@@ -1721,8 +1721,12 @@ class Parser : private iv::core::Noncopyable<> {
       //
       //   /** @const */
       //   Test.prototype.test;
+      // or
+      //   /** @const */
+      //   test;
       //
-      if (token_ == Token::TK_SEMICOLON && result->AsIdentifierAccess()) {
+      if (token_ == Token::TK_SEMICOLON &&
+          (result->AsIdentifierAccess() || result->AsIdentifier())) {
         if (std::shared_ptr<jsdoc::Info> info = GetAndResetJSDocInfo()) {
           ctx_->Tag(result, info);
         }
