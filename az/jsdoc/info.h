@@ -26,17 +26,17 @@ class Info {
   // TODO:(Constellation)
   // more efficiency info structure
   bool HasType() const {
-    return IsSpecified(Token::TK_TYPE);
+    return GetTag(Token::TK_TYPE);
   }
 
-  bool IsSpecified(Token::Type token) const {
+  std::shared_ptr<Tag> GetTag(Token::Type token) const {
     for (std::vector<std::shared_ptr<Tag> >::const_iterator it = tags_.begin(),
          last = tags_.end(); it != last; ++it) {
       if ((*it)->token() == token) {
-        return true;
+        return *it;
       }
     }
-    return false;
+    return std::shared_ptr<Tag>();
   }
 
  private:

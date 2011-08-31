@@ -70,7 +70,7 @@ class TypeParser : private iv::core::Noncopyable<TypeParser> {
     bool ok = true;
     bool* res = &ok;
     Next();
-    TypeExpression* expr = ParseTypeExpression(CHECK);
+    TypeExpression* expr = ParseTopLevelTypeExpression(CHECK);
     IS(TypeToken::TK_EOS);
     return expr;
   }

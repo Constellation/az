@@ -31,7 +31,10 @@ void Interpreter::Run(FunctionLiteral* global) {
     Identifier* ident = (*it)->name().Address();
     Binding* binding = ident->refer();
     assert(binding);
-    frame.Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
+    const AVal val(heap_->GetDeclObject(*it));
+    frame.Set(heap_, binding, val);
+    heap_->GetGlobal().UpdateProperty(heap_,
+                                      Intern(ident->value()), val);
   }
 
   // then interpret global function
@@ -54,7 +57,7 @@ void Interpreter::Run(FunctionLiteral* global) {
       // if jsdoc found and @constructor is specified,
       // call this function as constructor
       if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(function)) {
-        if (info->IsSpecified(jsdoc::Token::TK_CONSTRUCTOR)) {
+        if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR)) {
           AObject* this_binding = heap_->MakeObject();
           this_binding->UpdatePrototype(heap_,
                                         target->GetProperty(Intern("prototype")));
@@ -123,9 +126,23 @@ void Interpreter::Visit(VariableStatement* var) {
     Identifier* ident = (*it)->name();
     Binding* binding = ident->refer();
     assert(binding);
-    if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
-      expr.Address()->Accept(this);
+
+    // this Identifier may have JSDoc
+    bool jsdoc_type_is_found = false;
+    if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(ident)) {
+      if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_TYPE)) {
+        jsdoc_type_is_found = true;
+        assert(tag->type());
+        tag->type()->Accept(this);
+      }
     }
+
+    if (!jsdoc_type_is_found) {
+      if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
+        expr.Address()->Accept(this);
+      }
+    }
+
     if (result_.HasException()) {
       // collecting errors
       error_found = true;
@@ -139,6 +156,9 @@ void Interpreter::Visit(VariableStatement* var) {
       if (heap_->IsDeclaredHeapBinding(binding)) {
         // Global variable
         heap_->UpdateHeap(binding, val);
+        heap_->GetGlobal().UpdateProperty(heap_,
+                                          Intern(ident->value()),
+                                          val);
       }
     }
   }
@@ -973,7 +993,11 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
         const AVal val(CurrentFrame()->Get(heap_, binding) | res.result());
         CurrentFrame()->Set(heap_, binding, val);
         if (heap_->IsDeclaredHeapBinding(binding)) {
+          // global binding
           heap_->UpdateHeap(binding, val);
+          heap_->GetGlobal().UpdateProperty(heap_,
+                                            Intern(ident->value()),
+                                            val);
         }
       }
     } else {
@@ -1246,6 +1270,8 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
     result_.set_result(AVal(AVAL_NULL));
   } else {
     // this is name lookup
+    // TODO:(Constellation) implement it
+    result_.set_result(AVal(AVAL_NOBASE));
   }
 }
 

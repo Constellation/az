@@ -3117,7 +3117,7 @@ class Parser : private iv::core::Noncopyable<> {
       if (comment[0] == '/' && comment[1] == '*' && comment[2] == '*') {
         // this is JSDoc start mark
         // so, parse JSDoc
-        // DebugLog(comment);
+        DebugLog("PARSING JSDoc");
         jsdoc::Provider provider(factory_);
         provider.Parse(comment);
         doc_ = provider.GetInfo();
