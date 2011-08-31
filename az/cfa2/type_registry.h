@@ -19,13 +19,20 @@ class TypeRegistry {
       Identifier* ident = i.Address();
       name.assign(ident->value().begin(), ident->value().end());
       map_.insert(std::make_pair(name, literal));
-    } else {
-      // get name from Assignment
-      if (TypeRegistry::NormalizeName(lhs, &name)) {
-        DebugLog(name);
-        map_.insert(std::make_pair(name, literal));
-      }
     }
+    // get name from Assignment
+    if (TypeRegistry::NormalizeName(lhs, &name)) {
+      DebugLog(name);
+      map_.insert(std::make_pair(name, literal));
+    }
+  }
+
+  FunctionLiteral* GetRegisteredConstructorOrInterface(const iv::core::UStringPiece& piece) {
+    std::unordered_map<iv::core::UString, FunctionLiteral*>::const_iterator it = map_.find(piece);
+    if (it != map_.end()) {
+      return it->second;
+    }
+    return NULL;
   }
 
  private:

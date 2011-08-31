@@ -7,6 +7,7 @@
 #include <az/cfa2/heap_initializer.h>
 #include <az/cfa2/frame.h>
 #include <az/cfa2/result.h>
+#include <az/cfa2/type_registry.h>
 #include <az/cfa2/method_target_guard.h>
 namespace az {
 namespace cfa2 {
@@ -1268,9 +1269,21 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
   } else if (IsEqualIgnoreCase(*str, "boolean")) {
     result_.set_result(AVal(AVAL_BOOL));
   } else {
-    // this is name lookup
-    // TODO:(Constellation) implement it
-    result_.set_result(AVal(AVAL_NOBASE));
+    // class lookup
+    //
+    // see type registry
+    //
+    // FIXME:(Constellation) set object in HeapInitializer
+    if (FunctionLiteral* literal = heap_->registry()->GetRegisteredConstructorOrInterface(*node->value())) {
+      const std::vector<AVal> args;
+      AObject* this_binding = heap_->MakeObject();
+      AObject* target = heap_->GetDeclObject(literal);
+      this_binding->UpdatePrototype(heap_,
+                                    target->GetProperty(Intern("prototype")));
+      EvaluateFunction(target, AVal(this_binding), args, true);
+    } else {
+      result_.set_result(AVal(AVAL_NOBASE));
+    }
   }
 }
 

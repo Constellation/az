@@ -1184,9 +1184,8 @@ class Heap : public az::Context {
     return number_object_;
   }
 
-  // type registry
-  void RegisterAssignedType(Expression* name, FunctionLiteral* literal) {
-    registry_.RegisterAssignedType(name, literal);
+  TypeRegistry* registry() {
+    return &registry_;
   }
 
  private:
