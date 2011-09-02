@@ -221,8 +221,6 @@ void Interpreter::Visit(ForInStatement* stmt) {
   }
   stmt->enumerable()->Accept(this);
 
-#if 0
-  // TODO(Constellation)
   // too heavy...
   // so turn off this option
   const AVal res = result_.result();
@@ -243,9 +241,9 @@ void Interpreter::Visit(ForInStatement* stmt) {
               if (it2->second.IsEnumerable() &&
                   already.find(it2->first) == already.end()) {
                 already.insert(it2->first);
-                iv::core::UString name(GetSymbolString(it2->first));
-                DebugLog(name);
-                CurrentFrame()->Set(heap_, binding, AVal(name));
+                DebugLog(GetSymbolString(it2->first));
+                CurrentFrame()->Set(
+                    heap_, binding, AVal(GetSymbolString(it2->first)));
                 effective->Accept(this);
               }
             }
@@ -259,7 +257,6 @@ void Interpreter::Visit(ForInStatement* stmt) {
       }
     }
   }
-#endif
 }
 
 void Interpreter::Visit(ContinueStatement* stmt) {
