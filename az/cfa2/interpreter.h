@@ -73,6 +73,7 @@ void Interpreter::Run(FunctionLiteral* global) {
           assert(tag->type());
           tag->type()->Accept(this);
           EvaluateFunction(target, result_.result(), vec, false);
+          continue;
         }
       }
 
