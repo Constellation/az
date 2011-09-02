@@ -27,6 +27,16 @@ class TypeRegistry {
     }
   }
 
+  void RegisterNamedType(FunctionLiteral* literal) {
+    // if FunctionLiteral name found, use this
+    assert(literal->name());
+    Identifier* ident = literal->name().Address();
+    map_.insert(
+        std::make_pair(
+            iv::core::UString(ident->value().begin(), ident->value().end()),
+            literal));
+  }
+
   FunctionLiteral* GetRegisteredConstructorOrInterface(const iv::core::UStringPiece& piece) {
     std::unordered_map<iv::core::UString, FunctionLiteral*>::const_iterator it = map_.find(piece);
     if (it != map_.end()) {

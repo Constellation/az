@@ -50,13 +50,27 @@ void BindingResolver::MarkStatements(const Statements& body) {
 void BindingResolver::Visit(FunctionStatement* func) {
   func->set_normal(normal_);
   func->set_raised(raised_);
-  func->function()->Accept(this);
+  FunctionLiteral* literal = func->function();
+  literal->Accept(this);
+  if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+    if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||
+        info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+      heap_->registry()->RegisterNamedType(literal);
+    }
+  }
 }
 
 void BindingResolver::Visit(FunctionDeclaration* func) {
   // nothing
   func->set_normal(normal_);
   func->set_raised(raised_);
+  FunctionLiteral* literal = func->function();
+  if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+    if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||
+        info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+      heap_->registry()->RegisterNamedType(literal);
+    }
+  }
 }
 
 void BindingResolver::Visit(VariableStatement* var) {
@@ -320,9 +334,8 @@ void BindingResolver::Visit(Assignment* assign) {
     if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(assign)) {
       // adding jsdoc to function
       heap_->Tag(literal, info);
-      if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR)) {
-        heap_->registry()->RegisterAssignedType(assign->left(), literal);
-      } else if (info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+      if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||
+          info->GetTag(jsdoc::Token::TK_INTERFACE)) {
         heap_->registry()->RegisterAssignedType(assign->left(), literal);
       }
     }
