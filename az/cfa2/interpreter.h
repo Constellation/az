@@ -8,6 +8,7 @@
 #include <az/cfa2/frame.h>
 #include <az/cfa2/result.h>
 #include <az/cfa2/type_registry.h>
+#include <az/cfa2/param_type_matcher.h>
 #include <az/cfa2/method_target_guard.h>
 namespace az {
 namespace cfa2 {
@@ -55,21 +56,35 @@ void Interpreter::Run(FunctionLiteral* global) {
       AObject* target = current->target();
       const std::vector<AVal> vec(function->params().size(), AVal(AVAL_NOBASE));
 
-      // if jsdoc found and @constructor is specified,
-      // call this function as constructor
-      if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(function)) {
-        if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR)) {
+      std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(function);
+      if (info) {
+        if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||
+            info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+          // if jsdoc found and @constructor or @interface is specified,
+          // call this function as constructor
           AObject* this_binding = heap_->MakeObject();
           this_binding->UpdatePrototype(heap_,
                                         target->GetProperty(Intern("prototype")));
           EvaluateFunction(target, AVal(this_binding), vec, true);
           continue;
         }
+        if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_THIS)) {
+          // @this is specified
+          assert(tag->type());
+          tag->type()->Accept(this);
+          EvaluateFunction(target, result_.result(), vec, false);
+        }
       }
 
       if (AObject* obj = heap_->GetLiteralMemberBase(function)) {
+        // such as,
+        //   var obj ={
+        //     test: function() { }
+        //   };
         EvaluateFunction(target, AVal(obj), vec, false);
       } else if (Expression* expr = heap_->IsPrototypeMethod(function)) {
+        // such as,
+        //   Test.prototype.getValue = function() { ... }
         AVal constructor = heap_->GetMethodTarget(expr);
         if (constructor == AVal(AVAL_NOBASE)) {
           expr->Accept(this);
@@ -258,10 +273,10 @@ void Interpreter::Visit(ExpressionStatement* stmt) {
   Expression* expr = stmt->expr();
   if (expr->AsIdentifier() || expr->AsIdentifierAccess()) {
     if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(expr)) {
-      //   /** @const */
+      //   /** @type {string} */
       //   Test.prototype.test;
       // or
-      //   /** @const */
+      //   /** @type {string} */
       //   test;
       if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_TYPE)) {
         assert(tag->type());
@@ -861,6 +876,9 @@ Result Interpreter::EvaluateFunction(AObject* function,
     return res;
   }
 
+  // jsdoc is found?
+  std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal);
+
   // interpret function
   std::shared_ptr<Heap::Execution> current;
   while (true) {
@@ -877,7 +895,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
         // first time, through it.
         // second time, shut out this path and return NOBASE
         if (std::get<3>(*prev)) {
-          if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+          if (info) {
             if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_RETURN)) {
               // @return found, so use it
               assert(tag->type());
@@ -972,7 +990,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
         }
       }
 
-      if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+      if (info) {
         if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_RETURN)) {
           // @return found, so use it
           Result current = result_;

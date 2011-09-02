@@ -1243,10 +1243,12 @@ class Heap : public az::Context {
   typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
   typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
   WaitingMap waiting_result_;
+
   std::unordered_set<FunctionLiteral*> not_reachable_functions_;
   std::unordered_map<FunctionLiteral*, Expression*> method_and_target_;
   std::unordered_map<Expression*, AVal> target_cache_;
   std::unordered_map<FunctionLiteral*, AObject*> object_literal_member_;
+
   TypeRegistry registry_;
 };
 

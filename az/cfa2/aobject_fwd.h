@@ -170,6 +170,14 @@ class AObject
     return function_ || builtin_;
   }
 
+  Builtin AsNativeFunction() const {
+    return builtin_;
+  }
+
+  FunctionLiteral* AsJSFunction() const {
+    return function_;
+  }
+
   inline AVal GetNumberProperty(Heap* heap);
   inline AVal GetNumberPropertyImpl(AlreadySearched* already_searched) const;
   inline void MergeNumberProperty(Heap* heap);
