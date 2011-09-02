@@ -13,8 +13,6 @@
 namespace az {
 namespace cfa2 {
 
-class Work { };
-
 void Interpreter::Run(FunctionLiteral* global) {
   Frame frame(this);
   frame.SetThis(heap_->GetGlobal());
@@ -210,10 +208,54 @@ void Interpreter::Visit(ForStatement* stmt) {
 }
 
 void Interpreter::Visit(ForInStatement* stmt) {
+  Identifier* ident = NULL;
   if (stmt->each()->AsVariableStatement()) {
-    Visit(stmt->each()->AsVariableStatement());
+    VariableStatement* var = stmt->each()->AsVariableStatement();
+    if (!var->decls().empty()) {
+      ident = var->decls().front()->name();
+    }
+    Visit(var);
+  } else {
+    ExpressionStatement* ex = stmt->each()->AsExpressionStatement();
+    ident = ex->expr()->AsIdentifier();
   }
   stmt->enumerable()->Accept(this);
+
+  // TODO(Constellation) too heavy...
+  const AVal res = result_.result();
+  if (ident) {
+    if (Binding* binding = ident->refer()) {
+      if (binding->type() == Binding::STACK) {
+        Result prev = result_;
+        // limit different name symbol only
+        std::unordered_set<Symbol> already;
+        // too heavy, so only one statement allowed...
+        // very heuristic...
+        if (Statement* effective = GetFirstEffectiveStatement(stmt->body())) {
+          for (AVal::ObjectSet::const_iterator it = res.objects().begin(),
+               last = res.objects().end(); it != last; ++it) {
+            AObject* obj = *it;
+            for (AObject::Properties::const_iterator it2 = obj->properties().begin(),
+                 last2 = obj->properties().end(); it2 != last2; ++it2) {
+              if (it2->second.IsEnumerable() &&
+                  already.find(it2->first) == already.end()) {
+                already.insert(it2->first);
+                iv::core::UString name(GetSymbolString(it2->first));
+                DebugLog(name);
+                CurrentFrame()->Set(heap_, binding, AVal(name));
+                effective->Accept(this);
+                if (already.size() > 20) {
+                  // too big... so stop searching
+                  DebugLog("STOP!!");
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 void Interpreter::Visit(ContinueStatement* stmt) {
@@ -687,12 +729,20 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
   // interpret function
   // BindingResolver already marks normal / raised continuation
   // so this function use this and walking flow and evaluate this.
+  Interpret(literal->normal(), NULL);
+  if (heap_->completer() &&
+      literal == heap_->completer()->GetTargetFunction()) {
+    GainCompletion(heap_->completer());
+  }
+}
+
+void Interpreter::Interpret(Statement* start, Statement* end) {
   AVal result(AVAL_NOBASE);
   AVal error(AVAL_NOBASE);
   bool error_found = false;
   Tasks tasks;
 
-  tasks.push_back(literal->normal());
+  tasks.push_back(start);
   while (true) {
     if (tasks.empty()) {
       // all task is done!
@@ -700,7 +750,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
     }
     Statement* const task = tasks.back();
     tasks.pop_back();
-    if (!task) {
+    if (!task || task == end) {
       continue;  // next statement
     }
 
@@ -714,7 +764,7 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
     tasks.push_back(task->normal());
 
     // check answer value and determine evaluate raised path or not
-    if (result_.HasException()) {
+    if (result_.HasException() && !end) {
       error_found = true;
       // raised path is catch / finally / NULL
       // if catch   ... TryStatement,
@@ -741,10 +791,6 @@ void Interpreter::Interpret(FunctionLiteral* literal) {
         error |= result_.exception();
       }
     }
-  }
-  if (heap_->completer() &&
-      literal == heap_->completer()->GetTargetFunction()) {
-    GainCompletion(heap_->completer());
   }
   result_ = Result(result, error, error_found);
 }
@@ -1250,6 +1296,20 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
         heap_->RemoveWaitingResults(literal);
         throw ex;
       }
+    }
+  }
+}
+
+Statement* Interpreter::GetFirstEffectiveStatement(Statement* target) {
+  while (true) {
+    if (Block* block = target->AsBlock()) {
+      if (block->body().empty()) {
+        return NULL;
+      } else {
+        target = block->body().front();
+      }
+    } else {
+      return target;
     }
   }
 }

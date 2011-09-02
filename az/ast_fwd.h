@@ -105,6 +105,14 @@ class StatementBase<az::AstFactory>
     raised_ = raised;
   }
 
+  StatementType* end() const {
+    return end_;
+  }
+
+  void set_end(StatementType* end) {
+    end_ = end;
+  }
+
   void set_is_failed_node(bool val) {
     is_failed_node_ = val;
   }
@@ -116,6 +124,7 @@ class StatementBase<az::AstFactory>
  private:
   StatementType* normal_;
   StatementType* raised_;
+  StatementType* end_;
   bool is_failed_node_;
 };
 

@@ -1,11 +1,9 @@
-/**
- * @constructor
- */
+// issue #18
 function Test() {
 }
 
 Test.prototype.getValue = function() {
-  return "OK";
+  return "STRING";
 }
 
 /**
@@ -13,4 +11,4 @@ Test.prototype.getValue = function() {
  */
 function main() {
   // this.<COMPLETION>
-  this
+  this.

@@ -132,6 +132,7 @@ class Interpreter
   inline void Visit(CaseClause* clause);
 
   inline void Interpret(FunctionLiteral* literal);
+  inline void Interpret(Statement* start, Statement* end);
 
   inline void GainCompletion(Completer* completer);
   inline void EvaluateCompletionTargetFunction(Completer* completer);
@@ -159,6 +160,8 @@ class Interpreter
   inline void Visit(jsdoc::ParametersType* node);
   inline void Visit(jsdoc::RestExpression* node);
   inline void Visit(jsdoc::PostfixEqualExpression* node);
+
+  static inline Statement* GetFirstEffectiveStatement(Statement* target);
 
   Heap* heap_;
   Result result_;  // result value

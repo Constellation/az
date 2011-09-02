@@ -21,6 +21,7 @@ void BindingResolver::Resolve(FunctionLiteral* global) {
 void BindingResolver::Visit(Block* block) {
   block->set_raised(raised_);
   block->set_jump_to(normal_);
+  block->set_end(normal_);
   if (block->body().empty()) {
     // no Statement, so next is normal
     block->set_normal(normal_);
@@ -49,6 +50,7 @@ void BindingResolver::MarkStatements(const Statements& body) {
 void BindingResolver::Visit(FunctionStatement* func) {
   func->set_normal(normal_);
   func->set_raised(raised_);
+  func->set_end(normal_);
   Visit(func->function());
 }
 
@@ -56,11 +58,13 @@ void BindingResolver::Visit(FunctionDeclaration* func) {
   // nothing
   func->set_normal(normal_);
   func->set_raised(raised_);
+  func->set_end(normal_);
 }
 
 void BindingResolver::Visit(VariableStatement* var) {
   var->set_normal(normal_);
   var->set_raised(raised_);
+  var->set_end(normal_);
   for (Declarations::const_iterator it = var->decls().begin(),
        last = var->decls().end(); it != last; ++it) {
     if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
@@ -73,11 +77,13 @@ void BindingResolver::Visit(EmptyStatement* stmt) {
   // not have Identifier to value
   stmt->set_normal(normal_);
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
 }
 
 void BindingResolver::Visit(IfStatement* stmt) {
   stmt->set_normal(stmt->then_statement());
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   stmt->cond()->Accept(this);
 
   Statement* normal = normal_;
@@ -94,6 +100,7 @@ void BindingResolver::Visit(IfStatement* stmt) {
 void BindingResolver::Visit(DoWhileStatement* stmt) {
   stmt->set_normal(stmt->body());
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   stmt->set_jump_to(normal_);
   Statement* previous_normal = normal_;
   ExpressionStatement* cond = heap_->NewWrappedStatement(stmt->cond());
@@ -106,6 +113,7 @@ void BindingResolver::Visit(DoWhileStatement* stmt) {
 void BindingResolver::Visit(WhileStatement* stmt) {
   stmt->set_normal(stmt->body());
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   stmt->set_jump_to(normal_);
   stmt->cond()->Accept(this);
   stmt->body()->Accept(this);
@@ -114,6 +122,7 @@ void BindingResolver::Visit(WhileStatement* stmt) {
 void BindingResolver::Visit(ForStatement* stmt) {
   stmt->set_raised(raised_);
   stmt->set_jump_to(normal_);
+  stmt->set_end(normal_);
 
   Statement* previous_normal = normal_;
   normal_ = stmt->body();
@@ -165,6 +174,7 @@ void BindingResolver::Visit(ForInStatement* stmt) {
   stmt->set_raised(raised_);
   stmt->set_normal(stmt->body());
   stmt->set_jump_to(normal_);
+  stmt->set_end(normal_);
   stmt->each()->Accept(this);
   stmt->enumerable()->Accept(this);
   stmt->body()->Accept(this);
@@ -174,6 +184,7 @@ void BindingResolver::Visit(ContinueStatement* stmt) {
   // not have Identifier to value
   stmt->set_normal(stmt->target()->jump_to());
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
 }
 
 void BindingResolver::Visit(BreakStatement* stmt) {
@@ -191,11 +202,13 @@ void BindingResolver::Visit(BreakStatement* stmt) {
     stmt->set_normal(stmt->target()->jump_to());
     stmt->set_raised(raised_);
   }
+  stmt->set_end(normal_);
 }
 
 void BindingResolver::Visit(ReturnStatement* stmt) {
   stmt->set_normal(normal_);
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   if (const iv::core::Maybe<Expression> expr = stmt->expr()) {
     expr.Address()->Accept(this);
   }
@@ -204,6 +217,7 @@ void BindingResolver::Visit(ReturnStatement* stmt) {
 void BindingResolver::Visit(WithStatement* stmt) {
   stmt->set_normal(stmt->body());
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   // this is ambiguous, but use this
   stmt->context()->Accept(this);
   stmt->body()->Accept(this);
@@ -212,6 +226,7 @@ void BindingResolver::Visit(WithStatement* stmt) {
 void BindingResolver::Visit(LabelledStatement* stmt) {
   stmt->set_normal(stmt->body());
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   stmt->body()->Accept(this);
 }
 
@@ -220,6 +235,7 @@ void BindingResolver::Visit(SwitchStatement* stmt) {
   const CaseClauses& clauses = stmt->clauses();
   stmt->set_raised(raised_);
   stmt->set_jump_to(normal_);
+  stmt->set_end(normal_);
   if (clauses.empty()) {
     stmt->set_normal(normal_);
   } else {
@@ -259,12 +275,14 @@ void BindingResolver::Visit(CaseClause* clause) {
 void BindingResolver::Visit(ThrowStatement* stmt) {
   stmt->set_normal(normal_);
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   stmt->expr()->Accept(this);
 }
 
 void BindingResolver::Visit(TryStatement* stmt) {
   stmt->set_normal(stmt->body());
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
 
   Statement* raised = raised_;
   Statement* normal = normal_;
@@ -301,12 +319,14 @@ void BindingResolver::Visit(TryStatement* stmt) {
 void BindingResolver::Visit(DebuggerStatement* stmt) {
   stmt->set_normal(normal_);
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   // not have Identifier to value
 }
 
 void BindingResolver::Visit(ExpressionStatement* stmt) {
   stmt->set_normal(normal_);
   stmt->set_raised(raised_);
+  stmt->set_end(normal_);
   stmt->expr()->Accept(this);
 }
 

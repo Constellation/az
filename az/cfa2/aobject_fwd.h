@@ -179,15 +179,26 @@ class AObject
   }
 
   inline AVal GetNumberProperty(Heap* heap);
+
   inline AVal GetNumberPropertyImpl(AlreadySearched* already_searched) const;
+
   inline void MergeNumberProperty(Heap* heap);
+
   inline void UpdateNumberProperty(Heap* heap, const AVal& val);
+
   inline AVal GetStringProperty(Heap* heap);
+
   inline AVal GetStringPropertyImpl(AlreadySearched* already_searched) const;
+
   inline void MergeStringProperty(Heap* heap);
+
   inline void UpdateStringProperty(Heap* heap, const AVal& val);
 
   inline void Complete(Heap* heap, Completer* completer) const;
+
+  const Properties& properties() const {
+    return properties_;
+  }
 
  private:
   AVal proto_;

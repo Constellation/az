@@ -127,6 +127,7 @@ AVal AVal::GetStringPropertyImpl(AlreadySearched* already_searched) const {
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
     if (already_searched->find(*it) == already_searched->end()) {
+      already_searched->insert(*it);
       val |= (*it)->GetStringPropertyImpl(already_searched);
     }
   }
@@ -150,6 +151,7 @@ AVal AVal::GetNumberPropertyImpl(AlreadySearched* already_searched) const {
        last = objects_.end(); it != last; ++it) {
     // get object property and merge it
     if (already_searched->find(*it) == already_searched->end()) {
+      already_searched->insert(*it);
       val |= (*it)->GetNumberPropertyImpl(already_searched);
     }
   }
