@@ -58,7 +58,8 @@ inline bool ParsePulseOption(const std::string& format,
 
 inline int Pulse(const std::vector<char>& preload,
                  const iv::core::UString& script,
-                 const std::string& format) {
+                 const std::string& format,
+                 bool for_in_handling) {
   typedef az::Parser<iv::core::UString,
                      az::CompleteLexer,
                      az::EmptyReporter,
@@ -103,14 +104,14 @@ inline int Pulse(const std::vector<char>& preload,
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
-    ctx.InitializeCFA2(&factory, &completer);
+    ctx.InitializeCFA2(&factory, &completer, for_in_handling);
     az::cfa2::Complete(global, &ctx, src, &reporter);
     completer.Output();
   }
   return EXIT_SUCCESS;
 }
 
-inline int Tag(const iv::core::UString& src) {
+inline int Tag(const iv::core::UString& src, bool for_in_handling) {
   typedef az::Parser<iv::core::UString,
                      az::CompleteLexer,
                      az::EmptyReporter,
@@ -123,7 +124,7 @@ inline int Tag(const iv::core::UString& src) {
   Parser parser(&ctx, &factory, src, &lexer, &reporter, NULL, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
-  ctx.InitializeCFA2(&factory, NULL);
+  ctx.InitializeCFA2(&factory, NULL, for_in_handling);
   az::cfa2::Complete(global, &ctx, src, &reporter);
   return EXIT_SUCCESS;
 }
@@ -143,6 +144,10 @@ int main(int argc, char** argv) {
       "pulse",
       "pulse",
       0, "pulse option");
+  cmd.Add<std::string>(
+      "for-in-handling",
+      "for-in-handling",
+      0, "enable for-in-handling in cfa2 (too heavy)", false);
   cmd.Add(
       "tag",
       "tag",
@@ -201,7 +206,7 @@ int main(int argc, char** argv) {
       std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
       return EXIT_FAILURE;
     }
-    return Pulse(res, script_source, format);
+    return Pulse(res, script_source, format, cmd.Exist("for-in-handling"));
   } else {
     if (!ReadFile(rest.front(), &res)) {
       return EXIT_FAILURE;
@@ -216,7 +221,7 @@ int main(int argc, char** argv) {
       return EXIT_FAILURE;
     }
     if (cmd.Exist("tag")) {
-      return Tag(src);
+      return Tag(src, cmd.Exist("for-in-handling"));
     } else {
       typedef az::Parser<iv::core::UString,
                          az::CompleteLexer,

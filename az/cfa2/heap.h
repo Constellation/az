@@ -35,6 +35,7 @@ class Heap : public az::Context {
       factory_(),
       ast_factory_(NULL),
       completer_(NULL),
+      for_in_handling_(false),
       state_(kInitialState),
       waiting_result_(),
       not_reachable_functions_(),
@@ -45,10 +46,13 @@ class Heap : public az::Context {
   }
 
   // lazy initialization
-  void InitializeCFA2(AstFactory* ast_factory, Completer* completer) {
+  void InitializeCFA2(AstFactory* ast_factory,
+                      Completer* completer,
+                      bool for_in_handling) {
     // set factory and completer
     ast_factory_ = ast_factory;
     completer_ = completer;
+    for_in_handling_ = for_in_handling;
 
     completer_->set_heap(this);
     const std::vector<AVal> empty;
@@ -1206,6 +1210,10 @@ class Heap : public az::Context {
     return &registry_;
   }
 
+  bool for_in_handling() const {
+    return for_in_handling_;
+  }
+
  private:
   HeapSet heap_;
   HeapSet declared_heap_bindings_;
@@ -1216,6 +1224,7 @@ class Heap : public az::Context {
   AObjectFactory factory_;
   AstFactory* ast_factory_;
   Completer* completer_;
+  bool for_in_handling_;
   State state_;
 
   AVal global_;

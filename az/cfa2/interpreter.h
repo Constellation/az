@@ -223,34 +223,36 @@ void Interpreter::Visit(ForInStatement* stmt) {
 
   // too heavy...
   // so turn off this option
-  const AVal res = result_.result();
-  if (ident) {
-    if (Binding* binding = ident->refer()) {
-      if (binding->type() == Binding::STACK) {
-        Result prev = result_;
-        // limit different name symbol only
-        std::unordered_set<Symbol> already;
-        // too heavy, so only one statement allowed...
-        // very heuristic...
-        if (Statement* effective = GetFirstEffectiveStatement(stmt->body())) {
-          for (AVal::ObjectSet::const_iterator it = res.objects().begin(),
-               last = res.objects().end(); it != last; ++it) {
-            AObject* obj = *it;
-            for (AObject::Properties::const_iterator it2 = obj->properties().begin(),
-                 last2 = obj->properties().end(); it2 != last2; ++it2) {
-              if (it2->second.IsEnumerable() &&
-                  already.find(it2->first) == already.end()) {
-                already.insert(it2->first);
-                DebugLog(GetSymbolString(it2->first));
-                CurrentFrame()->Set(
-                    heap_, binding, AVal(GetSymbolString(it2->first)));
-                effective->Accept(this);
+  if (heap_->for_in_handling()) {
+    const AVal res = result_.result();
+    if (ident) {
+      if (Binding* binding = ident->refer()) {
+        if (binding->type() == Binding::STACK) {
+          Result prev = result_;
+          // limit different name symbol only
+          std::unordered_set<Symbol> already;
+          // too heavy, so only one statement allowed...
+          // very heuristic...
+          if (Statement* effective = GetFirstEffectiveStatement(stmt->body())) {
+            for (AVal::ObjectSet::const_iterator it = res.objects().begin(),
+                 last = res.objects().end(); it != last; ++it) {
+              AObject* obj = *it;
+              for (AObject::Properties::const_iterator it2 = obj->properties().begin(),
+                   last2 = obj->properties().end(); it2 != last2; ++it2) {
+                if (it2->second.IsEnumerable() &&
+                    already.find(it2->first) == already.end()) {
+                  already.insert(it2->first);
+                  DebugLog(GetSymbolString(it2->first));
+                  CurrentFrame()->Set(
+                      heap_, binding, AVal(GetSymbolString(it2->first)));
+                  effective->Accept(this);
+                }
               }
-            }
-            if (already.size() > 20) {
-              // too big... so stop searching
-              DebugLog("STOP!!");
-              return;
+              if (already.size() > 20) {
+                // too big... so stop searching
+                DebugLog("STOP!!");
+                return;
+              }
             }
           }
         }
