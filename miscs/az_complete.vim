@@ -16,6 +16,9 @@ function! s:source.initialize() "{{{
   if !exists('g:az_complete_auto')
     let g:az_complete_auto = 0
   endif
+  if !exists('g:az_complete_for_in_handling')
+    let g:az_complete_for_in_handling = 0
+  endif
 endfunction "}}}
 
 function! s:source.finalize() "{{{
@@ -51,6 +54,9 @@ function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
     let l:column = a:cur_keyword_pos + 1
     let l:position = l:line . ':' . l:column
     let l:command = 'az ' . l:escaped_tempfile . ' --pulse=' . l:position
+    if g:az_complete_for_in_handling
+      let l:command = l:command . ' --for-in-handling'
+    endif
     let l:output = split(neocomplcache#system(l:command), "\n")
   finally
     call delete(l:tempfile)

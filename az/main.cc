@@ -144,10 +144,10 @@ int main(int argc, char** argv) {
       "pulse",
       "pulse",
       0, "pulse option");
-  cmd.Add<std::string>(
+  cmd.Add(
       "for-in-handling",
       "for-in-handling",
-      0, "enable for-in-handling in cfa2 (too heavy)", false);
+      0, "enable for-in-handling in cfa2 (too heavy)");
   cmd.Add(
       "tag",
       "tag",

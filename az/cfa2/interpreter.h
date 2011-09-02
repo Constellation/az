@@ -223,7 +223,9 @@ void Interpreter::Visit(ForInStatement* stmt) {
 
   // too heavy...
   // so turn off this option
+  DebugLog("FOR IN?");
   if (heap_->for_in_handling()) {
+    DebugLog("FOR IN");
     const AVal res = result_.result();
     if (ident) {
       if (Binding* binding = ident->refer()) {
@@ -245,7 +247,8 @@ void Interpreter::Visit(ForInStatement* stmt) {
                   DebugLog(GetSymbolString(it2->first));
                   CurrentFrame()->Set(
                       heap_, binding, AVal(GetSymbolString(it2->first)));
-                  effective->Accept(this);
+                  // effective->Accept(this);
+                  Interpret(effective, stmt->end());
                 }
               }
               if (already.size() > 20) {
@@ -1452,7 +1455,10 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
       AObject* target = heap_->GetDeclObject(literal);
       this_binding->UpdatePrototype(heap_,
                                     target->GetProperty(Intern("prototype")));
-      EvaluateFunction(target, AVal(this_binding), args, true);
+      DebugLog(*node->value());
+      // not call FunctionLiteral
+      // because FunctionLiteral parses TypeExpression @return, so may recur
+      result_.set_result(AVal(this_binding));
     } else {
       // search target in current scope
       // TODO(Constellation) implement it
