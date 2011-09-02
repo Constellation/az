@@ -14,12 +14,6 @@ class TypeRegistry {
   void RegisterAssignedType(Expression* lhs, FunctionLiteral* literal) {
     iv::core::UString name;
     assert(lhs->IsValidLeftHandSide());
-    // if FunctionLiteral name found, use this
-    if (iv::core::Maybe<Identifier> i = literal->name()) {
-      Identifier* ident = i.Address();
-      name.assign(ident->value().begin(), ident->value().end());
-      map_.insert(std::make_pair(name, literal));
-    }
     // get name from Assignment
     if (TypeRegistry::NormalizeName(lhs, &name)) {
       DebugLog(name);
@@ -29,12 +23,13 @@ class TypeRegistry {
 
   void RegisterNamedType(FunctionLiteral* literal) {
     // if FunctionLiteral name found, use this
-    assert(literal->name());
-    Identifier* ident = literal->name().Address();
-    map_.insert(
-        std::make_pair(
-            iv::core::UString(ident->value().begin(), ident->value().end()),
-            literal));
+    if (iv::core::Maybe<Identifier> i = literal->name()) {
+      Identifier* ident = i.Address();
+      map_.insert(
+          std::make_pair(
+              iv::core::UString(ident->value().begin(), ident->value().end()),
+              literal));
+    }
   }
 
   FunctionLiteral* GetRegisteredConstructorOrInterface(const iv::core::UStringPiece& piece) {
