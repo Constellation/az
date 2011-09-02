@@ -221,7 +221,10 @@ void Interpreter::Visit(ForInStatement* stmt) {
   }
   stmt->enumerable()->Accept(this);
 
-  // TODO(Constellation) too heavy...
+#if 0
+  // TODO(Constellation)
+  // too heavy...
+  // so turn off this option
   const AVal res = result_.result();
   if (ident) {
     if (Binding* binding = ident->refer()) {
@@ -244,18 +247,19 @@ void Interpreter::Visit(ForInStatement* stmt) {
                 DebugLog(name);
                 CurrentFrame()->Set(heap_, binding, AVal(name));
                 effective->Accept(this);
-                if (already.size() > 20) {
-                  // too big... so stop searching
-                  DebugLog("STOP!!");
-                  return;
-                }
               }
+            }
+            if (already.size() > 20) {
+              // too big... so stop searching
+              DebugLog("STOP!!");
+              return;
             }
           }
         }
       }
     }
   }
+#endif
 }
 
 void Interpreter::Visit(ContinueStatement* stmt) {
