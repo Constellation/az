@@ -54,7 +54,9 @@
 #include <az/cfa2/cli_completer.h>
 #include <az/cfa2/heap.h>
 #include <az/cfa2/aval.h>
+#include <az/cfa2/jsdoc_collector.h>
 #include <az/cfa2/binding_resolver.h>
+#include <az/cfa2/heap_initializer.h>
 #include <az/cfa2/interpreter.h>
 namespace az {
 namespace cfa2 {
@@ -64,6 +66,11 @@ inline void Complete(FunctionLiteral* global,
                      Heap* heap,
                      const Source& src,
                      Reporter* reporter) {
+  {
+    // collect jsdoc
+    JSDocCollector collector(heap);
+    collector.Collect(global);
+  }
   {
     // resolve binding type
     BindingResolver resolver(heap);

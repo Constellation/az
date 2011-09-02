@@ -4,7 +4,6 @@
 #ifndef AZ_CFA2_BINDING_RESOLVER_H_
 #define AZ_CFA2_BINDING_RESOLVER_H_
 #include <functional>
-#include <iv/noncopyable.h>
 #include <iv/maybe.h>
 #include <az/ast_fwd.h>
 #include <az/symbol.h>
@@ -50,7 +49,7 @@ void BindingResolver::MarkStatements(const Statements& body) {
 void BindingResolver::Visit(FunctionStatement* func) {
   func->set_normal(normal_);
   func->set_raised(raised_);
-  func->function()->Accept(this);
+  Visit(func->function());
 }
 
 void BindingResolver::Visit(FunctionDeclaration* func) {

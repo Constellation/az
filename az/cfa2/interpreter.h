@@ -1391,6 +1391,8 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
                                     target->GetProperty(Intern("prototype")));
       EvaluateFunction(target, AVal(this_binding), args, true);
     } else {
+      // search target in current scope
+      // TODO(Constellation) implement it
       result_.set_result(AVal(AVAL_NOBASE));
     }
   }
