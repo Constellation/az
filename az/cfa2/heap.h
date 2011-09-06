@@ -49,6 +49,10 @@ class Heap : public az::Context {
     std::for_each(heap_.begin(), heap_.end(), Deleter());
     std::for_each(ordered_summaries_.begin(),
                   ordered_summaries_.end(), Deleter());
+    for (WaitingMap::const_iterator it = waiting_result_.begin(),
+         last = waiting_result_.end(); it != last; ++it) {
+      delete it->second;
+    }
   }
 
   // lazy initialization
@@ -1060,8 +1064,7 @@ class Heap : public az::Context {
 
   void InitWaitingResults(FunctionLiteral* lit) {
     assert(waiting_result_.find(lit) == waiting_result_.end());
-    waiting_result_.insert(
-        std::make_pair(lit, std::shared_ptr<ExecutionQueue>(new ExecutionQueue())));
+    waiting_result_.insert(std::make_pair(lit, new ExecutionQueue()));
   }
 
   bool IsWaited(FunctionLiteral* lit) const {
@@ -1251,8 +1254,8 @@ class Heap : public az::Context {
   AVal boolean_object_;
   AVal number_object_;
 
-  typedef std::deque<std::shared_ptr<Execution> > ExecutionQueue;
-  typedef std::unordered_map<const FunctionLiteral*, std::shared_ptr<ExecutionQueue> > WaitingMap;
+  typedef std::vector<std::shared_ptr<Execution> > ExecutionQueue;
+  typedef std::unordered_map<const FunctionLiteral*, ExecutionQueue*> WaitingMap;
   WaitingMap waiting_result_;
 
   std::unordered_set<FunctionLiteral*> not_reachable_functions_;

@@ -5,6 +5,7 @@
 #include <iv/detail/unordered_map.h>
 #include <iv/detail/tuple.h>
 #include <iv/detail/cstdint.h>
+#include <az/deleter.h>
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/result.h>
 #include <az/cfa2/state.h>
@@ -77,7 +78,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
     Result result_;
   };
 
-  typedef std::vector<std::shared_ptr<Entry> > Entries;
+  typedef std::vector<Entry*> Entries;
 
   Summary(FunctionLiteral* function, AObject* obj)
     : function_(function),
@@ -86,6 +87,10 @@ class Summary : private iv::core::Noncopyable<Summary> {
       value_(AVAL_NOBASE),
       type_(function),
       state_(kInvalidState) {
+  }
+
+  ~Summary() {
+    std::for_each(candidates_.begin(), candidates_.end(), Deleter());
   }
 
   bool IsExists() const {
@@ -110,8 +115,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
 
   void AddCandidate(const AVal& this_binding,
                     const std::vector<AVal>& args, const Result& result) {
-    candidates_.push_back(
-        std::shared_ptr<Entry>(new Entry(this_binding, args, result)));
+    candidates_.push_back(new Entry(this_binding, args, result));
   }
 
   void UpdateCandidates(State state,
