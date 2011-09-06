@@ -15,47 +15,51 @@ namespace cfa2 {
 class AObjectFactory : private iv::core::Noncopyable<AObjectFactory> {
  public:
   AObjectFactory()
-    : created_objects_() {
+    : created_objects_(),
+      space_() {
   }
 
   AObject* NewAObject() {
-    // AObject* obj = new (&space_) AObject();
+    AObject* obj = new (&space_) AObject();
     // AObject* obj = new (space_.New(sizeof(AObject))) AObject;
-    AObject* obj = new AObject;
+    // AObject* obj = new AObject;
     created_objects_.push_back(obj);
     return obj;
   }
 
   AObject* NewAObject(FunctionLiteral* func, AVal proto) {
-    // AObject* obj = new (&space_) AObject(func, proto);
+    AObject* obj = new (&space_) AObject(func, proto);
     // AObject* obj = new (space_.New(sizeof(AObject))) AObject(func, proto);
-    AObject* obj = new AObject(func, proto);
+    // AObject* obj = new AObject(func, proto);
     created_objects_.push_back(obj);
     return obj;
   }
 
   AObject* NewAObject(Builtin func, AVal proto) {
-    // AObject* obj = new (&space_) AObject(func, proto);
+    AObject* obj = new (&space_) AObject(func, proto);
     // AObject* obj = new (space_.New(sizeof(AObject))) AObject(func, proto);
-    AObject* obj = new AObject(func, proto);
+    // AObject* obj = new AObject(func, proto);
     created_objects_.push_back(obj);
     return obj;
   }
 
   AObject* NewAObject(AVal proto) {
-    // AObject* obj = new (&space_) AObject(proto);
+    AObject* obj = new (&space_) AObject(proto);
     // AObject* obj = new (space_.New(sizeof(AObject))) AObject(proto);
-    AObject* obj = new AObject(proto);
+    // AObject* obj = new AObject(proto);
     created_objects_.push_back(obj);
     return obj;
   }
 
   ~AObjectFactory() {
     // call destructors
+//    std::for_each(created_objects_.begin(),
+//                  created_objects_.end(), Deleter());
     std::for_each(created_objects_.begin(),
-                  created_objects_.end(), Deleter());
+                  created_objects_.end(), Destructor());
   }
   std::deque<AObject*> created_objects_;
+  iv::core::Space<2> space_;
 };
 
 } }  // namespace az::cfa2

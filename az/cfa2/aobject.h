@@ -53,18 +53,17 @@ void AObject::MergeNumberProperty(Heap* heap) {
   if (number_) {
     return;
   }
-  // tricy code. (remove_if for map/unordered_map)
-  // http://stackoverflow.com/questions/800955/remove-if-equivalent-for-stdmap
   AVal result(AVAL_NOBASE);
+  Properties prop;
   for (Properties::const_iterator it = properties_.begin(),
-       last = properties_.end(); it != last;) {
+       last = properties_.end(); it != last; ++it) {
     if (IsArrayIndexSymbol(it->first)) {
       result |= it->second.value();
-      properties_.erase(it++);
     } else {
-      ++it;
+      prop.insert(*it);
     }
   }
+  properties_ = prop;
   number_ = std::shared_ptr<AVal>(new AVal(result));
   heap->UpdateState();
 }
@@ -115,15 +114,16 @@ void AObject::MergeStringProperty(Heap* heap) {
   }
   MergeNumberProperty(heap);
   AVal result(AVAL_NOBASE);
+  Properties prop;
   for (Properties::const_iterator it = properties_.begin(),
-       last = properties_.end(); it != last;) {
+       last = properties_.end(); it != last; ++it) {
     if (it->second.IsEnumerable()) {
       result |= it->second.value();
-      properties_.erase(it++);
     } else {
-      ++it;
+      prop.insert(*it);
     }
   }
+  properties_ = prop;
   string_ = std::shared_ptr<AVal>(new AVal(result));
   heap->UpdateState();
 }

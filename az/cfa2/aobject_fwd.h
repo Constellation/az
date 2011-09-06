@@ -68,7 +68,8 @@ class AProp {
 
 // abstract object
 class AObject
-  : private iv::core::Noncopyable<AObject> {
+  : public iv::core::SpaceObject,
+    private iv::core::Noncopyable<AObject> {
  public:
   typedef std::unordered_map<Symbol, AProp> Properties;
   AObject()
