@@ -27,6 +27,12 @@ void JSDocCollector::Visit(FunctionDeclaration* func) {
 }
 
 void JSDocCollector::Visit(VariableStatement* var) {
+  for (Declarations::const_iterator it = var->decls().begin(),
+       last = var->decls().end(); it != last; ++it) {
+    if (const iv::core::Maybe<Expression> expr = (*it)->expr()) {
+      expr.Address()->Accept(this);
+    }
+  }
 }
 
 void JSDocCollector::Visit(EmptyStatement* stmt) {
@@ -91,6 +97,13 @@ void JSDocCollector::Visit(LabelledStatement* stmt) {
 }
 
 void JSDocCollector::Visit(SwitchStatement* stmt) {
+  typedef SwitchStatement::CaseClauses CaseClauses;
+  const CaseClauses& clauses = stmt->clauses();
+  stmt->expr()->Accept(this);
+  for (CaseClauses::const_iterator it = clauses.begin(),
+       last = clauses.end(); it != last; ++it) {
+    Visit(*it);
+  }
 }
 
 void JSDocCollector::Visit(CaseClause* clause) {
@@ -101,6 +114,13 @@ void JSDocCollector::Visit(ThrowStatement* stmt) {
 }
 
 void JSDocCollector::Visit(TryStatement* stmt) {
+  stmt->body()->Accept(this);
+  if (const iv::core::Maybe<Block> block = stmt->catch_block()) {
+    Visit(block.Address());
+  }
+  if (const iv::core::Maybe<Block> block = stmt->finally_block()) {
+    Visit(block.Address());
+  }
 }
 
 void JSDocCollector::Visit(DebuggerStatement* stmt) {
@@ -121,6 +141,7 @@ void JSDocCollector::Visit(Assignment* assign) {
       heap_->Tag(literal, info);
       if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||
           info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+        DebugLog("@constructor / @interface found");
         heap_->registry()->RegisterAssignedType(assign->left(), literal);
       }
     }
@@ -188,6 +209,9 @@ void JSDocCollector::Visit(ObjectLiteral* literal) {
 }
 
 void JSDocCollector::Visit(FunctionLiteral* literal) {
+  std::for_each(literal->body().begin(),
+                literal->body().end(),
+                Acceptor<JSDocCollector>(this));
   // tagging jsdoc information
   if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
     if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||

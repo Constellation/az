@@ -147,6 +147,7 @@ void Interpreter::Visit(VariableStatement* var) {
     AVal from_jsdoc(AVAL_NOBASE);
     if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(ident)) {
       if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_TYPE)) {
+        DebugLog("@type found");
         jsdoc_type_is_found = true;
         assert(tag->type());
         tag->type()->Accept(this);
