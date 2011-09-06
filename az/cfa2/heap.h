@@ -45,6 +45,12 @@ class Heap : public az::Context {
       registry_() {
   }
 
+  ~Heap() {
+    std::for_each(heap_.begin(), heap_.end(), Deleter());
+    std::for_each(ordered_summaries_.begin(),
+                  ordered_summaries_.end(), Deleter());
+  }
+
   // lazy initialization
   void InitializeCFA2(AstFactory* ast_factory,
                       Completer* completer,
@@ -872,10 +878,6 @@ class Heap : public az::Context {
         AProp(AVal(factory_.NewAObject(TO_STRING, function_prototype_)), A::W | A::C));
   }
 
-  ~Heap() {
-    std::for_each(heap_.begin(), heap_.end(), Deleter());
-  }
-
   // create new binding object
   Binding* Instantiate(Symbol name) {
     Binding* binding = new Binding(name, Binding::STACK);
@@ -972,16 +974,16 @@ class Heap : public az::Context {
   }
 
   void InitSummary(FunctionLiteral* literal, AObject* func) {
-    std::shared_ptr<Summary> summary(new Summary(literal, func));
+    Summary* summary(new Summary(literal, func));
     assert(summaries_.find(literal) == summaries_.end());
     summaries_.insert(std::make_pair(literal, summary));
-    ordered_summaries_.push_back(summary.get());
+    ordered_summaries_.push_back(summary);
   }
 
   bool FindSummary(AObject* func,
                    const AVal& this_binding,
                    const std::vector<AVal>& args, Result* result) const {
-    std::shared_ptr<Summary> summary = GetSummaryByFunction(func->function());
+    Summary* summary = GetSummaryByFunction(func->function());
     if (summary->state() < state_) {
       // out of date summary
       return false;
@@ -1002,7 +1004,7 @@ class Heap : public az::Context {
     return false;
   }
 
-  std::shared_ptr<Summary> GetSummaryByFunction(FunctionLiteral* literal) const {
+  Summary* GetSummaryByFunction(FunctionLiteral* literal) const {
     Summaries::const_iterator it = summaries_.find(literal);
     assert(it != summaries_.end());
     return it->second;
@@ -1012,7 +1014,7 @@ class Heap : public az::Context {
                   State state,
                   const AVal& this_binding,
                   const std::vector<AVal>& args, const Result& result) {
-    std::shared_ptr<Summary> summary = GetSummaryByFunction(func->function());
+    Summary* summary = GetSummaryByFunction(func->function());
     if (summary->state() == state) {
       summary->AddCandidate(this_binding, args, result);
     } else if (summary->state() < state) {

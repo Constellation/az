@@ -147,7 +147,7 @@ class Summary : private iv::core::Noncopyable<Summary> {
   State state_;
 };
 
-typedef std::unordered_map<FunctionLiteral*, std::shared_ptr<Summary> > Summaries;
+typedef std::unordered_map<FunctionLiteral*, Summary*> Summaries;
 
 } }  // namespace az::cfa2
 #endif  // AZ_CFA2_SUMMARY_H_

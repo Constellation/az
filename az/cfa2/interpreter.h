@@ -110,7 +110,7 @@ void Interpreter::Run(FunctionLiteral* global) {
     } else {
       Completer* completer = heap_->completer();
       FunctionLiteral* compl_literal = completer->GetTargetFunction();
-      std::shared_ptr<Summary> summary =
+      Summary* summary =
           heap_->GetSummaryByFunction(compl_literal);
       const Summary::Entry& entry = summary->type();
       EvaluateFunction(summary->target(),

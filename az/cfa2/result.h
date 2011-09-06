@@ -14,7 +14,6 @@ class Result {
       has_exception_(false) {
   }
 
-
   explicit Result(AVal result)
     : result_(result),
       exception_(AVAL_NOBASE),
