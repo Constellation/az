@@ -81,7 +81,7 @@ def Build():
     env.Append(CCFLAGS=["-g3", "-Werror"])
   else:
     env.Append(
-        CCFLAGS=["-O3"],
+        CCFLAGS=["-O3", "-fomit-frame-pointer"],
         CPPDEFINES=["NDEBUG"])
 
   env.Append(
