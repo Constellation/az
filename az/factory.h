@@ -9,6 +9,7 @@
 #include <iv/maybe.h>
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
+#include <az/symbol.h>
 namespace az {
 
 class AstFactory
@@ -31,6 +32,7 @@ class AstFactory
                             std::size_t begin,
                             std::size_t end) {
     Identifier* ident = new(this)Identifier(range, this);
+    ident->set_symbol(Intern(ident->value()));
     ident->set_type(type);
     ident->Location(begin, end);
     return ident;

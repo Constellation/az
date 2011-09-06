@@ -77,8 +77,18 @@ class IdentifierBase<az::AstFactory>
   az::cfa2::Binding::Type binding_type() const {
     return binding_type_;
   }
+
+  void set_symbol(az::Symbol sym) {
+    sym_ = sym;
+  }
+
+  az::Symbol symbol() const {
+    return sym_;
+  }
+
  private:
   core::Token::Type type_;
+  az::Symbol sym_;
   az::cfa2::Binding* refer_;
   az::cfa2::Binding::Type binding_type_;
 };

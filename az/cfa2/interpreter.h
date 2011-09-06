@@ -33,8 +33,7 @@ void Interpreter::Run(FunctionLiteral* global) {
     assert(binding);
     const AVal val(heap_->GetDeclObject(*it));
     frame.Set(heap_, binding, val);
-    heap_->GetGlobal().UpdateProperty(heap_,
-                                      Intern(ident->value()), val);
+    heap_->GetGlobal().UpdateProperty(heap_, ident->symbol(), val);
   }
 
   // then interpret global function
@@ -175,9 +174,7 @@ void Interpreter::Visit(VariableStatement* var) {
       if (heap_->IsDeclaredHeapBinding(binding)) {
         // Global variable
         heap_->UpdateHeap(binding, val);
-        heap_->GetGlobal().UpdateProperty(heap_,
-                                          Intern(ident->value()),
-                                          val);
+        heap_->GetGlobal().UpdateProperty(heap_, ident->symbol(), val);
       }
     }
   }
@@ -654,7 +651,7 @@ void Interpreter::Visit(Identifier* ident) {
   } else {
     // not found => global lookup
     result_ = Result(
-        heap_->GetGlobal().GetProperty(heap_, Intern(ident->value())));
+        heap_->GetGlobal().GetProperty(heap_, ident->symbol()));
   }
 }
 
@@ -715,7 +712,7 @@ void Interpreter::Visit(ObjectLiteral* literal) {
     if (std::get<0>(prop) == ObjectLiteral::DATA) {
       std::get<2>(prop)->Accept(this);
       Identifier* ident = std::get<1>(prop);
-      obj->UpdateProperty(heap_, Intern(ident->value()), result_.result());
+      obj->UpdateProperty(heap_, ident->symbol(), result_.result());
       if (result_.HasException())  {
         // error found
         error_found = true;
@@ -805,7 +802,7 @@ void Interpreter::Visit(IdentifierAccess* prop) {
   const MethodTargetGuard method_target_guard(this, prop);
   prop->target()->Accept(this);
   base_ = result_.result().ToObject(heap_);
-  const AVal refer = base_.GetProperty(heap_, Intern(prop->key()->value()));
+  const AVal refer = base_.GetProperty(heap_, prop->key()->symbol());
   result_.set_result(refer);
 }
 
@@ -1091,16 +1088,12 @@ Result Interpreter::Assign(Expression* lhs, Result res) {
         if (heap_->IsDeclaredHeapBinding(binding)) {
           // global binding
           heap_->UpdateHeap(binding, val);
-          heap_->GetGlobal().UpdateProperty(heap_,
-                                            Intern(ident->value()),
-                                            val);
+          heap_->GetGlobal().UpdateProperty(heap_, ident->symbol(), val);
         }
       }
     } else {
       // global assignment
-      heap_->GetGlobal().UpdateProperty(heap_,
-                                        Intern(ident->value()),
-                                        res.result());
+      heap_->GetGlobal().UpdateProperty(heap_, ident->symbol(), res.result());
     }
     return res;
   } else if (lhs->AsCall()) {
@@ -1116,7 +1109,7 @@ Result Interpreter::Assign(Expression* lhs, Result res) {
   } else {
     assert(lhs->AsPropertyAccess());
     if (IdentifierAccess* identac = lhs->AsIdentifierAccess()) {
-      const Symbol key = Intern(identac->key()->value());
+      const Symbol key = identac->key()->symbol();
       identac->target()->Accept(this);
       const Result target(result_);
       target.result().UpdateProperty(heap_, key, res.result());
