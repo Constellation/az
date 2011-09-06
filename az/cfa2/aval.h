@@ -102,6 +102,20 @@ void AVal::Construct(Heap* heap,
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
     if ((*it)->IsFunction()) {
+      if (FunctionLiteral* literal = (*it)->AsJSFunction()) {
+        // jsdoc @extends / @interface check
+        // TODO(Constellation) lookup only prototype and set
+        if (std::shared_ptr<jsdoc::Info> info = heap->GetInfo(literal)) {
+          if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_IMPLEMENTS)) {
+            tag->type()->Accept(interp);
+            this_binding->UpdatePrototype(heap, interp->result().result());
+          }
+          if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_EXTENDS)) {
+            tag->type()->Accept(interp);
+            this_binding->UpdatePrototype(heap, interp->result().result());
+          }
+        }
+      }
       this_binding->UpdatePrototype(heap, (*it)->GetProperty(Intern("prototype")));
       res |= interp->EvaluateFunction(*it, base, args, true);
     }

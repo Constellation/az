@@ -1449,6 +1449,18 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
       AObject* target = heap_->GetDeclObject(literal);
       this_binding->UpdatePrototype(heap_,
                                     target->GetProperty(Intern("prototype")));
+      // jsdoc @extends / @interface check
+      // TODO(Constellation) lookup only prototype and set
+      if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+        if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_IMPLEMENTS)) {
+          tag->type()->Accept(this);
+          this_binding->UpdatePrototype(heap_, result_.result());
+        }
+        if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_EXTENDS)) {
+          tag->type()->Accept(this);
+          this_binding->UpdatePrototype(heap_, result_.result());
+        }
+      }
       DebugLog(*node->value());
       // not call FunctionLiteral
       // because FunctionLiteral parses TypeExpression @return, so may recur
