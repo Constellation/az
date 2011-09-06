@@ -1,3 +1,4 @@
+// collect @constructor / @interface jsdoc information
 #ifndef AZ_CFA2_JSDOC_COLLECTOR_H_
 #define AZ_CFA2_JSDOC_COLLECTOR_H_
 #include <algorithm>
@@ -114,6 +115,16 @@ void JSDocCollector::Visit(ExpressionStatement* stmt) {
 void JSDocCollector::Visit(Assignment* assign) {
   assign->left()->Accept(this);
   assign->right()->Accept(this);
+  if (FunctionLiteral* literal = assign->right()->AsFunctionLiteral()) {
+    if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(assign)) {
+      // adding jsdoc to function
+      heap_->Tag(literal, info);
+      if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||
+          info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+        heap_->registry()->RegisterAssignedType(assign->left(), literal);
+      }
+    }
+  }
 }
 
 void JSDocCollector::Visit(BinaryOperation* binary) {
@@ -177,6 +188,13 @@ void JSDocCollector::Visit(ObjectLiteral* literal) {
 }
 
 void JSDocCollector::Visit(FunctionLiteral* literal) {
+  // tagging jsdoc information
+  if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
+    if (info->GetTag(jsdoc::Token::TK_CONSTRUCTOR) ||
+        info->GetTag(jsdoc::Token::TK_INTERFACE)) {
+      heap_->registry()->RegisterNamedType(literal);
+    }
+  }
 }
 
 void JSDocCollector::Visit(IdentifierAccess* prop) {
