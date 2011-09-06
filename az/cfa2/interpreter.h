@@ -221,9 +221,7 @@ void Interpreter::Visit(ForInStatement* stmt) {
 
   // too heavy...
   // so turn off this option
-  DebugLog("FOR IN?");
   if (heap_->for_in_handling()) {
-    DebugLog("FOR IN");
     const AVal res = result_.result();
     if (ident) {
       if (Binding* binding = ident->refer()) {
@@ -242,7 +240,6 @@ void Interpreter::Visit(ForInStatement* stmt) {
                 if (it2->second.IsEnumerable() &&
                     already.find(it2->first) == already.end()) {
                   already.insert(it2->first);
-                  DebugLog(GetSymbolString(it2->first));
                   CurrentFrame()->Set(
                       heap_, binding, AVal(GetSymbolString(it2->first)));
                   // effective->Accept(this);
@@ -1437,7 +1434,6 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
     result_.set_result(AVAL_BOOL);
   } else {
     // class lookup
-    //
     // see type registry
     if (FunctionLiteral* literal = heap_->registry()->GetRegisteredConstructorOrInterface(*node->value())) {
       const std::vector<AVal> args;
@@ -1461,7 +1457,6 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
           this_binding->UpdatePrototype(heap_, result_.result());
         }
       }
-      DebugLog(*node->value());
       // not call FunctionLiteral
       // because FunctionLiteral parses TypeExpression @return, so may recur
       result_.set_result(AVal(this_binding));
