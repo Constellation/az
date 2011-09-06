@@ -273,7 +273,7 @@ void Interpreter::Visit(ReturnStatement* stmt) {
   if (const iv::core::Maybe<Expression> expr = stmt->expr()) {
     expr.Address()->Accept(this);
   } else {
-    result_ = Result(AVal(AVAL_UNDEFINED));
+    result_.Reset(AVAL_UNDEFINED);
   }
 }
 
@@ -573,21 +573,21 @@ void Interpreter::Visit(UnaryOperation* unary) {
     case Token::TK_DELETE: {
       // if no error occurred, this always returns BOOL / UNDEFINED
       unary->expr()->Accept(this);
-      result_.set_result(AVal(AVAL_BOOL) | AVal(AVAL_UNDEFINED));
+      result_.set_result(AVAL_BOOL | AVAL_UNDEFINED);
       break;
     }
 
     case Token::TK_VOID: {
       // if no error occurred, this always returns UNDEFINED
       unary->expr()->Accept(this);
-      result_.set_result(AVal(AVAL_UNDEFINED));
+      result_.set_result(AVAL_UNDEFINED);
       break;
     }
 
     case Token::TK_TYPEOF: {
       // if no error occurred, this always returns STRING
       unary->expr()->Accept(this);
-      result_.set_result(AVal(AVAL_STRING));
+      result_.set_result(AVAL_STRING);
       break;
     }
 
@@ -598,19 +598,19 @@ void Interpreter::Visit(UnaryOperation* unary) {
     case Token::TK_BIT_NOT: {
       // if no error occurred, this always returns NUMBER
       unary->expr()->Accept(this);
-      result_.set_result(AVal(AVAL_NUMBER));
+      result_.set_result(AVAL_NUMBER);
       break;
     }
 
     case Token::TK_NOT: {
       unary->expr()->Accept(this);
       if (result_.result().IsTrue()) {
-        result_.set_result(AVal(AVAL_TRUE));
+        result_.set_result(AVAL_TRUE);
       } else if (result_.result().IsFalse()) {
-        result_.set_result(AVal(AVAL_FALSE));
+        result_.set_result(AVAL_FALSE);
       } else {
         // indeterminate
-        result_.set_result(AVal(AVAL_BOOL));
+        result_.set_result(AVAL_BOOL);
       }
       break;
     }
@@ -623,7 +623,7 @@ void Interpreter::Visit(UnaryOperation* unary) {
 void Interpreter::Visit(PostfixExpression* postfix) {
   const MethodTargetGuard method_target_guard(this, postfix);
   postfix->expr()->Accept(this);
-  result_.set_result(AVal(AVAL_NUMBER));
+  result_.set_result(AVAL_NUMBER);
 }
 
 void Interpreter::Visit(StringLiteral* literal) {
@@ -633,7 +633,7 @@ void Interpreter::Visit(StringLiteral* literal) {
 
 void Interpreter::Visit(NumberLiteral* literal) {
   const MethodTargetGuard method_target_guard(this, literal);
-  result_ = Result(AVal(AVAL_NUMBER));
+  result_.Reset(AVAL_NUMBER);
 }
 
 void Interpreter::Visit(Identifier* ident) {
@@ -662,17 +662,17 @@ void Interpreter::Visit(ThisLiteral* literal) {
 
 void Interpreter::Visit(NullLiteral* literal) {
   const MethodTargetGuard method_target_guard(this, literal);
-  result_ = Result(AVal(AVAL_NULL));
+  result_.Reset(AVAL_NULL);
 }
 
 void Interpreter::Visit(TrueLiteral* literal) {
   const MethodTargetGuard method_target_guard(this, literal);
-  result_ = Result(AVal(AVAL_TRUE));
+  result_.Reset(AVAL_TRUE);
 }
 
 void Interpreter::Visit(FalseLiteral* literal) {
   const MethodTargetGuard method_target_guard(this, literal);
-  result_ = Result(AVal(AVAL_FALSE));
+  result_.Reset(AVAL_FALSE);
 }
 
 void Interpreter::Visit(RegExpLiteral* literal) {
@@ -825,7 +825,7 @@ void Interpreter::Visit(IndexAccess* prop) {
   } else if (keyr.HasNumber()) {
     res.set_result(base_.GetNumberProperty(heap_));
   } else {
-    res.set_result(AVal(AVAL_NOBASE));
+    res.set_result(AVAL_NOBASE);
   }
   if (error_found) {
     AVal ex(AVAL_NOBASE);
@@ -1036,7 +1036,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
         // if result value is NOBASE (no return statement),
         // add undefined
         if (result_.result() == AVal(AVAL_NOBASE)) {
-          result_.set_result(AVal(AVAL_UNDEFINED));
+          result_.set_result(AVAL_UNDEFINED);
         }
       }
 
@@ -1159,7 +1159,7 @@ Result Interpreter::Assign(Assignment* assign, Result res, AVal old) {
     if (assign->op() == iv::core::Token::TK_ASSIGN_ADD) {
       res.set_result(res.result() + old);
     } else {
-      res.set_result(AVal(AVAL_NUMBER));
+      res.set_result(AVAL_NUMBER);
     }
   }
   return Assign(lhs, res);
@@ -1273,7 +1273,7 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
         // if result value is NOBASE (no return statement),
         // add undefined
         if (result_.result() == AVal(AVAL_NOBASE)) {
-          result_.set_result(AVal(AVAL_UNDEFINED));
+          result_.set_result(AVAL_UNDEFINED);
         }
       }
 
@@ -1315,7 +1315,7 @@ Statement* Interpreter::GetFirstEffectiveStatement(Statement* target) {
 
 void Interpreter::Visit(jsdoc::PrefixQuestionExpression* node) {
   node->expr()->Accept(this);
-  result_.MergeResult(AVal(AVAL_NULL));
+  result_.MergeResult(AVAL_NULL);
 }
 
 void Interpreter::Visit(jsdoc::PrefixBangExpression* node) {
@@ -1327,7 +1327,7 @@ void Interpreter::Visit(jsdoc::PrefixBangExpression* node) {
 
 void Interpreter::Visit(jsdoc::PostfixQuestionExpression* node) {
   node->expr()->Accept(this);
-  result_.MergeResult(AVal(AVAL_NULL));
+  result_.MergeResult(AVAL_NULL);
 }
 
 void Interpreter::Visit(jsdoc::PostfixBangExpression* node) {
@@ -1338,23 +1338,23 @@ void Interpreter::Visit(jsdoc::PostfixBangExpression* node) {
 }
 
 void Interpreter::Visit(jsdoc::QuestionLiteral* node) {
-  result_ = Result(AVal(AVAL_NOBASE));
+  result_.Reset(AVAL_NOBASE);
 }
 
 void Interpreter::Visit(jsdoc::StarLiteral* node) {
-  result_ = Result(AVal(AVAL_NOBASE));
+  result_.Reset(AVAL_NOBASE);
 }
 
 void Interpreter::Visit(jsdoc::NullLiteral* node) {
-  result_ = Result(AVal(AVAL_NULL));
+  result_.Reset(AVAL_NULL);
 }
 
 void Interpreter::Visit(jsdoc::UndefinedLiteral* node) {
-  result_ = Result(AVal(AVAL_UNDEFINED));
+  result_.Reset(AVAL_UNDEFINED);
 }
 
 void Interpreter::Visit(jsdoc::VoidLiteral* node) {
-  result_ = Result(AVal(AVAL_UNDEFINED));
+  result_.Reset(AVAL_UNDEFINED);
 }
 
 void Interpreter::Visit(jsdoc::UnionType* node) {
@@ -1429,11 +1429,11 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
   jsdoc::NameString* str = node->value();
   // primitive type check phase
   if (IsEqualIgnoreCase(*str, "string")) {
-    result_.set_result(AVal(AVAL_STRING));
+    result_.set_result(AVAL_STRING);
   } else if (IsEqualIgnoreCase(*str, "number")) {
-    result_.set_result(AVal(AVAL_NUMBER));
+    result_.set_result(AVAL_NUMBER);
   } else if (IsEqualIgnoreCase(*str, "boolean")) {
-    result_.set_result(AVal(AVAL_BOOL));
+    result_.set_result(AVAL_BOOL);
   } else {
     // class lookup
     //
@@ -1455,7 +1455,7 @@ void Interpreter::Visit(jsdoc::NameExpression* node) {
     } else {
       // search target in current scope
       // TODO(Constellation) implement it
-      result_.set_result(AVal(AVAL_NOBASE));
+      result_.set_result(AVAL_NOBASE);
     }
   }
 }

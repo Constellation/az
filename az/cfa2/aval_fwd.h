@@ -97,8 +97,8 @@ class AVal {
     return objects_;
   }
 
-  void Reset() {
-    base_ = AVAL_NOBASE;
+  void Reset(int base = AVAL_NOBASE) {
+    base_ = base;
     str_.reset();
     objects_.clear();
   }
@@ -168,6 +168,7 @@ class AVal {
     }
     base_ |= rhs;
   }
+
 
   friend AVal operator|(const AVal& lhs, const AVal& rhs) {
     AVal res(lhs);

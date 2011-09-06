@@ -40,6 +40,10 @@ class Result {
     result_ = res;
   }
 
+  void set_result(int base) {
+    result_.Reset(base);
+  }
+
   const AVal& exception() const {
     return exception_;
   }
@@ -77,6 +81,12 @@ class Result {
 
   void Reset() {
     result_.Reset();
+    has_exception_ = false;
+    exception_.Reset();
+  }
+
+  void Reset(int base) {
+    result_.Reset(base);
     has_exception_ = false;
     exception_.Reset();
   }
