@@ -39,15 +39,15 @@ class StructuredSource : private iv::core::Noncopyable<StructuredSource> {
 
         // ECMA262 LineTerminators
         LTType type =
-            (ch == character::CR) ? LF :
-            (ch == character::LF) ? CR :
+            (ch == character::CR) ? CR :
+            (ch == character::LF) ? LF :
             (ch == 0x2028) ? U2028 : U2029;
 
         if (type == CR) {
           iv::core::UStringPiece::const_iterator next_it = it;
           ++next_it;
           if (next_it != last) {
-            if (*next_it == LF) {
+            if (*next_it == character::LF) {
               type = CRLF;
               it = next_it;
               ++pos;
