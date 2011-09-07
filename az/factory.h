@@ -13,13 +13,9 @@
 namespace az {
 
 class AstFactory
-  : public iv::core::Space<2>,
+  : public iv::core::Space<1>,
     private iv::core::Noncopyable<AstFactory> {
  public:
-  AstFactory()
-    : iv::core::Space<2>() {
-  }
-
   Scope* NewScope(FunctionLiteral::DeclType type) {
     Scope* scope = new (this) Scope(this, type == FunctionLiteral::GLOBAL);
     scope->literals_ = NewVector<FunctionLiteral*>();

@@ -11,6 +11,7 @@
 #include <iv/unicode.h>
 #include <iv/cmdline.h>
 #include <iv/debug.h>
+#include <iv/scoped_ptr.h>
 #include <az/factory.h>
 #include <az/analyzer.h>
 #include <az/reporter.h>
@@ -21,10 +22,28 @@
 #include <az/symbol.h>
 #include <az/debug_log.h>
 #include <az/cfa2.h>
+#include <fstream>
 namespace {
 
 bool ReadFile(const std::string& filename, std::vector<char>* out) {
-  if (std::FILE* fp = std::fopen(filename.c_str(), "r")) {
+#if 0
+	std::ifstream ifs(filename.c_str(), std::ios::binary);
+	if (!ifs) {
+	    std::string err = "az can't open \"" + filename + "\"";
+		std::perror(err.c_str());
+		return false;
+	}
+	ifs.seekg(0, std::ifstream::end);
+	const size_t size = ifs.tellg();
+	if (size == 0) {
+		return true;
+	}
+	ifs.seekg(0);
+	out->resize(size);
+	ifs.read(&(*out)[0], size);
+	return true;
+#else
+  if (std::FILE* fp = std::fopen(filename.c_str(), "rb")) {
     std::array<char, 1024> buf;
     while (const std::size_t len = std::fread(
             buf.data(),
@@ -41,15 +60,16 @@ bool ReadFile(const std::string& filename, std::vector<char>* out) {
     std::perror(err.c_str());
     return false;
   }
+#endif
 }
 
 inline bool ParsePulseOption(const std::string& format,
                              std::pair<std::size_t, std::size_t>* res) {
-  uint64_t line;
-  uint64_t column;
+  unsigned int line;
+  unsigned int column;
   if (std::sscanf(  // NOLINT
           format.c_str(),
-          "%"SCNu64 ":" "%"SCNu64, &line, &column) != 2) {
+          "%u:%u", &line, &column) != 2) {
     return false;
   }
   res->first = line;
@@ -89,23 +109,23 @@ inline int Pulse(const std::vector<char>& preload,
   if (iv::core::unicode::UTF8ToUTF16(
           preload.begin(),
           preload.end(),
-          std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
+          std::back_inserter(src)) != iv::core::unicode::UNICODE_NO_ERROR) {
     std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
     return EXIT_FAILURE;
   }
   src.append(script);
-
   const az::StructuredSource structured(src);
   az::EmptyReporter reporter;
-  az::AstFactory factory;
+
+  iv::core::ScopedPtr<az::AstFactory> factory(new az::AstFactory());
   az::cfa2::CLICompleter completer;
   az::CompleteLexer lexer(src, offset);
   az::cfa2::Heap ctx;
-  Parser parser(&ctx, &factory, src, &lexer, &reporter, &completer, structured);
+  Parser parser(&ctx, factory.get(), src, &lexer, &reporter, &completer, structured);
   az::FunctionLiteral* const global = parser.ParseProgram();
   assert(global);
   if (completer.HasCompletionPoint()) {
-    ctx.InitializeCFA2(&factory, &completer, for_in_handling);
+    ctx.InitializeCFA2(factory.get(), &completer, for_in_handling);
     az::cfa2::Complete(global, &ctx, src, &reporter);
     completer.Output();
   }
@@ -203,11 +223,12 @@ int main(int argc, char** argv) {
     if (iv::core::unicode::UTF8ToUTF16(
             script.begin(),
             script.end(),
-            std::back_inserter(script_source)) != iv::core::unicode::NO_ERROR) {
+            std::back_inserter(script_source)) != iv::core::unicode::UNICODE_NO_ERROR) {
       std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
       return EXIT_FAILURE;
     }
-    return Pulse(res, script_source, format, cmd.Exist("for-in-handling"));
+    int ret = Pulse(res, script_source, format, cmd.Exist("for-in-handling"));
+	return ret;
   } else {
     if (!ReadFile(rest.front(), &res)) {
       return EXIT_FAILURE;
@@ -217,7 +238,7 @@ int main(int argc, char** argv) {
     if (iv::core::unicode::UTF8ToUTF16(
             res.begin(),
             res.end(),
-            std::back_inserter(src)) != iv::core::unicode::NO_ERROR) {
+            std::back_inserter(src)) != iv::core::unicode::UNICODE_NO_ERROR) {
       std::fprintf(stderr, "%s\n", "invalid UTF-8 encoding file");
       return EXIT_FAILURE;
     }

@@ -187,7 +187,7 @@ iv::core::UString AVal::ToTypeString(Heap* heap) const {
   std::set<iv::core::UString> types;
   iv::core::UString str;
   // base type searching
-  for (std::array<Pair, 5>::const_iterator it = kBase.begin(),
+  for (std::array<Pair, 7>::const_iterator it = kBase.begin(),
        last = kBase.end(); it != last; ++it) {
     if ((it->type & base_) == it->type) {
       // include this base type
