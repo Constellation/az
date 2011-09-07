@@ -10,10 +10,11 @@
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
 #include <az/symbol.h>
+#include <az/cfa2/binding.h>
 namespace az {
 
 class AstFactory
-  : public iv::core::Space<1>,
+  : public iv::core::Space,
     private iv::core::Noncopyable<AstFactory> {
  public:
   Scope* NewScope(FunctionLiteral::DeclType type) {
@@ -30,6 +31,8 @@ class AstFactory
     Identifier* ident = new(this)Identifier(range, this);
     ident->set_symbol(Intern(ident->value()));
     ident->set_type(type);
+    ident->set_refer(NULL);
+    ident->set_binding_type(cfa2::Binding::NONE);
     ident->Location(begin, end);
     return ident;
   }
@@ -149,30 +152,35 @@ class AstFactory
   EmptyStatement* NewEmptyStatement(std::size_t begin, std::size_t end) {
     EmptyStatement* empty = new (this) EmptyStatement();
     empty->Location(begin, end);
+    empty->set_is_failed_node(false);
     return empty;
   }
 
   DebuggerStatement* NewDebuggerStatement(std::size_t begin, std::size_t end) {
     DebuggerStatement* debug = new (this) DebuggerStatement();
     debug->Location(begin, end);
+    debug->set_is_failed_node(false);
     return debug;
   }
 
   FunctionStatement* NewFunctionStatement(FunctionLiteral* func) {
     FunctionStatement* stmt = new (this) FunctionStatement(func);
     stmt->Location(func->begin_position(), func->end_position());
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
   FunctionDeclaration* NewFunctionDeclaration(FunctionLiteral* func) {
     FunctionDeclaration* decl = new (this) FunctionDeclaration(func);
     decl->Location(func->begin_position(), func->end_position());
+    decl->set_is_failed_node(false);
     return decl;
   }
 
   Block* NewBlock(Statements* body, std::size_t begin, std::size_t end) {
     Block* block = new (this) Block(body);
     block->Location(begin, end);
+    block->set_is_failed_node(false);
     return block;
   }
 
@@ -183,6 +191,7 @@ class AstFactory
     assert(!decls->empty());
     VariableStatement* var = new (this) VariableStatement(token, decls);
     var->Location(begin, end);
+    var->set_is_failed_node(false);
     return var;
   }
 
@@ -204,6 +213,7 @@ class AstFactory
     const std::size_t end = (else_statement) ?
         (*else_statement).end_position() : then_statement->end_position();
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -213,6 +223,7 @@ class AstFactory
                                         std::size_t end) {
     DoWhileStatement* stmt = new (this) DoWhileStatement(body, cond);
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -222,6 +233,7 @@ class AstFactory
     assert(body && cond);
     WhileStatement* stmt = new (this) WhileStatement(body, cond);
     stmt->Location(begin, body->end_position());
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -232,6 +244,7 @@ class AstFactory
     assert(body);
     ForInStatement* stmt = new (this) ForInStatement(body, each, enumerable);
     stmt->Location(begin, body->end_position());
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -243,12 +256,14 @@ class AstFactory
     assert(body);
     ForStatement* stmt = new (this) ForStatement(body, init, cond, next);
     stmt->Location(begin, body->end_position());
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
   ExpressionStatement* NewExpressionStatement(Expression* expr, std::size_t end) {
     ExpressionStatement* stmt = new (this) ExpressionStatement(expr);
     stmt->Location(expr->begin_position(), end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -258,6 +273,7 @@ class AstFactory
                                           std::size_t end) {
     ContinueStatement* stmt = new (this) ContinueStatement(label, target);
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -267,6 +283,7 @@ class AstFactory
                                     std::size_t end) {
     BreakStatement* stmt = new (this) BreakStatement(label, target);
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -275,6 +292,7 @@ class AstFactory
                                       std::size_t end) {
     ReturnStatement* stmt = new (this) ReturnStatement(expr);
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -283,6 +301,7 @@ class AstFactory
     assert(body);
     WithStatement* stmt = new (this) WithStatement(expr, body);
     stmt->Location(begin, body->end_position());
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -290,6 +309,7 @@ class AstFactory
                                       std::size_t begin, std::size_t end) {
     SwitchStatement* stmt = new (this) SwitchStatement(expr, clauses);
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -309,6 +329,7 @@ class AstFactory
     assert(expr);
     ThrowStatement* stmt = new (this) ThrowStatement(expr);
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
@@ -325,12 +346,14 @@ class AstFactory
     const std::size_t end = (finally_block) ?
         (*finally_block).end_position() : (*catch_block).end_position();
     stmt->Location(begin, end);
+    stmt->set_is_failed_node(false);
     return stmt;
   }
 
   LabelledStatement* NewLabelledStatement(Expression* expr, Statement* stmt) {
     LabelledStatement* label = new (this) LabelledStatement(expr, stmt);
     label->Location(expr->begin_position(), stmt->end_position());
+    label->set_is_failed_node(false);
     return label;
   }
 

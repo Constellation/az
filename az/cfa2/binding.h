@@ -14,7 +14,8 @@ class Binding : private iv::core::Noncopyable<Binding> {
   enum Type {
     STACK = 0,
     HEAP,
-    GLOBAL
+    GLOBAL,
+    NONE
   };
 
   explicit Binding(Symbol name, Type type)
