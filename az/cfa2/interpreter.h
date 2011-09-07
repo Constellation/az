@@ -9,6 +9,7 @@
 #include <az/cfa2/result.h>
 #include <az/cfa2/type_registry.h>
 #include <az/cfa2/param_type_matcher.h>
+#include <az/cfa2/type_interpreter.h>
 #include <az/cfa2/method_target_guard.h>
 namespace az {
 namespace cfa2 {
@@ -68,8 +69,10 @@ void Interpreter::Run(FunctionLiteral* global) {
         if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_THIS)) {
           // @this is specified
           assert(tag->type());
-          tag->type()->Accept(this);
-          EvaluateFunction(target, result_.result(), vec, false);
+          EvaluateFunction(
+              target,
+              TypeInterpreter::Interpret(heap_, tag->type()),
+              vec, false);
           continue;
         }
       }
@@ -150,8 +153,7 @@ void Interpreter::Visit(VariableStatement* var) {
         DebugLog("@type found");
         jsdoc_type_is_found = true;
         assert(tag->type());
-        tag->type()->Accept(this);
-        from_jsdoc = result_.result();
+        from_jsdoc = TypeInterpreter::Interpret(heap_, tag->type());
       }
     }
 
@@ -229,9 +231,7 @@ void Interpreter::Visit(ForInStatement* stmt) {
           Result prev = result_;
           // limit different name symbol only
           std::unordered_set<Symbol> already;
-          // too heavy, so only one statement allowed...
-          // very heuristic...
-          if (Statement* effective = GetFirstEffectiveStatement(stmt->body())) {
+          if (stmt->normal() != stmt->end()) {
             for (AVal::ObjectSet::const_iterator it = res.objects().begin(),
                  last = res.objects().end(); it != last; ++it) {
               AObject* obj = *it;
@@ -242,8 +242,7 @@ void Interpreter::Visit(ForInStatement* stmt) {
                   already.insert(it2->first);
                   CurrentFrame()->Set(
                       heap_, binding, AVal(GetSymbolString(it2->first)));
-                  // effective->Accept(this);
-                  Interpret(effective, stmt->end());
+                  Interpret(stmt->normal(), stmt->end());
                 }
               }
               if (already.size() > 20) {
@@ -324,7 +323,7 @@ void Interpreter::Visit(ExpressionStatement* stmt) {
       //   test;
       if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_TYPE)) {
         assert(tag->type());
-        tag->type()->Accept(this);
+        result_.set_result(TypeInterpreter::Interpret(heap_, tag->type()));
         result_ = Assign(expr, result_);
         return;
       }
@@ -947,7 +946,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
             if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_RETURN)) {
               // @return found, so use it
               assert(tag->type());
-              tag->type()->Accept(this);
+              result_.set_result(TypeInterpreter::Interpret(heap_, tag->type()));
               return result_;
             }
           }
@@ -1043,8 +1042,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
           // @return found, so use it
           Result current = result_;
           assert(tag->type());
-          tag->type()->Accept(this);
-          current.MergeResult(result_.result());
+          current.MergeResult(TypeInterpreter::Interpret(heap_, tag->type()));
           result_ = current;
         }
       }
@@ -1295,194 +1293,6 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
       }
     }
   }
-}
-
-Statement* Interpreter::GetFirstEffectiveStatement(Statement* target) {
-  while (true) {
-    if (Block* block = target->AsBlock()) {
-      if (block->body().empty()) {
-        return NULL;
-      } else {
-        target = block->body().front();
-      }
-    } else {
-      return target;
-    }
-  }
-}
-
-void Interpreter::Visit(jsdoc::PrefixQuestionExpression* node) {
-  node->expr()->Accept(this);
-  result_.MergeResult(AVAL_NULL);
-}
-
-void Interpreter::Visit(jsdoc::PrefixBangExpression* node) {
-  node->expr()->Accept(this);
-  AVal res = result_.result();
-  res.ExcludeBase(AVAL_NULL);
-  result_.set_result(res);
-}
-
-void Interpreter::Visit(jsdoc::PostfixQuestionExpression* node) {
-  node->expr()->Accept(this);
-  result_.MergeResult(AVAL_NULL);
-}
-
-void Interpreter::Visit(jsdoc::PostfixBangExpression* node) {
-  node->expr()->Accept(this);
-  AVal res = result_.result();
-  res.ExcludeBase(AVAL_NULL);
-  result_.set_result(res);
-}
-
-void Interpreter::Visit(jsdoc::QuestionLiteral* node) {
-  result_.Reset(AVAL_NOBASE);
-}
-
-void Interpreter::Visit(jsdoc::StarLiteral* node) {
-  result_.Reset(AVAL_NOBASE);
-}
-
-void Interpreter::Visit(jsdoc::NullLiteral* node) {
-  result_.Reset(AVAL_NULL);
-}
-
-void Interpreter::Visit(jsdoc::UndefinedLiteral* node) {
-  result_.Reset(AVAL_UNDEFINED);
-}
-
-void Interpreter::Visit(jsdoc::VoidLiteral* node) {
-  result_.Reset(AVAL_UNDEFINED);
-}
-
-void Interpreter::Visit(jsdoc::UnionType* node) {
-  AVal res(AVAL_NOBASE);
-  jsdoc::TypeExpressions* exprs = node->exprs();
-  assert(!exprs->empty());
-  for (jsdoc::TypeExpressions::const_iterator it = exprs->begin(),
-       last = exprs->end(); it != last; ++it) {
-    (*it)->Accept(this);
-    res |= result_.result();
-  }
-  result_.set_result(res);
-}
-
-void Interpreter::Visit(jsdoc::ArrayType* node) {
-  AObject* ary = heap_->GetDeclObject(node);
-  if (ary) {
-    // already created, so use it
-    result_ = Result(AVal(ary));
-    return;
-  }
-  ary = heap_->GetFactory()->NewAObject();
-  heap_->DeclObject(node, ary);
-  const std::vector<AVal> args;
-  ARRAY_CONSTRUCTOR(heap_, AVal(ary), args, true);
-
-  assert(ary);
-  uint32_t index = 0;
-  for (jsdoc::TypeExpressions::const_iterator it = node->exprs()->begin(),
-       last = node->exprs()->end(); it != last; ++it, ++index) {
-    (*it)->Accept(this);
-    ary->UpdateProperty(heap_, Intern(index), result_.result());
-  }
-  result_ = Result(AVal(ary));
-}
-
-void Interpreter::Visit(jsdoc::RecordType* node) {
-  AObject* obj = heap_->GetDeclObject(node);
-  if (obj) {
-    // already created, so use it
-    result_ = Result(AVal(obj));
-    return;
-  }
-  obj = heap_->MakeObject();
-  heap_->DeclObject(node, obj);
-
-  assert(obj);
-  for (jsdoc::FieldTypes::const_iterator it = node->exprs()->begin(),
-       last = node->exprs()->end(); it != last; ++it) {
-    jsdoc::FieldType* field = *it;
-    if (field->HasValue()) {
-      field->value()->Accept(this);
-      obj->UpdateProperty(heap_, Intern(*field->key()), result_.result());
-    } else {
-      obj->UpdateProperty(heap_, Intern(*field->key()), AVal(AVAL_NOBASE));
-    }
-  }
-  result_ = Result(AVal(obj));
-}
-
-void Interpreter::Visit(jsdoc::FieldType* node) {
-  // TODO(Constellation) implement it
-  UNREACHABLE();
-}
-
-void Interpreter::Visit(jsdoc::FunctionType* node) {
-  // TODO(Constellation) implement it
-  result_.Reset();
-}
-
-void Interpreter::Visit(jsdoc::NameExpression* node) {
-  jsdoc::NameString* str = node->value();
-  // primitive type check phase
-  if (IsEqualIgnoreCase(*str, "string")) {
-    result_.set_result(AVAL_STRING);
-  } else if (IsEqualIgnoreCase(*str, "number")) {
-    result_.set_result(AVAL_NUMBER);
-  } else if (IsEqualIgnoreCase(*str, "boolean")) {
-    result_.set_result(AVAL_BOOL);
-  } else {
-    // class lookup
-    // see type registry
-    if (FunctionLiteral* literal = heap_->registry()->GetRegisteredConstructorOrInterface(*node->value())) {
-      const std::vector<AVal> args;
-      AObject* this_binding = heap_->GetDeclObject(node);
-      if (!this_binding) {
-        this_binding = heap_->MakeObject();
-        heap_->DeclObject(node, this_binding);
-      }
-      AObject* target = heap_->GetDeclObject(literal);
-      this_binding->UpdatePrototype(heap_,
-                                    target->GetProperty(Intern("prototype")));
-      // jsdoc @extends / @interface check
-      // TODO(Constellation) lookup only prototype and set
-      if (std::shared_ptr<jsdoc::Info> info = heap_->GetInfo(literal)) {
-        if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_IMPLEMENTS)) {
-          tag->type()->Accept(this);
-          this_binding->UpdatePrototype(heap_, result_.result());
-        }
-        if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_EXTENDS)) {
-          tag->type()->Accept(this);
-          this_binding->UpdatePrototype(heap_, result_.result());
-        }
-      }
-      // not call FunctionLiteral
-      // because FunctionLiteral parses TypeExpression @return, so may recur
-      result_.set_result(AVal(this_binding));
-    } else {
-      // search target in current scope
-      // TODO(Constellation) implement it
-      result_.set_result(AVAL_NOBASE);
-    }
-  }
-}
-
-void Interpreter::Visit(jsdoc::TypeNameWithApplication* node) {
-  // TODO:(Constellation) use application data
-  node->expr()->Accept(this);
-}
-
-void Interpreter::Visit(jsdoc::ParametersType* node) {
-  UNREACHABLE();
-}
-
-void Interpreter::Visit(jsdoc::RestExpression* node) {
-  UNREACHABLE();
-}
-
-void Interpreter::Visit(jsdoc::PostfixEqualExpression* node) {
-  UNREACHABLE();
 }
 
 } }  // namespace az::cfa2

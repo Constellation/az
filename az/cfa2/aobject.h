@@ -139,12 +139,16 @@ void AObject::UpdateStringProperty(Heap* heap, const AVal& val) {
 }
 
 
-void AObject::Complete(Heap* heap, Completer* completer) const {
-  for (Properties::const_iterator it = properties_.begin(),
-       last = properties_.end(); it != last; ++it) {
-    completer->Notify(it->first, it->second.value());
+void AObject::Complete(Heap* heap, Completer* completer,
+                       AlreadySearched* already_searched) const {
+  if (already_searched->find(this) == already_searched->end()) {
+    already_searched->insert(this);
+    for (Properties::const_iterator it = properties_.begin(),
+         last = properties_.end(); it != last; ++it) {
+      completer->Notify(it->first, it->second.value());
+    }
+    proto_.ToObject(heap).Complete(heap, completer, already_searched);
   }
-  proto_.ToObject(heap).Complete(heap, completer);
 }
 
 iv::core::UString AObject::ToTypeString(Heap* heap,

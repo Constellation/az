@@ -194,7 +194,8 @@ class AObject
 
   inline void UpdateStringProperty(Heap* heap, const AVal& val);
 
-  inline void Complete(Heap* heap, Completer* completer) const;
+  inline void Complete(Heap* heap, Completer* completer,
+                       AlreadySearched* already_searched) const;
 
   const Properties& properties() const {
     return properties_;

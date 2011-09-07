@@ -97,6 +97,13 @@ class AVal {
     return objects_;
   }
 
+  void Reset(AObject* obj) {
+    base_ = AVAL_NOBASE;
+    str_.reset();
+    objects_.clear();
+    objects_.insert(obj);
+  }
+
   void Reset(int base = AVAL_NOBASE) {
     base_ = base;
     str_.reset();
@@ -138,6 +145,9 @@ class AVal {
   inline bool IsFalse() const;
 
   inline void Complete(Heap* heap, Completer* completer) const;
+
+  inline void Complete(Heap* heap, Completer* completer,
+                       AlreadySearched* already_searched) const;
 
   void ExcludeBase(BaseType base) {
     base_ &= ~base;

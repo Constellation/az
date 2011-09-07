@@ -43,7 +43,7 @@ def Build():
   var = GetVariables()
   var.AddVariables(
     BoolVariable('debug', '', 0),
-    BoolVariable('gprof', '', 0),
+    BoolVariable('prof', '', 0),
     BoolVariable('gcov', '', 0),
     BoolVariable('clang', '', 0),
     BoolVariable('release', '', 0)
@@ -62,11 +62,8 @@ def Build():
   if options.get('cache'):
     env.CacheDir('cache')
 
-  if env['gprof']:
-    env.Append(
-      CCFLAGS=["-pg"],
-      LINKFLAGS=["-pg"]
-    )
+  if env['prof']:
+    env.Append(CCFLAGS=["-g3"])
 
   if env['gcov']:
     env.Append(

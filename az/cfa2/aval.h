@@ -3,11 +3,11 @@
 #include <az/cfa2/aval_fwd.h>
 #include <az/cfa2/completer.h>
 #include <az/cfa2/interpreter_fwd.h>
+#include <az/cfa2/type_interpreter_fwd.h>
 #include <az/cfa2/aobject_fwd.h>
 #include <az/cfa2/result.h>
 namespace az {
 namespace cfa2 {
-
 
 void AVal::UpdateProperty(Heap* heap, Symbol name, const AVal& val) const {
   for (ObjectSet::const_iterator it = objects_.begin(),
@@ -107,12 +107,14 @@ void AVal::Construct(Heap* heap,
         // TODO(Constellation) lookup only prototype and set
         if (std::shared_ptr<jsdoc::Info> info = heap->GetInfo(literal)) {
           if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_IMPLEMENTS)) {
-            tag->type()->Accept(interp);
-            this_binding->UpdatePrototype(heap, interp->result().result());
+            this_binding->UpdatePrototype(
+                heap,
+                TypeInterpreter::Interpret(heap, tag->type()));
           }
           if (std::shared_ptr<jsdoc::Tag> tag = info->GetTag(jsdoc::Token::TK_EXTENDS)) {
-            tag->type()->Accept(interp);
-            this_binding->UpdatePrototype(heap, interp->result().result());
+            this_binding->UpdatePrototype(
+                heap,
+                TypeInterpreter::Interpret(heap, tag->type()));
           }
         }
       }
@@ -231,10 +233,17 @@ bool AVal::IsFalse() const {
       objects_.empty() && base_ != 0 && (((base_ == AVAL_NULL || base_ == AVAL_UNDEFINED || base_ == AVAL_FALSE)) || (base_ == AVAL_STRING && str_ && str_->empty()));
 }
 
+// start point
 void AVal::Complete(Heap* heap, Completer* completer) const {
+  AlreadySearched already_searched;
+  Complete(heap, completer, &already_searched);
+}
+
+void AVal::Complete(Heap* heap, Completer* completer,
+                    AlreadySearched* already_searched) const {
   for (ObjectSet::const_iterator it = objects_.begin(),
        last = objects_.end(); it != last; ++it) {
-    (*it)->Complete(heap, completer);
+    (*it)->Complete(heap, completer, already_searched);
   }
 }
 
