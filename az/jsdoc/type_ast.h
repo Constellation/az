@@ -144,12 +144,12 @@ class RecordType : public TypeExpression {
 
 class FieldType: public TypeExpression {
  public:
-  FieldType(NameString* key,
+  FieldType(const NameString* key,
             TypeExpression* value)
     : key_(key),
       value_(value) {
   }
-  NameString* key() const {
+  const NameString* key() const {
     return key_;
   }
   TypeExpression* value() const {
@@ -160,7 +160,7 @@ class FieldType: public TypeExpression {
   }
   DECLARE_DERIVED_NODE_TYPE(FieldType)
  private:
-  NameString* key_;
+  const NameString* key_;
   TypeExpression* value_;
 };
 
@@ -203,13 +203,13 @@ class TypeName : public TypeExpression {
 
 class NameExpression : public TypeName {
  public:
-  NameExpression(NameString* str) : str_(str) { }
-  NameString* value() {
+  NameExpression(const NameString* str) : str_(str) { }
+  const NameString* value() {
     return str_;
   }
   DECLARE_DERIVED_NODE_TYPE(NameExpression)
  private:
-  NameString* str_;
+  const NameString* str_;
 };
 
 class TypeNameWithApplication : public TypeName {

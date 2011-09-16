@@ -114,7 +114,7 @@ void TypeInterpreter::Visit(jsdoc::FunctionType* node) {
 }
 
 void TypeInterpreter::Visit(jsdoc::NameExpression* node) {
-  jsdoc::NameString* str = node->value();
+  const jsdoc::NameString* str = node->value();
   // primitive type check phase
   if (IsEqualIgnoreCase(*str, "string")) {
     result_.Reset(AVAL_STRING);

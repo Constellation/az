@@ -28,7 +28,7 @@ class AstFactory
                             const Range& range,
                             std::size_t begin,
                             std::size_t end) {
-    Identifier* ident = new(this)Identifier(range, this);
+    Identifier* ident = new(this)Identifier(NewString(range));
     ident->set_symbol(Intern(ident->value()));
     ident->set_type(type);
     ident->set_refer(NULL);
@@ -52,7 +52,7 @@ class AstFactory
 
   StringLiteral* NewStringLiteral(const std::vector<uint16_t>& buffer,
                                   std::size_t begin, std::size_t end) {
-    StringLiteral* str = new (this) StringLiteral(buffer, this);
+    StringLiteral* str = new (this) StringLiteral(NewString(buffer));
     str->Location(begin, end);
     return str;
   }
@@ -61,7 +61,7 @@ class AstFactory
                                   const std::vector<uint16_t>& flags,
                                   std::size_t begin,
                                   std::size_t end) {
-    RegExpLiteral* reg = new (this) RegExpLiteral(content, flags, this);
+    RegExpLiteral* reg = new (this) RegExpLiteral(NewString(content), NewString(flags));
     reg->Location(begin, end);
     return reg;
   }
@@ -118,10 +118,12 @@ class AstFactory
   }
 
   template<typename Range>
-  typename iv::core::SpaceUString<AstFactory>::type* NewUString(const Range& range) {
-    typedef typename iv::core::SpaceUString<AstFactory>::type String;
-    return new (New(sizeof(String)))
-        String(range.begin(), range.end(), typename String::allocator_type(this));
+  const SpaceUString* NewString(const Range& range) {
+    return new (New(sizeof(SpaceUString)))
+        SpaceUString(
+            range.begin(),
+            range.end(),
+            typename SpaceUString::allocator_type(this));
   }
 
   NullLiteral* NewNullLiteral(std::size_t begin,
