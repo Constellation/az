@@ -85,9 +85,10 @@ def Build():
     CCFLAGS=[
       "-pedantic",
       "-Wall", "-Wextra", '-pipe',
-      "-Wno-unused-parameter", "-Wwrite-strings", "-Wreturn-type", "-Wpointer-arith",
+      "-Wno-unused-parameter", "-Wwrite-strings",
+      "-Wreturn-type", "-Wpointer-arith", "-Wno-long-long",
       "-Wwrite-strings", "-Wno-missing-field-initializers"],
-    CPPPATH=[join(root_dir, 'iv'), root_dir],
+    CPPPATH=[root_dir, join(root_dir, 'deps', 'iv')],
     CPPDEFINES=[
       "_GNU_SOURCE",
       "__STDC_LIMIT_MACROS",
