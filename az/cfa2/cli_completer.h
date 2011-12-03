@@ -19,7 +19,7 @@ class CLICompleter : public Completer {
     assert(heap());
     for (Properties::const_iterator it = properties_.begin(),
          last = properties_.end(); it != last; ++it) {
-      iv::core::UString target = GetSymbolString(it->first);
+      iv::core::UString target = iv::core::symbol::GetSymbolString(it->first);
       if (!target.empty()) {
 //        if (!iv::core::character::IsIdentifierStart(target[0])) {
 //          const iv::core::UString temp = target;

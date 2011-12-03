@@ -213,8 +213,7 @@ void HeapInitializer::Visit(Assignment* assign) {
     IdentifierAccess* method = left->AsIdentifierAccess();
     FunctionLiteral* literal = right->AsFunctionLiteral();
     if (IdentifierAccess* parent = method->target()->AsIdentifierAccess()) {
-      if (iv::core::UStringPiece(parent->key()->value()) ==
-          iv::core::ToUString("prototype")) {
+      if (parent->key()->symbol() == Intern("prototype")) {
         // form is
         //   AAA.prototype.BBB = function() { }
         heap_->RegisterPrototypeMethodBinding(parent->target(), literal);

@@ -1,6 +1,7 @@
 #ifndef AZ_CFA2_TYPE_INTERPRETER_FWD_H_
 #define AZ_CFA2_TYPE_INTERPRETER_FWD_H_
 #include <iv/noncopyable.h>
+#include <iv/conversions.h>
 #include <iv/detail/unordered_set.h>
 #include <az/cfa2/heap.h>
 #include <az/jsdoc/type_ast.h>
@@ -20,7 +21,7 @@ class TypeInterpreter
 
   struct UStringPieceHash {
     std::size_t operator()(iv::core::UStringPiece target) const {
-      return iv::core::StringToHash(target);
+      return iv::core::Hash::StringToHash(target);
     }
   };
 

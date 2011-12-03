@@ -30,7 +30,7 @@ class TypeRegistry {
       Identifier* ident = i.Address();
       named_map_.insert(
           std::make_pair(
-              iv::core::UString(ident->value().begin(), ident->value().end()),
+              iv::core::symbol::GetSymbolString(ident->symbol()),
               literal));
     }
   }
@@ -54,13 +54,16 @@ class TypeRegistry {
     Expression* current = lhs;
     while (true) {
       if (Identifier* ident = current->AsIdentifier()) {
-        name->assign(ident->value().begin(), ident->value().end());
+        name->assign(iv::core::symbol::GetSymbolString(ident->symbol()));
         name->insert(name->end(), reversed.rbegin(), reversed.rend());
         return true;
       } else if (IdentifierAccess* access = current->AsIdentifierAccess()) {
         Identifier* prop = access->key();
-        reversed.insert(reversed.end(),
-                        prop->value().rbegin(), prop->value().rend());
+        const iv::core::UString str(
+            iv::core::symbol::GetSymbolString(prop->symbol()));
+        reversed.insert(
+            reversed.end(),
+            str.begin(), str.end());
         reversed.push_back('.');
         current = access->target();
       } else {

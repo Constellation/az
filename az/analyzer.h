@@ -168,7 +168,7 @@ class Analyzer
         }
         // because this expr is Function Declaration, so instantiate as
         // TYPE_FUNCTION
-        const Symbol target = Intern((*it)->name().Address()->value());
+        const Symbol target = (*it)->name().Address()->symbol();
         Var& ref = context_->GetVariableEnvironment()->Get(target);
         ref.InsertType(AType(TYPE_FUNCTION));
         ref.AddDeclaration(*it);
@@ -221,7 +221,7 @@ class Analyzer
     FunctionLiteral* literal = stmt->function();
 
     // the name is trapped, get environment.
-    const Symbol target = Intern(literal->name().Address()->value());
+    const Symbol target = literal->name().Address()->symbol();
     context_->GetLexicalEnvironment()->Lookup(target);
 
     // analyze function
@@ -329,7 +329,7 @@ class Analyzer
       if (VariableStatement* var =
           stmt->init().Address()->AsVariableStatement()) {
         Visit(var->decls().front());
-        const Symbol name = Intern(var->decls().front()->name()->value());
+        const Symbol name = var->decls().front()->name()->symbol();
         Var& ref = context_->GetVariableEnvironment()->Get(name);
         ref.InsertType(AType(TYPE_ANY));
       } else {
@@ -359,7 +359,7 @@ class Analyzer
     stmt->set_normal(stmt->body());
     if (VariableStatement* var = stmt->each()->AsVariableStatement()) {
       Visit(var->decls().front());
-      const Symbol name = Intern(var->decls().front()->name()->value());
+      const Symbol name = var->decls().front()->name()->symbol();
       Var& ref = context_->GetVariableEnvironment()->Get(name);
       ref.InsertType(AType(TYPE_ANY));
     } else {
@@ -521,7 +521,7 @@ class Analyzer
       }
       context_->DownInCatchBlock(stmt);
       // catch name instantiation
-      const Symbol name = Intern(stmt->catch_name().Address()->value());
+      const Symbol name = stmt->catch_name().Address()->symbol();
       context_->GetLexicalEnvironment()->Instantiate(name);
       catch_block->Accept(this);
       context_->UpFromCatchBlock();
@@ -578,7 +578,7 @@ class Analyzer
     std::shared_ptr<Environment> env;
     bool variable_found = false;
     if (ident) {
-      const Symbol name = Intern(ident->value());
+      const Symbol name = ident->symbol();
       env = context_->GetLexicalEnvironment()->Lookup(name);
       Environment::TrapStatus stat = env->IsTrapped(name);
       if (stat == Environment::VARIABLE_FOUND) {
@@ -601,7 +601,7 @@ class Analyzer
       reporter_->ReportTypeConflict(*assign, lhs, rhs);
     }
     if (variable_found) {
-      env->Get(Intern(ident->value())).InsertType(rhs);
+      env->Get(ident->symbol()).InsertType(rhs);
     }
     type_ = rhs;
   }
@@ -1113,7 +1113,7 @@ class Analyzer
   }
 
   void Visit(Identifier* literal) {
-    const Symbol name = Intern(literal->value());
+    const Symbol name = literal->symbol();
     std::shared_ptr<Environment> env =
         context_->GetLexicalEnvironment()->Lookup(name);
     Environment::TrapStatus stat = env->IsTrapped(name);
@@ -1220,7 +1220,7 @@ class Analyzer
   }
 
   void Visit(Declaration* decl) {
-    const Symbol name = Intern(decl->name()->value());
+    const Symbol name = decl->name()->symbol();
     Var& ref = context_->GetVariableEnvironment()->Get(name);
     if (ref.IsDeclared()) {
       // duplicate declaration
@@ -1250,7 +1250,7 @@ class Analyzer
   bool InstantiateVariable(Identifier* ident,
                            VariableType type = VARIABLE_STACK) {
     return
-        context_->GetVariableEnvironment()->Instantiate(Intern(ident->value()));
+        context_->GetVariableEnvironment()->Instantiate(ident->symbol());
   }
 
   bool CheckDeadStatement(const Statement* stmt) {

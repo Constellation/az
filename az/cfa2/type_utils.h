@@ -9,8 +9,7 @@ inline iv::core::UString GetFunctionPrototypeDeclaration(FunctionLiteral* fun) {
   assert(fun);
   iv::core::UString res;
   if (const iv::core::Maybe<Identifier> name = fun->name()) {
-    res.append(name.Address()->value().begin(),
-               name.Address()->value().end());
+    res.append(iv::core::symbol::GetSymbolString(name.Address()->symbol()));
   } else {
     const iv::core::StringPiece piece("%anonymous");
     res.append(piece.begin(), piece.end());
@@ -23,7 +22,7 @@ inline iv::core::UString GetFunctionPrototypeDeclaration(FunctionLiteral* fun) {
     return res;
   }
   do {
-    res.append((*it)->value().begin(), (*it)->value().end());
+    res.append(iv::core::symbol::GetSymbolString((*it)->symbol()));
     ++it;
     if (it == last) {
       res.push_back(')');

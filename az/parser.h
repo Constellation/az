@@ -2359,7 +2359,7 @@ class Parser : private iv::core::Noncopyable<> {
 //  PropertySetParameterList
 //    : IDENTIFIER
   Expression* ParseObjectLiteral(bool *res) {
-    typedef std::unordered_map<IdentifierKey, int> ObjectMap;
+    typedef std::unordered_map<Symbol, int> ObjectMap;
     typedef typename ObjectLiteral::Property Property;
     typedef typename ObjectLiteral::Properties Properties;
     const std::size_t begin = lexer_->begin_position();
@@ -2383,9 +2383,9 @@ class Parser : private iv::core::Noncopyable<> {
               lexer_->previous_end_position());
           expr = ParseAssignmentExpression(true, CHECK);
           ObjectLiteral::AddDataProperty(prop, ident, expr);
-          typename ObjectMap::iterator it = map.find(ident);
+          typename ObjectMap::iterator it = map.find(ident->symbol());
           if (it == map.end()) {
-            map.insert(std::make_pair(ident, ObjectLiteral::DATA));
+            map.insert(std::make_pair(ident->symbol(), ObjectLiteral::DATA));
           } else {
             if (it->second != ObjectLiteral::DATA) {
               ReportAndRecovery(
@@ -2419,9 +2419,9 @@ class Parser : private iv::core::Noncopyable<> {
                 (is_get) ? FunctionLiteral::GETTER : FunctionLiteral::SETTER,
                 CHECK);
             ObjectLiteral::AddAccessor(prop, type, ident, expr);
-            typename ObjectMap::iterator it = map.find(ident);
+            typename ObjectMap::iterator it = map.find(ident->symbol());
             if (it == map.end()) {
-              map.insert(std::make_pair(ident, type));
+              map.insert(std::make_pair(ident->symbol(), type));
             } else if (it->second & (ObjectLiteral::DATA | type)) {
               if (it->second & ObjectLiteral::DATA) {
                 ReportAndRecovery(
@@ -2452,9 +2452,9 @@ class Parser : private iv::core::Noncopyable<> {
         EXPECT(Token::TK_COLON);
         expr = ParseAssignmentExpression(true, CHECK);
         ObjectLiteral::AddDataProperty(prop, ident, expr);
-        typename ObjectMap::iterator it = map.find(ident);
+        typename ObjectMap::iterator it = map.find(ident->symbol());
         if (it == map.end()) {
-          map.insert(std::make_pair(ident, ObjectLiteral::DATA));
+          map.insert(std::make_pair(ident->symbol(), ObjectLiteral::DATA));
         } else {
           if (it->second != ObjectLiteral::DATA) {
             ReportAndRecovery(
@@ -2512,7 +2512,7 @@ class Parser : private iv::core::Noncopyable<> {
       bool *res) {
     // IDENTIFIER
     // IDENTIFIER_opt
-    std::unordered_set<IdentifierKey> param_set;
+    std::unordered_set<Symbol> param_set;
     std::size_t throw_error_if_strict_code_line = 0;
     std::size_t throw_error_if_strict_code_number = 0;
     const std::size_t begin_position = lexer_->begin_position();
@@ -2618,14 +2618,14 @@ class Parser : private iv::core::Noncopyable<> {
               }
             }
             if ((!throw_error_if_strict_code) &&
-                (param_set.find(ident) != param_set.end())) {
+                (param_set.find(ident->symbol()) != param_set.end())) {
               throw_error_if_strict_code = kDetectDuplicateParameter;
               throw_error_if_strict_code_line = lexer_->line_number();
               throw_error_if_strict_code_number = lexer_->previous_end_position();
             }
           }
           params->push_back(ident);
-          param_set.insert(ident);
+          param_set.insert(ident->symbol());
           if (token_ == Token::TK_COMMA) {
             Next(true);
           } else {
@@ -2730,7 +2730,7 @@ class Parser : private iv::core::Noncopyable<> {
     builder.Build(val);
     Identifier* const ident = factory_->NewIdentifier(
         Token::TK_NUMBER,
-        builder.buffer(),
+        Intern(builder.buffer()),
         lexer_->begin_position(),
         lexer_->end_position());
     Next();
@@ -2742,20 +2742,22 @@ class Parser : private iv::core::Noncopyable<> {
     if (strict_ && lexer_->StringEscapeType() == lexer_type::OCTAL) {
       RAISE("octal escape sequence not allowed in strict code");
     }
-    Identifier* const ident = factory_->NewIdentifier(Token::TK_STRING,
-                                                      lexer_->Buffer(),
-                                                      lexer_->begin_position(),
-                                                      lexer_->end_position());
+    Identifier* const ident = factory_->NewIdentifier(
+        Token::TK_STRING,
+        Intern(lexer_->Buffer()),
+        lexer_->begin_position(),
+        lexer_->end_position());
     Next();
     return ident;
   }
 
   template<typename Range>
   Identifier* ParseIdentifier(const Range& range) {
-    Identifier* const ident = factory_->NewIdentifier(Token::TK_IDENTIFIER,
-                                                      range,
-                                                      lexer_->begin_position(),
-                                                      lexer_->end_position());
+    Identifier* const ident = factory_->NewIdentifier(
+        Token::TK_IDENTIFIER,
+        Intern(range),
+        lexer_->begin_position(),
+        lexer_->end_position());
     Next();
     return ident;
   }
@@ -2764,10 +2766,11 @@ class Parser : private iv::core::Noncopyable<> {
   Identifier* ParseIdentifierWithPosition(const Range& range,
                                           std::size_t begin,
                                           std::size_t end) {
-    Identifier* const ident = factory_->NewIdentifier(Token::TK_IDENTIFIER,
-                                                      range,
-                                                      begin,
-                                                      end);
+    Identifier* const ident = factory_->NewIdentifier(
+        Token::TK_IDENTIFIER,
+        Intern(range),
+        begin,
+        end);
     Next();
     return ident;
   }
@@ -2776,11 +2779,10 @@ class Parser : private iv::core::Noncopyable<> {
                      const Identifier * const label) const {
     assert(label != NULL);
     if (labels) {
-      const typename Identifier::value_type& value = label->value();
+      const Symbol name = label->symbol();
       for (typename Identifiers::const_iterator it = labels->begin(),
-           last = labels->end();
-           it != last; ++it) {
-        if ((*it)->value() == value) {
+           last = labels->end(); it != last; ++it) {
+        if ((*it)->symbol() == name) {
           return true;
         }
       }
@@ -3007,10 +3009,10 @@ class Parser : private iv::core::Noncopyable<> {
   };
 
   static EvalOrArguments IsEvalOrArguments(const Identifier* ident) {
-    const SpaceUString& str = ident->value();
-    if (str.compare(detail::kEval.data()) == 0) {
+    const Symbol sym = ident->symbol();
+    if (sym == iv::core::symbol::eval()) {
       return kEval;
-    } else if (str.compare(detail::kArguments.data()) == 0) {
+    } else if (sym == iv::core::symbol::arguments()) {
       return kArguments;
     } else {
       return kNone;

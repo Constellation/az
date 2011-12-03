@@ -1034,9 +1034,9 @@ class Heap : public az::Context {
          last = ordered_summaries_.end(); it != last; ++it) {
       Summary* summary = *it;
       if (const iv::core::Maybe<Identifier> ident = summary->function()->name()) {
-        res.insert(res.end(),
-                   ident.Address()->value().begin(),
-                   ident.Address()->value().end());
+        const iv::core::UString str(
+            iv::core::symbol::GetSymbolString(ident.Address()->symbol()));
+        res.insert(res.end(), str.begin(), str.end());
         res.push_back(' ');
       } else {
         static const std::string prefix("<anonymous> ");

@@ -23,13 +23,11 @@ class AstFactory
     return scope;
   }
 
-  template<typename Range>
   Identifier* NewIdentifier(iv::core::Token::Type type,
-                            const Range& range,
+                            Symbol symbol,
                             std::size_t begin,
                             std::size_t end) {
-    Identifier* ident = new(this)Identifier(NewString(range));
-    ident->set_symbol(Intern(ident->value()));
+    Identifier* ident = new(this)Identifier(symbol);
     ident->set_type(type);
     ident->set_refer(NULL);
     ident->set_binding_type(cfa2::Binding::NONE);

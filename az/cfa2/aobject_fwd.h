@@ -139,7 +139,7 @@ class AObject
     if (GetOwnProperty(name, &result)) {
       return result;
     } else {
-      if (number_ && IsArrayIndexSymbol(name)) {
+      if (number_ && iv::core::symbol::IsArrayIndexSymbol(name)) {
         return *number_;
       }
       if (string_) {

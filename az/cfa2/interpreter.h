@@ -241,7 +241,8 @@ void Interpreter::Visit(ForInStatement* stmt) {
                     already.find(it2->first) == already.end()) {
                   already.insert(it2->first);
                   CurrentFrame()->Set(
-                      heap_, binding, AVal(GetSymbolString(it2->first)));
+                      heap_, binding,
+                      AVal(iv::core::symbol::GetSymbolString(it2->first)));
                   Interpret(stmt->normal(), stmt->end());
                 }
               }

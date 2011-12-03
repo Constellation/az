@@ -19,7 +19,7 @@ void AObject::UpdateProperty(Heap* heap, Symbol name, const AVal& val) {
     if (string_) {
       // absorb to string_
       UpdateStringProperty(heap, val);
-    } else if (number_ && IsArrayIndexSymbol(name)) {
+    } else if (number_ && iv::core::symbol::IsArrayIndexSymbol(name)) {
       UpdateNumberProperty(heap, val);
     } else {
       AddProperty(name, AProp(val));
@@ -57,7 +57,7 @@ void AObject::MergeNumberProperty(Heap* heap) {
   Properties prop;
   for (Properties::const_iterator it = properties_.begin(),
        last = properties_.end(); it != last; ++it) {
-    if (IsArrayIndexSymbol(it->first)) {
+    if (iv::core::symbol::IsArrayIndexSymbol(it->first)) {
       result |= it->second.value();
     } else {
       prop.insert(*it);
