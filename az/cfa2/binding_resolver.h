@@ -187,7 +187,7 @@ void BindingResolver::Visit(ContinueStatement* stmt) {
 
 void BindingResolver::Visit(BreakStatement* stmt) {
   // not have Identifier to value
-  if (!stmt->target() && stmt->label()) {
+  if (!stmt->target() && !stmt->label().IsDummy()) {
     // like
     //   do {
     //     self: break self;
@@ -298,7 +298,7 @@ void BindingResolver::Visit(TryStatement* stmt) {
 
   if (const iv::core::Maybe<Block> block = stmt->catch_block()) {
     raised_ = catch_raised;
-    Identifier* ident = stmt->catch_name().Address();
+    Assigned* ident = stmt->catch_name().Address();
     Binding* binding = heap_->Instantiate(ident->symbol());
     ident->set_refer(binding);
     inner_scope_->push_back(binding);
@@ -370,6 +370,8 @@ class FindBinding : public std::unary_function<const Binding*, bool> {
  private:
   Symbol target_;
 };
+
+void BindingResolver::Visit(Assigned* ident) { }
 
 void BindingResolver::Visit(Identifier* ident) {
   // search Idenfier and make binding or set refer
@@ -465,16 +467,16 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   // instantiate scope variables
   const Scope& scope = literal->scope();
   const FunctionLiteral::DeclType type = literal->type();
-  for (Identifiers::const_iterator it = literal->params().begin(),
+  for (Assigneds::const_iterator it = literal->params().begin(),
        last = literal->params().end(); it != last; ++it) {
-    Identifier* ident = *it;
+    Assigned* ident = *it;
     Binding* binding = heap_->Instantiate(ident->symbol());
     ident->set_refer(binding);
     inner_scope.push_back(binding);
   }
   if (type == FunctionLiteral::STATEMENT ||
       (type == FunctionLiteral::EXPRESSION && literal->name())) {
-    Identifier* ident = literal->name().Address();
+    Assigned* ident = literal->name().Address();
     Binding* binding = heap_->Instantiate(ident->symbol());
     ident->set_refer(binding);
     inner_scope.push_back(binding);
@@ -482,7 +484,7 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   for (Scope::Variables::const_iterator it = scope.variables().begin(),
        last = scope.variables().end(); it != last; ++it) {
     const Scope::Variable& var = *it;
-    Identifier* ident = var.first;
+    Assigned* ident = var.first;
     Binding* binding = heap_->Instantiate(ident->symbol());
     ident->set_refer(binding);  // set refer binding to identifier
     inner_scope.push_back(binding);
@@ -492,7 +494,7 @@ void BindingResolver::Visit(FunctionLiteral* literal) {
   }
   for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
        last = scope.function_declarations().end(); it != last; ++it) {
-    Identifier* ident = (*it)->name().Address();
+    Assigned* ident = (*it)->name().Address();
     Binding* binding = heap_->Instantiate(ident->symbol());
     ident->set_refer(binding);  // set refer binding to identifier
     inner_scope.push_back(binding);

@@ -162,13 +162,13 @@ class Analyzer
       const Functions& functions = scope.function_declarations();
       for (Functions::const_iterator it = functions.begin(),
            last = functions.end(); it != last; ++it) {
-        if (InstantiateVariable((*it)->name().Address())) {
+        const Symbol target = (*it)->name().Address()->symbol();
+        if (InstantiateVariable(target)) {
           // variable name is duplicate
           // TODO(Constellation) insert report
         }
         // because this expr is Function Declaration, so instantiate as
         // TYPE_FUNCTION
-        const Symbol target = (*it)->name().Address()->symbol();
         Var& ref = context_->GetVariableEnvironment()->Get(target);
         ref.InsertType(AType(TYPE_FUNCTION));
         ref.AddDeclaration(*it);
@@ -180,7 +180,7 @@ class Analyzer
       const Variables& vars = scope.variables();
       for (Variables::const_iterator it = vars.begin(),
            last = vars.end(); it != last; ++it) {
-        if (InstantiateVariable(it->first)) {
+        if (InstantiateVariable(it->first->symbol())) {
           // variable name is duplicate
           // TODO(Constellation) insert report
         }
@@ -521,8 +521,10 @@ class Analyzer
       }
       context_->DownInCatchBlock(stmt);
       // catch name instantiation
-      const Symbol name = stmt->catch_name().Address()->symbol();
-      context_->GetLexicalEnvironment()->Instantiate(name);
+      if (stmt->catch_name()) {
+        const Symbol name = stmt->catch_name().Address()->symbol();
+        context_->GetLexicalEnvironment()->Instantiate(name);
+      }
       catch_block->Accept(this);
       context_->UpFromCatchBlock();
       if (!dead) {
@@ -1112,6 +1114,8 @@ class Analyzer
     type_ = AType(TYPE_NUMBER);
   }
 
+  void Visit(Assigned* literal) { }
+
   void Visit(Identifier* literal) {
     const Symbol name = literal->symbol();
     std::shared_ptr<Environment> env =
@@ -1247,10 +1251,9 @@ class Analyzer
   }
 
   // remember this variable is located at this function stack
-  bool InstantiateVariable(Identifier* ident,
-                           VariableType type = VARIABLE_STACK) {
+  bool InstantiateVariable(Symbol sym, VariableType type = VARIABLE_STACK) {
     return
-        context_->GetVariableEnvironment()->Instantiate(ident->symbol());
+        context_->GetVariableEnvironment()->Instantiate(sym);
   }
 
   bool CheckDeadStatement(const Statement* stmt) {

@@ -26,11 +26,10 @@ class TypeRegistry {
 
   void RegisterNamedType(FunctionLiteral* literal) {
     // if FunctionLiteral name found, use this
-    if (iv::core::Maybe<Identifier> i = literal->name()) {
-      Identifier* ident = i.Address();
+    if (iv::core::Maybe<Assigned> a = literal->name()) {
       named_map_.insert(
           std::make_pair(
-              iv::core::symbol::GetSymbolString(ident->symbol()),
+              iv::core::symbol::GetSymbolString(a.Address()->symbol()),
               literal));
     }
   }
@@ -58,9 +57,8 @@ class TypeRegistry {
         name->insert(name->end(), reversed.rbegin(), reversed.rend());
         return true;
       } else if (IdentifierAccess* access = current->AsIdentifierAccess()) {
-        Identifier* prop = access->key();
         const iv::core::UString str(
-            iv::core::symbol::GetSymbolString(prop->symbol()));
+            iv::core::symbol::GetSymbolString(access->key()));
         reversed.insert(
             reversed.end(),
             str.begin(), str.end());

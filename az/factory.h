@@ -9,38 +9,38 @@
 #include <iv/maybe.h>
 #include <iv/noncopyable.h>
 #include <az/ast_fwd.h>
+#include <iv/ast_factory.h>
 #include <az/symbol.h>
 #include <az/cfa2/binding.h>
 namespace az {
 
 class AstFactory
-  : public iv::core::Space,
-    private iv::core::Noncopyable<AstFactory> {
+  : public iv::core::ast::BasicAstFactory<AstFactory>,
+    public iv::core::Space {
  public:
+  typedef iv::core::ast::BasicAstFactory<AstFactory> super_type;
   Scope* NewScope(FunctionLiteral::DeclType type) {
     Scope* scope = new (this) Scope(this, type == FunctionLiteral::GLOBAL);
     scope->literals_ = NewVector<FunctionLiteral*>();
     return scope;
   }
 
+  Assigned* NewAssigned(iv::core::ast::SymbolHolder symbol) {
+    Assigned* ident = super_type::NewAssigned(symbol);
+    ident->set_refer(NULL);
+    ident->set_binding_type(cfa2::Binding::NONE);
+    return ident;
+  }
+
   Identifier* NewIdentifier(iv::core::Token::Type type,
                             Symbol symbol,
                             std::size_t begin,
                             std::size_t end) {
-    Identifier* ident = new(this)Identifier(symbol);
+    Identifier* ident = super_type::NewIdentifier(type, symbol, begin, end);
     ident->set_type(type);
     ident->set_refer(NULL);
     ident->set_binding_type(cfa2::Binding::NONE);
-    ident->Location(begin, end);
     return ident;
-  }
-
-  NumberLiteral* NewNumberLiteral(const double& val,
-                                  std::size_t begin,
-                                  std::size_t end) {
-    NumberLiteral* num = new (this) NumberLiteral(val);
-    num->Location(begin, end);
-    return num;
   }
 
   NumberLiteral* NewReducedNumberLiteral(const double& val) {
@@ -48,138 +48,32 @@ class AstFactory
     return NULL;
   }
 
-  StringLiteral* NewStringLiteral(const std::vector<uint16_t>& buffer,
-                                  std::size_t begin, std::size_t end) {
-    StringLiteral* str = new (this) StringLiteral(NewString(buffer));
-    str->Location(begin, end);
-    return str;
-  }
-
-  RegExpLiteral* NewRegExpLiteral(const std::vector<uint16_t>& content,
-                                  const std::vector<uint16_t>& flags,
-                                  std::size_t begin,
-                                  std::size_t end) {
-    RegExpLiteral* reg = new (this) RegExpLiteral(NewString(content), NewString(flags));
-    reg->Location(begin, end);
-    return reg;
-  }
-
-  FunctionLiteral* NewFunctionLiteral(FunctionLiteral::DeclType type,
-                                      iv::core::Maybe<Identifier> name,
-                                      Identifiers* params,
-                                      Statements* body,
-                                      Scope* scope,
-                                      bool strict,
-                                      std::size_t begin_block_position,
-                                      std::size_t end_block_position,
-                                      std::size_t begin,
-                                      std::size_t end) {
-    FunctionLiteral* func = new (this)
-        FunctionLiteral(type,
-                        name,
-                        params,
-                        body,
-                        scope,
-                        strict,
-                        begin_block_position,
-                        end_block_position);
-    func->Location(begin, end);
-    return func;
-  }
-
-  ArrayLiteral* NewArrayLiteral(MaybeExpressions* items,
-                                std::size_t begin, std::size_t end) {
-    ArrayLiteral* ary = new (this) ArrayLiteral(items);
-    ary->Location(begin, end);
-    return ary;
-  }
-
-
-  ObjectLiteral*
-      NewObjectLiteral(ObjectLiteral::Properties* properties,
-                       std::size_t begin,
-                       std::size_t end) {
-    ObjectLiteral* obj = new (this) ObjectLiteral(properties);
-    obj->Location(begin, end);
-    return obj;
-  }
-
-  template<typename T>
-  T** NewPtr() {
-    return new (New(sizeof(T*))) T*(NULL);  // NOLINT
-  }
-
-  template<typename T>
-  typename iv::core::SpaceVector<AstFactory, T>::type* NewVector() {
-    typedef typename iv::core::SpaceVector<AstFactory, T>::type Vector;
-    return new (New(sizeof(Vector))) Vector(typename Vector::allocator_type(this));
-  }
-
-  template<typename Range>
-  const SpaceUString* NewString(const Range& range) {
-    return new (New(sizeof(SpaceUString)))
-        SpaceUString(
-            range.begin(),
-            range.end(),
-            typename SpaceUString::allocator_type(this));
-  }
-
-  NullLiteral* NewNullLiteral(std::size_t begin,
-                              std::size_t end) {
-    NullLiteral* null = new (this) NullLiteral();
-    null->Location(begin, end);
-    return null;
-  }
-
-  ThisLiteral* NewThisLiteral(std::size_t begin, std::size_t end) {
-    ThisLiteral* th = new (this) ThisLiteral();
-    th->Location(begin, end);
-    return th;
-  }
-
-  TrueLiteral* NewTrueLiteral(std::size_t begin, std::size_t end) {
-    TrueLiteral* tr = new (this) TrueLiteral();
-    tr->Location(begin, end);
-    return tr;
-  }
-
-  FalseLiteral* NewFalseLiteral(std::size_t begin, std::size_t end) {
-    FalseLiteral* fal = new (this) FalseLiteral();
-    fal->Location(begin, end);
-    return fal;
-  }
-
   EmptyStatement* NewEmptyStatement(std::size_t begin, std::size_t end) {
-    EmptyStatement* empty = new (this) EmptyStatement();
-    empty->Location(begin, end);
+    EmptyStatement* empty = super_type::NewEmptyStatement(begin, end);
     empty->set_is_failed_node(false);
     return empty;
   }
 
   DebuggerStatement* NewDebuggerStatement(std::size_t begin, std::size_t end) {
-    DebuggerStatement* debug = new (this) DebuggerStatement();
-    debug->Location(begin, end);
+    DebuggerStatement* debug = super_type::NewDebuggerStatement(begin, end);
     debug->set_is_failed_node(false);
     return debug;
   }
 
   FunctionStatement* NewFunctionStatement(FunctionLiteral* func) {
-    FunctionStatement* stmt = new (this) FunctionStatement(func);
-    stmt->Location(func->begin_position(), func->end_position());
+    FunctionStatement* stmt = super_type::NewFunctionStatement(func);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
   FunctionDeclaration* NewFunctionDeclaration(FunctionLiteral* func) {
-    FunctionDeclaration* decl = new (this) FunctionDeclaration(func);
-    decl->Location(func->begin_position(), func->end_position());
+    FunctionDeclaration* decl = super_type::NewFunctionDeclaration(func);
     decl->set_is_failed_node(false);
     return decl;
   }
 
   Block* NewBlock(Statements* body, std::size_t begin, std::size_t end) {
-    Block* block = new (this) Block(body);
-    block->Location(begin, end);
+    Block* block = super_type::NewBlock(body, begin, end);
     block->set_is_failed_node(false);
     return block;
   }
@@ -189,30 +83,18 @@ class AstFactory
                                           std::size_t begin,
                                           std::size_t end) {
     assert(!decls->empty());
-    VariableStatement* var = new (this) VariableStatement(token, decls);
-    var->Location(begin, end);
+    VariableStatement* var =
+        super_type::NewVariableStatement(token, decls, begin, end);
     var->set_is_failed_node(false);
     return var;
-  }
-
-  Declaration* NewDeclaration(Identifier* name, iv::core::Maybe<Expression> expr) {
-    assert(name);
-    Declaration* decl = new (this) Declaration(name, expr);
-    const std::size_t end = (expr) ? (*expr).end_position() : name->end_position();
-    decl->Location(name->begin_position(), end);
-    return decl;
   }
 
   IfStatement* NewIfStatement(Expression* cond,
                               Statement* then_statement,
                               iv::core::Maybe<Statement> else_statement,
                               std::size_t begin) {
-    IfStatement* stmt = new (this) IfStatement(cond,
-                                               then_statement, else_statement);
-    assert(then_statement);
-    const std::size_t end = (else_statement) ?
-        (*else_statement).end_position() : then_statement->end_position();
-    stmt->Location(begin, end);
+    IfStatement* stmt =
+        super_type::NewIfStatement(cond, then_statement, else_statement, begin);
     stmt->set_is_failed_node(false);
     return stmt;
   }
@@ -221,8 +103,8 @@ class AstFactory
                                         Expression* cond,
                                         std::size_t begin,
                                         std::size_t end) {
-    DoWhileStatement* stmt = new (this) DoWhileStatement(body, cond);
-    stmt->Location(begin, end);
+    DoWhileStatement* stmt =
+        super_type::NewDoWhileStatement(body, cond, begin, end);
     stmt->set_is_failed_node(false);
     return stmt;
   }
@@ -231,8 +113,8 @@ class AstFactory
                                     Expression* cond,
                                     std::size_t begin) {
     assert(body && cond);
-    WhileStatement* stmt = new (this) WhileStatement(body, cond);
-    stmt->Location(begin, body->end_position());
+    WhileStatement* stmt =
+        super_type::NewWhileStatement(body, cond, begin);
     stmt->set_is_failed_node(false);
     return stmt;
   }
@@ -242,8 +124,8 @@ class AstFactory
                                     Expression* enumerable,
                                     std::size_t begin) {
     assert(body);
-    ForInStatement* stmt = new (this) ForInStatement(body, each, enumerable);
-    stmt->Location(begin, body->end_position());
+    ForInStatement* stmt =
+        super_type::NewForInStatement(body, each, enumerable, begin);
     stmt->set_is_failed_node(false);
     return stmt;
   }
@@ -254,35 +136,35 @@ class AstFactory
                                 iv::core::Maybe<Expression> next,
                                 std::size_t begin) {
     assert(body);
-    ForStatement* stmt = new (this) ForStatement(body, init, cond, next);
-    stmt->Location(begin, body->end_position());
+    ForStatement* stmt =
+        super_type::NewForStatement(body, init, cond, next, begin);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
   ExpressionStatement* NewExpressionStatement(Expression* expr, std::size_t end) {
-    ExpressionStatement* stmt = new (this) ExpressionStatement(expr);
-    stmt->Location(expr->begin_position(), end);
+    ExpressionStatement* stmt =
+        super_type::NewExpressionStatement(expr, end);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
-  ContinueStatement* NewContinueStatement(iv::core::Maybe<Identifier> label,
+  ContinueStatement* NewContinueStatement(const iv::core::ast::SymbolHolder& label,
                                           IterationStatement** target,
                                           std::size_t begin,
                                           std::size_t end) {
-    ContinueStatement* stmt = new (this) ContinueStatement(label, target);
-    stmt->Location(begin, end);
+    ContinueStatement* stmt =
+        super_type::NewContinueStatement(label, target, begin, end);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
-  BreakStatement* NewBreakStatement(iv::core::Maybe<Identifier> label,
+  BreakStatement* NewBreakStatement(const iv::core::ast::SymbolHolder& label,
                                     BreakableStatement** target,
                                     std::size_t begin,
                                     std::size_t end) {
-    BreakStatement* stmt = new (this) BreakStatement(label, target);
-    stmt->Location(begin, end);
+    BreakStatement* stmt =
+        super_type::NewBreakStatement(label, target, begin, end);
     stmt->set_is_failed_node(false);
     return stmt;
   }
@@ -290,25 +172,24 @@ class AstFactory
   ReturnStatement* NewReturnStatement(iv::core::Maybe<Expression> expr,
                                       std::size_t begin,
                                       std::size_t end) {
-    ReturnStatement* stmt = new (this) ReturnStatement(expr);
-    stmt->Location(begin, end);
+    ReturnStatement* stmt =
+        super_type::NewReturnStatement(expr, begin, end);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
   WithStatement* NewWithStatement(Expression* expr,
                                   Statement* body, std::size_t begin) {
-    assert(body);
-    WithStatement* stmt = new (this) WithStatement(expr, body);
-    stmt->Location(begin, body->end_position());
+    WithStatement* stmt =
+        super_type::NewWithStatement(expr, body, begin);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
   SwitchStatement* NewSwitchStatement(Expression* expr, CaseClauses* clauses,
                                       std::size_t begin, std::size_t end) {
-    SwitchStatement* stmt = new (this) SwitchStatement(expr, clauses);
-    stmt->Location(begin, end);
+    SwitchStatement* stmt =
+        super_type::NewSwitchStatement(expr, clauses, begin, end);
     stmt->set_is_failed_node(false);
     return stmt;
   }
@@ -317,110 +198,40 @@ class AstFactory
                             iv::core::Maybe<Expression> expr, Statements* body,
                             std::size_t begin,
                             std::size_t end) {
-    CaseClause* clause = new (this) CaseClause(is_default, expr, body);
-    clause->Location(begin, end);
+    CaseClause* clause =
+        super_type::NewCaseClause(is_default, expr, body, begin ,end);
     return clause;
   }
 
 
   ThrowStatement*  NewThrowStatement(Expression* expr,
-                                     std::size_t begin,
-                                     std::size_t end) {
-    assert(expr);
-    ThrowStatement* stmt = new (this) ThrowStatement(expr);
-    stmt->Location(begin, end);
+                                     std::size_t begin, std::size_t end) {
+    ThrowStatement* stmt =
+        super_type::NewThrowStatement(expr, begin, end);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
   TryStatement* NewTryStatement(Block* try_block,
-                                iv::core::Maybe<Identifier> catch_name,
+                                iv::core::Maybe<Assigned> catch_name,
                                 iv::core::Maybe<Block> catch_block,
                                 iv::core::Maybe<Block> finally_block,
                                 std::size_t begin) {
-    TryStatement* stmt = new (this) TryStatement(try_block,
-                                                 catch_name,
-                                                 catch_block,
-                                                 finally_block);
-    assert(catch_block || finally_block);
-    const std::size_t end = (finally_block) ?
-        (*finally_block).end_position() : (*catch_block).end_position();
-    stmt->Location(begin, end);
+    TryStatement* stmt =
+        super_type::NewTryStatement(try_block,
+                                    catch_name,
+                                    catch_block,
+                                    finally_block, begin);
     stmt->set_is_failed_node(false);
     return stmt;
   }
 
-  LabelledStatement* NewLabelledStatement(Expression* expr, Statement* stmt) {
-    LabelledStatement* label = new (this) LabelledStatement(expr, stmt);
-    label->Location(expr->begin_position(), stmt->end_position());
-    label->set_is_failed_node(false);
-    return label;
-  }
-
-  BinaryOperation* NewBinaryOperation(iv::core::Token::Type op,
-                                      Expression* result,
-                                      Expression* right) {
-    BinaryOperation* expr = new (this) BinaryOperation(op, result, right);
-    expr->Location(result->begin_position(), right->end_position());
-    return expr;
-  }
-
-  Assignment* NewAssignment(iv::core::Token::Type op,
-                            Expression* left,
-                            Expression* right) {
-    Assignment* expr = new (this) Assignment(op, left, right);
-    expr->Location(left->begin_position(), right->end_position());
-    return expr;
-  }
-
-  ConditionalExpression* NewConditionalExpression(Expression* cond,
-                                                  Expression* left,
-                                                  Expression* right) {
-    ConditionalExpression* expr = new (this) ConditionalExpression(cond, left, right);
-    expr->Location(cond->begin_position(), right->end_position());
-    return expr;
-  }
-
-  UnaryOperation* NewUnaryOperation(iv::core::Token::Type op,
-                                    Expression* expr, std::size_t begin) {
-    assert(expr);
-    UnaryOperation* unary = new (this) UnaryOperation(op, expr);
-    unary->Location(begin, expr->end_position());
-    return unary;
-  }
-
-  PostfixExpression* NewPostfixExpression(iv::core::Token::Type op,
-                                          Expression* expr, std::size_t end) {
-    assert(expr);
-    PostfixExpression* post = new (this) PostfixExpression(op, expr);
-    post->Location(expr->begin_position(), end);
-    return post;
-  }
-
-  FunctionCall* NewFunctionCall(Expression* expr,
-                                Expressions* args, std::size_t end) {
-    FunctionCall* call = new (this) FunctionCall(expr, args);
-    call->Location(expr->begin_position(), end);
-    return call;
-  }
-
-  ConstructorCall* NewConstructorCall(Expression* target,
-                                      Expressions* args, std::size_t end) {
-    ConstructorCall* call = new (this) ConstructorCall(target, args);
-    call->Location(target->begin_position(), end);
-    return call;
-  }
-
-  IndexAccess* NewIndexAccess(Expression* expr, Expression* index) {
-    IndexAccess* access = new (this) IndexAccess(expr, index);
-    access->Location(expr->begin_position(), index->end_position());
-    return access;
-  }
-
-  IdentifierAccess* NewIdentifierAccess(Expression* expr, Identifier* ident) {
-    IdentifierAccess* access = new (this) IdentifierAccess(expr, ident);
-    access->Location(expr->begin_position(), ident->end_position());
-    return access;
+  LabelledStatement* NewLabelledStatement(
+      const iv::core::ast::SymbolHolder& label, Statement* stmt) {
+    LabelledStatement* res =
+        super_type::NewLabelledStatement(label, stmt);
+    res->set_is_failed_node(false);
+    return res;
   }
 };
 

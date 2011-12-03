@@ -1033,7 +1033,7 @@ class Heap : public az::Context {
     for (std::vector<Summary*>::const_iterator it = ordered_summaries_.begin(),
          last = ordered_summaries_.end(); it != last; ++it) {
       Summary* summary = *it;
-      if (const iv::core::Maybe<Identifier> ident = summary->function()->name()) {
+      if (const iv::core::Maybe<Assigned> ident = summary->function()->name()) {
         const iv::core::UString str(
             iv::core::symbol::GetSymbolString(ident.Address()->symbol()));
         res.insert(res.end(), str.begin(), str.end());

@@ -21,7 +21,7 @@ void Interpreter::Run(FunctionLiteral* global) {
   for (Scope::Variables::const_iterator it = scope.variables().begin(),
        last = scope.variables().end(); it != last; ++it) {
     const Scope::Variable& var = *it;
-    Identifier* ident = var.first;
+    Assigned* ident = var.first;
     Binding* binding = ident->refer();
     assert(binding);
     frame.Set(heap_, binding, AVal(AVAL_NOBASE));
@@ -29,7 +29,7 @@ void Interpreter::Run(FunctionLiteral* global) {
 
   for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
        last = scope.function_declarations().end(); it != last; ++it) {
-    Identifier* ident = (*it)->name().Address();
+    Assigned* ident = (*it)->name().Address();
     Binding* binding = ident->refer();
     assert(binding);
     const AVal val(heap_->GetDeclObject(*it));
@@ -141,7 +141,7 @@ void Interpreter::Visit(VariableStatement* var) {
   for (Declarations::const_iterator it = var->decls().begin(),
        last = var->decls().end(); it != last; ++it) {
     result_.Reset();
-    Identifier* ident = (*it)->name();
+    Assigned* ident = (*it)->name();
     Binding* binding = ident->refer();
     assert(binding);
 
@@ -208,16 +208,16 @@ void Interpreter::Visit(ForStatement* stmt) {
 }
 
 void Interpreter::Visit(ForInStatement* stmt) {
-  Identifier* ident = NULL;
+  Binding* binding = NULL;
   if (stmt->each()->AsVariableStatement()) {
     VariableStatement* var = stmt->each()->AsVariableStatement();
     if (!var->decls().empty()) {
-      ident = var->decls().front()->name();
+      binding = var->decls().front()->name()->refer();
     }
     Visit(var);
   } else {
     ExpressionStatement* ex = stmt->each()->AsExpressionStatement();
-    ident = ex->expr()->AsIdentifier();
+    binding = ex->expr()->AsIdentifier()->refer();
   }
   stmt->enumerable()->Accept(this);
 
@@ -225,32 +225,30 @@ void Interpreter::Visit(ForInStatement* stmt) {
   // so turn off this option
   if (heap_->for_in_handling()) {
     const AVal res = result_.result();
-    if (ident) {
-      if (Binding* binding = ident->refer()) {
-        if (binding->type() == Binding::STACK) {
-          Result prev = result_;
-          // limit different name symbol only
-          std::unordered_set<Symbol> already;
-          if (stmt->normal() != stmt->end()) {
-            for (AVal::ObjectSet::const_iterator it = res.objects().begin(),
-                 last = res.objects().end(); it != last; ++it) {
-              AObject* obj = *it;
-              for (AObject::Properties::const_iterator it2 = obj->properties().begin(),
-                   last2 = obj->properties().end(); it2 != last2; ++it2) {
-                if (it2->second.IsEnumerable() &&
-                    already.find(it2->first) == already.end()) {
-                  already.insert(it2->first);
-                  CurrentFrame()->Set(
-                      heap_, binding,
-                      AVal(iv::core::symbol::GetSymbolString(it2->first)));
-                  Interpret(stmt->normal(), stmt->end());
-                }
+    if (binding) {
+      if (binding->type() == Binding::STACK) {
+        Result prev = result_;
+        // limit different name symbol only
+        std::unordered_set<Symbol> already;
+        if (stmt->normal() != stmt->end()) {
+          for (AVal::ObjectSet::const_iterator it = res.objects().begin(),
+               last = res.objects().end(); it != last; ++it) {
+            AObject* obj = *it;
+            for (AObject::Properties::const_iterator it2 = obj->properties().begin(),
+                 last2 = obj->properties().end(); it2 != last2; ++it2) {
+              if (it2->second.IsEnumerable() &&
+                  already.find(it2->first) == already.end()) {
+                already.insert(it2->first);
+                CurrentFrame()->Set(
+                    heap_, binding,
+                    AVal(iv::core::symbol::GetSymbolString(it2->first)));
+                Interpret(stmt->normal(), stmt->end());
               }
-              if (already.size() > 20) {
-                // too big... so stop searching
-                DebugLog("STOP!!");
-                return;
-              }
+            }
+            if (already.size() > 20) {
+              // too big... so stop searching
+              DebugLog("STOP!!");
+              return;
             }
           }
         }
@@ -634,6 +632,8 @@ void Interpreter::Visit(NumberLiteral* literal) {
   result_.Reset(AVAL_NUMBER);
 }
 
+void Interpreter::Visit(Assigned* ident) { }
+
 void Interpreter::Visit(Identifier* ident) {
   // lookup!
   const MethodTargetGuard method_target_guard(this, ident);
@@ -709,8 +709,7 @@ void Interpreter::Visit(ObjectLiteral* literal) {
     const ObjectLiteral::Property& prop = *it;
     if (std::get<0>(prop) == ObjectLiteral::DATA) {
       std::get<2>(prop)->Accept(this);
-      Identifier* ident = std::get<1>(prop);
-      obj->UpdateProperty(heap_, ident->symbol(), result_.result());
+      obj->UpdateProperty(heap_, std::get<1>(prop), result_.result());
       if (result_.HasException())  {
         // error found
         error_found = true;
@@ -800,7 +799,7 @@ void Interpreter::Visit(IdentifierAccess* prop) {
   const MethodTargetGuard method_target_guard(this, prop);
   prop->target()->Accept(this);
   base_ = result_.result().ToObject(heap_);
-  const AVal refer = base_.GetProperty(heap_, prop->key()->symbol());
+  const AVal refer = base_.GetProperty(heap_, prop->key());
   result_.set_result(refer);
 }
 
@@ -967,8 +966,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
       if (type == FunctionLiteral::STATEMENT ||
           (type == FunctionLiteral::EXPRESSION && literal->name())) {
         // in scope, so set to the frame
-        Identifier* name = literal->name().Address();
-        Binding* binding = name->refer();
+        Binding* binding = literal->name().Address()->refer();
         assert(binding);
         CurrentFrame()->Set(heap_, binding,
                             AVal(heap_->GetDeclObject(literal)));
@@ -977,7 +975,7 @@ Result Interpreter::EvaluateFunction(AObject* function,
       // parameter binding initialization
       std::size_t index = 0;
       const std::size_t args_size = args.size();
-      for (Identifiers::const_iterator it = literal->params().begin(),
+      for (Assigneds::const_iterator it = literal->params().begin(),
            last = literal->params().end(); it != last; ++it, ++index) {
         Binding* binding = (*it)->refer();
         assert(binding);
@@ -1001,16 +999,14 @@ Result Interpreter::EvaluateFunction(AObject* function,
       for (Scope::Variables::const_iterator it = scope.variables().begin(),
            last = scope.variables().end(); it != last; ++it) {
         const Scope::Variable& var = *it;
-        Identifier* ident = var.first;
-        Binding* binding = ident->refer();
+        Binding* binding = var.first->refer();
         assert(binding);
         CurrentFrame()->Set(heap_, binding, AVal(AVAL_NOBASE));
       }
 
       for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
            last = scope.function_declarations().end(); it != last; ++it) {
-        Identifier* ident = (*it)->name().Address();
-        Binding* binding = ident->refer();
+        Binding* binding = (*it)->name().Address()->refer();
         assert(binding);
         CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
       }
@@ -1106,10 +1102,9 @@ Result Interpreter::Assign(Expression* lhs, Result res) {
   } else {
     assert(lhs->AsPropertyAccess());
     if (IdentifierAccess* identac = lhs->AsIdentifierAccess()) {
-      const Symbol key = identac->key()->symbol();
       identac->target()->Accept(this);
       const Result target(result_);
-      target.result().UpdateProperty(heap_, key, res.result());
+      target.result().UpdateProperty(heap_, identac->key(), res.result());
       res.MergeException(target);
       return res;
     } else {
@@ -1203,8 +1198,7 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
       if (type == FunctionLiteral::STATEMENT ||
           (type == FunctionLiteral::EXPRESSION && literal->name())) {
         // in scope, so set to the frame
-        Identifier* name = literal->name().Address();
-        Binding* binding = name->refer();
+        Binding* binding = literal->name().Address()->refer();
         assert(binding);
         CurrentFrame()->Set(heap_,
                             binding, AVal(heap_->GetDeclObject(literal)));
@@ -1213,7 +1207,7 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
       // parameter binding initialization
       std::size_t index = 0;
       const std::size_t args_size = args.size();
-      for (Identifiers::const_iterator it = literal->params().begin(),
+      for (Assigneds::const_iterator it = literal->params().begin(),
            last = literal->params().end(); it != last; ++it, ++index) {
         Binding* binding = (*it)->refer();
         assert(binding);
@@ -1237,16 +1231,14 @@ void Interpreter::EvaluateCompletionTargetFunction(Completer* completer) {
       for (Scope::Variables::const_iterator it = scope.variables().begin(),
            last = scope.variables().end(); it != last; ++it) {
         const Scope::Variable& var = *it;
-        Identifier* ident = var.first;
-        Binding* binding = ident->refer();
+        Binding* binding = var.first->refer();
         assert(binding);
         CurrentFrame()->Set(heap_, binding, AVal(AVAL_NOBASE));
       }
 
       for (Scope::FunctionLiterals::const_iterator it = scope.function_declarations().begin(),
            last = scope.function_declarations().end(); it != last; ++it) {
-        Identifier* ident = (*it)->name().Address();
-        Binding* binding = ident->refer();
+        Binding* binding = (*it)->name().Address()->refer();
         assert(binding);
         CurrentFrame()->Set(heap_, binding, AVal(heap_->GetDeclObject(*it)));
       }

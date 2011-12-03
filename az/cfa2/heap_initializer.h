@@ -213,7 +213,7 @@ void HeapInitializer::Visit(Assignment* assign) {
     IdentifierAccess* method = left->AsIdentifierAccess();
     FunctionLiteral* literal = right->AsFunctionLiteral();
     if (IdentifierAccess* parent = method->target()->AsIdentifierAccess()) {
-      if (parent->key()->symbol() == Intern("prototype")) {
+      if (parent->key() == Intern("prototype")) {
         // form is
         //   AAA.prototype.BBB = function() { }
         heap_->RegisterPrototypeMethodBinding(parent->target(), literal);
@@ -247,6 +247,10 @@ void HeapInitializer::Visit(StringLiteral* literal) {
 }
 
 void HeapInitializer::Visit(NumberLiteral* literal) {
+  // nothing
+}
+
+void HeapInitializer::Visit(Assigned* literal) {
   // nothing
 }
 
@@ -314,7 +318,7 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
   AVal prototype = AVal(heap_->MakePrototype(obj));
   obj->AddProperty(Intern("prototype"), AProp(prototype, A::W | A::C));
 
-  if (const iv::core::Maybe<Identifier> ident = literal->name()) {
+  if (const iv::core::Maybe<Assigned> ident = literal->name()) {
     // function literal name has always binding
     Binding* binding = ident.Address()->refer();
     assert(binding);
@@ -325,7 +329,7 @@ void HeapInitializer::Visit(FunctionLiteral* literal) {
   }
 
   // parameter binding initialization
-  for (Identifiers::const_iterator it = literal->params().begin(),
+  for (Assigneds::const_iterator it = literal->params().begin(),
        last = literal->params().end(); it != last; ++it) {
     Binding* binding = (*it)->refer();
     assert(binding);

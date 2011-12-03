@@ -114,6 +114,7 @@ class Interpreter
   inline void Visit(StringLiteral* literal);
   inline void Visit(NumberLiteral* literal);
   inline void Visit(Identifier* literal);
+  inline void Visit(Assigned* literal);
   inline void Visit(ThisLiteral* literal);
   inline void Visit(NullLiteral* lit);
   inline void Visit(TrueLiteral* lit);

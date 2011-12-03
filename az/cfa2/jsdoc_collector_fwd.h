@@ -46,6 +46,7 @@ class JSDocCollector
   inline void Visit(StringLiteral* literal);
   inline void Visit(NumberLiteral* literal);
   inline void Visit(Identifier* literal);
+  inline void Visit(Assigned* ident);
   inline void Visit(ThisLiteral* literal);
   inline void Visit(NullLiteral* lit);
   inline void Visit(TrueLiteral* lit);

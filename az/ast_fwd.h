@@ -32,25 +32,6 @@ class ScopeBase<az::AstFactory>
 };
 
 template<>
-class AstNodeBase<az::AstFactory>
-  : public Inherit<az::AstFactory, kAstNode> {
- public:
-  void Location(std::size_t begin, std::size_t end) {
-    begin_ = begin;
-    end_ = end;
-  }
-  std::size_t begin_position() const {
-    return begin_;
-  }
-  std::size_t end_position() const {
-    return end_;
-  }
- private:
-  std::size_t begin_;
-  std::size_t end_;
-};
-
-template<>
 class IdentifierBase<az::AstFactory>
   : public Inherit<az::AstFactory, kIdentifier> {
  public:
@@ -78,17 +59,33 @@ class IdentifierBase<az::AstFactory>
     return binding_type_;
   }
 
-  void set_symbol(az::Symbol sym) {
-    sym_ = sym;
+ private:
+  core::Token::Type type_;
+  az::cfa2::Binding* refer_;
+  az::cfa2::Binding::Type binding_type_;
+};
+
+template<>
+class AssignedBase<az::AstFactory>
+  : public Inherit<az::AstFactory, kAssigned> {
+ public:
+  void set_refer(az::cfa2::Binding* binding) {
+    refer_ = binding;
   }
 
-  az::Symbol symbol() const {
-    return sym_;
+  az::cfa2::Binding* refer() const {
+    return refer_;
+  }
+
+  void set_binding_type(az::cfa2::Binding::Type type) {
+    binding_type_ = type;
+  }
+
+  az::cfa2::Binding::Type binding_type() const {
+    return binding_type_;
   }
 
  private:
-  core::Token::Type type_;
-  az::Symbol sym_;
   az::cfa2::Binding* refer_;
   az::cfa2::Binding::Type binding_type_;
 };

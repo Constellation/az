@@ -176,6 +176,9 @@ void JSDocCollector::Visit(NumberLiteral* literal) {
 void JSDocCollector::Visit(Identifier* ident) {
 }
 
+void JSDocCollector::Visit(Assigned* ident) {
+}
+
 void JSDocCollector::Visit(ThisLiteral* literal) {
 }
 
